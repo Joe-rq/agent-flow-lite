@@ -30,3 +30,142 @@ class Settings(BaseSettings):
 ## 待办
 - 用户需要从 https://platform.deepseek.com/api_keys 获取真实的 API Key
 - 配置完成后可解锁 Task 7
+
+---
+
+# Vue3 前端项目初始化学习笔记
+
+## 完成的工作
+- 创建 `frontend/` 目录
+- 使用 `npm create vue@latest` 初始化项目（TypeScript + Pinia + Vue Router）
+- 安装 Vue Flow 依赖：`@vue-flow/core`, `@vue-flow/background`, `@vue-flow/controls`
+- 安装 axios
+- 配置 vite.config.ts 代理到后端 8000 端口
+- 创建基础布局组件：App.vue（Header + Sidebar + Main Content）
+- 创建路由：`/`, `/workflow`, `/knowledge`, `/chat`
+- 验证开发服务器能正常启动
+
+## 项目结构
+```
+frontend/
+├── src/
+│   ├── App.vue          # 基础布局组件
+│   ├── router/index.ts  # 路由配置
+│   ├── views/           # 页面视图
+│   │   ├── HomeView.vue
+│   │   ├── WorkflowView.vue
+│   │   ├── KnowledgeView.vue
+│   │   └── ChatView.vue
+│   └── ...
+├── vite.config.ts       # Vite 配置（含代理）
+└── package.json         # 依赖（含 Vue Flow）
+```
+
+## 关键配置
+```typescript
+// vite.config.ts 代理配置
+export default defineConfig({
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      }
+    }
+  }
+})
+```
+
+## 依赖版本
+- Vue Flow: 1.48.2
+- Axios: 1.13.4
+- Vite: 内置于 create-vue 模板
+
+## 待办
+- Task 9: 集成 Vue Flow 可视化工作流编辑器
+- Task 10: 创建 API 服务层（axios 封装）
+- Task 11: 实现知识库页面（KnowledgeView）
+- Task 12: 实现对话页面（ChatView）
+
+---
+
+# FastAPI 后端项目初始化学习笔记
+
+## 完成的工作
+- 创建 `backend/` 目录
+- 使用 `uv init` 初始化 Python 项目（Python 3.11）
+- 创建 FastAPI 标准项目结构：`app/api/`, `app/core/`, `app/models/`
+- 安装依赖：fastapi, uvicorn, llama-index, chromadb, python-multipart, python-dotenv
+- 创建 `main.py` 入口文件，配置 CORS 和基础路由（/, /health）
+- 创建 `.env.example` 配置文件模板
+- 创建 `.gitignore` 排除 .env, __pycache__, .venv 等
+- 验证服务能启动并访问 `/docs`
+
+## 项目结构
+```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── api/
+│   │   └── __init__.py
+│   ├── core/
+│   │   └── __init__.py
+│   └── models/
+│       └── __init__.py
+├── main.py              # FastAPI 应用入口
+├── .env.example         # 环境变量模板
+├── .gitignore
+├── pyproject.toml       # uv 项目配置
+├── uv.lock
+└── README.md
+```
+
+## 关键配置
+```python
+# main.py - FastAPI 应用配置
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Agent Flow Lite API",
+        description="Backend API for Agent Flow Lite",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
+    
+    # CORS 配置
+    origins = os.getenv("CORS_ORIGINS", "*").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    return app
+```
+
+## 依赖版本
+- FastAPI: 0.128.0
+- Uvicorn: 0.40.0
+- Llama-Index: 0.14.13
+- ChromaDB: 1.4.1
+- Python: 3.11.11
+
+## 验证结果
+- ✅ 依赖导入成功
+- ✅ 服务启动成功（http://127.0.0.1:8000）
+- ✅ /docs 端点可访问（Swagger UI）
+
+## 启动方式
+```bash
+cd backend
+uv run uvicorn main:app --reload
+# 访问 http://localhost:8000/docs 查看 API 文档
+```
+
+## 待办
+- Task 4: 集成 DeepSeek API（已存在，可跳过）
+- Task 5: 集成 LlamaIndex RAG
+- Task 6: 集成 ChromaDB 向量存储
+- Task 7: 实现对话 API
+- Task 8: 实现知识库 API

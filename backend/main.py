@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.workflow import router as workflow_router
+
 # Load environment variables
 load_dotenv()
 
@@ -52,6 +54,8 @@ def create_app() -> FastAPI:
     async def health_check():
         """Health check endpoint"""
         return {"status": "healthy"}
+
+    app.include_router(workflow_router)
 
     return app
 
