@@ -324,3 +324,65 @@ uv pip install llama-index-embeddings-huggingface transformers torch
 
 ## 解锁
 - Task 8: 聊天 API 可以使用 RAG 检索功能
+
+---
+
+# SSE 流式聊天 API 实现学习笔记
+
+## 2024-02-01: 实现 SSE 流式聊天 API
+
+### 完成的工作
+- 创建了 `app/models/chat.py`: ChatRequest, ChatMessage, SessionHistory 等模型
+- 创建了 `app/api/chat.py`: SSE 流式聊天 API 端点
+- 更新了 `main.py`: 注册 chat 路由
+
+### SSE 事件格式
+```
+event: thought
+data: {"type": "retrieval", "status": "start", ...}
+
+event: token  
+data: {"content": "生成的文本..."}
+
+event: citation
+data: {"sources": [{"doc_id": "...", "score": 0.95}]}
+
+event: done
+data: {"status": "success"}
+```
+
+### 关键设计决策
+1. **会话存储**: 使用 JSON 文件存储在 `data/sessions/{session_id}.json`
+2. **历史限制**: 只保留最近 10 条消息传给 LLM，避免 token 过多
+3. **RAG 集成**: 如果有 kb_id，先检索相关文档并注入到 system prompt
+4. **异步流**: 使用 `AsyncGenerator` 和 `StreamingResponse` 实现真正的 SSE 流
+
+### 代码结构
+```
+app/api/chat.py
+- router: APIRouter(prefix="/api/v1/chat")
+- chat_completions(): POST /completions 端点
+- chat_stream_generator(): 异步生成器产生 SSE 事件
+- load_session()/save_session(): 会话持久化
+
+app/models/chat.py
+- ChatRequest: session_id, message, kb_id, workflow_id
+- ChatMessage: role, content, timestamp
+- SessionHistory: 完整会话数据结构
+```
+
+### 验证命令
+```bash
+# 简单聊天
+curl -N -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"s1","message":"Hello"}'
+
+# 带 RAG 的聊天  
+curl -N -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"s2","message":"What is AI?","kb_id":"kb-test"}'
+```
+
+### 解锁
+- Task 12: 聊天终端前端

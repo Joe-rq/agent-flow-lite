@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.workflow import router as workflow_router
 from app.api.knowledge import router as knowledge_router
+from app.api.chat import router as chat_router
 
 # Load environment variables
 load_dotenv()
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
 
     app.include_router(workflow_router)
     app.include_router(knowledge_router)
+    app.include_router(chat_router)
 
     return app
 
