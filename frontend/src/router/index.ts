@@ -12,7 +12,7 @@ const router = createRouter({
     {
       path: '/workflow',
       name: 'workflow',
-      component: () => import('../views/WorkflowView.vue'),
+      component: () => import('../views/WorkflowEditor.vue'),
     },
     {
       path: '/knowledge',
