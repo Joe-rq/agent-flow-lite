@@ -169,3 +169,66 @@ uv run uvicorn main:app --reload
 - Task 6: 集成 ChromaDB 向量存储
 - Task 7: 实现对话 API
 - Task 8: 实现知识库 API
+
+---
+
+# Task 4: 工作流 CRUD API 学习笔记
+
+## 完成的工作
+- 创建 `backend/app/models/workflow.py`：Workflow Pydantic 模型
+  - Workflow, WorkflowCreate, WorkflowUpdate, GraphData 模型
+  - 包含 id, name, description, graph_data, created_at, updated_at 字段
+  - graph_data 存储 Vue Flow 的节点和边数据
+- 创建 `backend/app/api/workflow.py`：CRUD 端点
+  - GET /api/v1/workflows - 列表
+  - POST /api/v1/workflows - 创建
+  - GET /api/v1/workflows/{id} - 详情
+  - PUT /api/v1/workflows/{id} - 更新
+  - DELETE /api/v1/workflows/{id} - 删除
+- 修改 `backend/main.py`：注册 workflow 路由
+- 使用 JSON 文件存储（data/workflows.json）
+- 添加适当的错误处理（404, 400）
+
+## API 端点验证结果
+```bash
+# 创建工作流 - 201 Created
+curl -X POST http://localhost:8000/api/v1/workflows \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","description":"A test","graph_data":{"nodes":[],"edges":[]}}'
+
+# 列表 - 200 OK
+curl http://localhost:8000/api/v1/workflows
+
+# 详情 - 200 OK
+curl http://localhost:8000/api/v1/workflows/{id}
+
+# 更新 - 200 OK
+curl -X PUT http://localhost:8000/api/v1/workflows/{id} \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Updated"}'
+
+# 删除 - 204 No Content
+curl -X DELETE http://localhost:8000/api/v1/workflows/{id}
+```
+
+## 技术要点
+1. **Pydantic v2 模型**：使用 Field 定义验证规则
+2. **UUID 生成**：使用 uuid.uuid4() 生成唯一 ID
+3. **JSON 文件存储**：简单的文件读写操作
+4. **FastAPI 路由注册**：使用 APIRouter 和 include_router
+
+## 遇到的问题
+1. **uvicorn 路径问题**：
+   - 使用 `uv run uvicorn main:app` 时从错误的目录运行
+   - 解决方案：确保从 `backend` 目录运行，或使用 `DEBUG=0` 禁用 reload
+
+2. **相对导入问题**：
+   - `from app.api.workflow import router` 需要正确的 PYTHONPATH
+   - 解决方案：在 backend 目录下运行，并确保 `app/__init__.py` 存在
+
+## Git 提交
+- Message: `feat(api): add workflow CRUD endpoints`
+- Files: `backend/app/models/workflow.py`, `backend/app/api/workflow.py`, `backend/main.py`
+
+## 待办
+- Task 5: 实现文件上传 + ChromaDB 集成（解锁）
