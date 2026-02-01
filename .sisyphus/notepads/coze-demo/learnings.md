@@ -232,3 +232,95 @@ curl -X DELETE http://localhost:8000/api/v1/workflows/{id}
 
 ## 待办
 - Task 5: 实现文件上传 + ChromaDB 集成（解锁）
+
+---
+
+# Task 6: LlamaIndex RAG Pipeline 实现学习笔记
+
+## 完成的工作
+- 创建 `backend/app/core/rag.py`：RAG 核心逻辑
+  - 使用 LlamaIndex 的 Document 和 SentenceSplitter 进行文本分块
+  - 使用 HuggingFace BAAI/bge-small-zh-v1.5 本地 embedding 模型（避免依赖 OpenAI API）
+  - chunk_size=512, chunk_overlap=50
+  - 存储到 ChromaDB，metadata 包含 doc_id 和 chunk_index
+  - 检索功能返回 top-k 相关 chunks
+
+- 更新 `backend/app/api/knowledge.py`：
+  - POST /api/v1/knowledge/{kb_id}/process/{doc_id} - 处理文档（后台任务）
+  - GET /api/v1/knowledge/{kb_id}/search?query=xxx - 检索测试
+  - 文档状态更新：pending → processing → completed/error
+
+## 技术要点
+
+### 1. HuggingFace Embedding 模型
+```python
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-zh-v1.5")
+```
+- BAAI/bge-small-zh-v1.5 是轻量级多语言模型，支持中英文
+- 首次使用时会自动下载模型（约 100MB）
+- 无需 OpenAI API Key，完全本地运行
+
+### 2. SentenceSplitter 分块
+```python
+from llama_index.core.node_parser import SentenceSplitter
+
+node_parser = SentenceSplitter(
+    chunk_size=512,
+    chunk_overlap=50,
+)
+```
+- 按句子边界分块，避免截断句子
+- chunk_overlap 保证上下文连贯性
+
+### 3. ChromaDB 集成
+- 每个知识库使用独立的 collection（kb_{kb_id}）
+- 存储时包含 embedding、文本、metadata
+- chunk ID 格式：{doc_id}_chunk_{index}
+
+### 4. 后台任务处理
+```python
+from fastapi import BackgroundTasks
+
+@router.post("/{kb_id}/process/{doc_id}")
+async def process_document(
+    kb_id: str,
+    doc_id: str,
+    background_tasks: BackgroundTasks
+):
+    background_tasks.add_task(process_document_task, kb_id, doc_id)
+    return JSONResponse(
+        content={"message": "Document processing started.", "doc_id": doc_id},
+        status_code=status.HTTP_202_ACCEPTED
+    )
+```
+- 使用 FastAPI BackgroundTasks 异步处理文档
+- 避免长时间处理阻塞 HTTP 请求
+- 状态实时更新到 metadata JSON 文件
+
+## API 验证结果
+
+```bash
+# 处理文档
+curl -X POST http://localhost:8000/api/v1/knowledge/kb-test/process/832143e9-4ae9-46f7-91b2-518be7901ede
+# Response: {"message": "Document processing started.", "doc_id": "..."}
+
+# 搜索测试
+curl "http://localhost:8000/api/v1/knowledge/kb-test/search?query=capital%20of%20France"
+# Response: 返回包含 "Paris" 的文本块，score: 0.4697
+```
+
+## 依赖安装
+```bash
+uv pip install llama-index-embeddings-huggingface transformers torch
+```
+
+## 注意事项
+1. 首次运行需要下载 embedding 模型（约 100MB），耗时约 30-60 秒
+2. 模型缓存在本地，后续启动更快
+3. 仅支持 .txt 和 .md 文件（按需求）
+4. 每个 chunk 独立存储，支持精确删除文档
+
+## 解锁
+- Task 8: 聊天 API 可以使用 RAG 检索功能

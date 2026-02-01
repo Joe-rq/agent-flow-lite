@@ -2,11 +2,11 @@
   "832143e9-4ae9-46f7-91b2-518be7901ede": {
     "id": "832143e9-4ae9-46f7-91b2-518be7901ede",
     "kb_id": "kb-test",
-    "filename": "test_knowledge.txt",
-    "file_path": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/data/uploads/kb-test/test_knowledge.txt",
-    "file_size": 53,
-    "status": "pending",
-    "created_at": "2026-02-01T15:09:26.275503",
-    "updated_at": null
+    "filename": "test_document.txt",
+    "file_path": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/data/uploads/kb-test/test_document.txt",
+    "file_size": 1024,
+    "status": "completed",
+    "created_at": "2024-01-01T00:00:00",
+    "updated_at": "2026-02-01T15:17:13.930932"
   }
 }
