@@ -1,0 +1,212 @@
+"""
+Knowledge base API endpoints for document management.
+"""
+import json
+import os
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi.responses import JSONResponse
+
+from app.core.chroma_client import get_chroma_client
+from app.models.document import (
+    DocumentResponse,
+    DocumentStatus,
+    DocumentListResponse,
+)
+
+
+router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
+
+# Configuration
+ALLOWED_EXTENSIONS = {".txt", ".md"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+def allowed_file(filename: str) -> bool:
+    """Check if file extension is allowed."""
+    return any(filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS)
+
+
+def get_upload_path(kb_id: str, filename: str) -> Path:
+    """Get the full path for saving an uploaded file."""
+    project_root = Path(__file__).parent.parent.parent
+    upload_dir = project_root / "data" / "uploads" / kb_id
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    return upload_dir / filename
+
+
+def get_metadata_path(kb_id: str) -> Path:
+    """Get the path for document metadata JSON file."""
+    project_root = Path(__file__).parent.parent.parent
+    metadata_dir = project_root / "data" / "metadata" / kb_id
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    return metadata_dir / "documents.json"
+
+
+def load_documents_metadata(kb_id: str) -> dict:
+    """Load document metadata from JSON file."""
+    metadata_path = get_metadata_path(kb_id)
+    if not metadata_path.exists():
+        return {}
+    try:
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
+
+
+def save_documents_metadata(kb_id: str, metadata: dict) -> None:
+    """Save document metadata to JSON file."""
+    metadata_path = get_metadata_path(kb_id)
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+
+@router.post("/{kb_id}/upload")
+async def upload_document(
+    kb_id: str,
+    file: UploadFile = File(...)
+) -> DocumentResponse:
+    """
+    Upload a document to a knowledge base.
+
+    - **kb_id**: Knowledge base ID (path parameter)
+    - **file**: File to upload (.txt or .md, max 5MB)
+    """
+    if not file.filename or not allowed_file(file.filename):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Only {', '.join(ALLOWED_EXTENSIONS)} files are supported."
+        )
+
+    content = await file.read()
+    file_size = len(content)
+
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB."
+        )
+
+    doc_id = str(uuid.uuid4())
+    timestamp = datetime.utcnow()
+
+    file_path = get_upload_path(kb_id, file.filename)
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    metadata = {
+        "id": doc_id,
+        "kb_id": kb_id,
+        "filename": file.filename,
+        "file_path": str(file_path),
+        "file_size": file_size,
+        "status": DocumentStatus.PENDING.value,
+        "created_at": timestamp.isoformat(),
+        "updated_at": None
+    }
+
+    all_metadata = load_documents_metadata(kb_id)
+    all_metadata[doc_id] = metadata
+    save_documents_metadata(kb_id, all_metadata)
+
+    chroma_client = get_chroma_client()
+    chroma_client.get_or_create_collection(kb_id)
+
+    return DocumentResponse(
+        id=doc_id,
+        kb_id=kb_id,
+        filename=file.filename,
+        status=DocumentStatus.PENDING,
+        file_size=file_size,
+        created_at=timestamp
+    )
+
+
+@router.get("/{kb_id}/documents")
+async def list_documents(kb_id: str) -> DocumentListResponse:
+    """
+    List all documents in a knowledge base.
+
+    - **kb_id**: Knowledge base ID
+    """
+    all_metadata = load_documents_metadata(kb_id)
+
+    documents = []
+    for doc_id, doc_data in all_metadata.items():
+        created_at = datetime.fromisoformat(doc_data["created_at"])
+
+        documents.append(DocumentResponse(
+            id=doc_data["id"],
+            kb_id=doc_data["kb_id"],
+            filename=doc_data["filename"],
+            status=DocumentStatus(doc_data["status"]),
+            file_size=doc_data["file_size"],
+            created_at=created_at
+        ))
+
+    documents.sort(key=lambda x: x.created_at, reverse=True)
+
+    return DocumentListResponse(
+        documents=documents,
+        total=len(documents)
+    )
+
+
+@router.delete("/{kb_id}/documents/{doc_id}")
+async def delete_document(kb_id: str, doc_id: str) -> JSONResponse:
+    """
+    Delete a document from a knowledge base.
+
+    - **kb_id**: Knowledge base ID
+    - **doc_id**: Document ID to delete
+    """
+    all_metadata = load_documents_metadata(kb_id)
+
+    if doc_id not in all_metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found."
+        )
+
+    doc_data = all_metadata[doc_id]
+
+    file_path = Path(doc_data["file_path"])
+    if file_path.exists():
+        try:
+            file_path.unlink()
+        except OSError:
+            pass
+
+    del all_metadata[doc_id]
+    save_documents_metadata(kb_id, all_metadata)
+
+    chroma_client = get_chroma_client()
+    chroma_client.delete_document(kb_id, doc_id)
+
+    return JSONResponse(
+        content={"message": "Document deleted successfully.", "doc_id": doc_id},
+        status_code=status.HTTP_200_OK
+    )
+
+
+@router.get("/{kb_id}/info")
+async def get_knowledge_base_info(kb_id: str) -> dict:
+    """Get information about a knowledge base."""
+    chroma_client = get_chroma_client()
+    collection_info = chroma_client.get_collection_info(kb_id)
+
+    all_metadata = load_documents_metadata(kb_id)
+    doc_count = len(all_metadata)
+
+    return {
+        "kb_id": kb_id,
+        "collection_name": collection_info["name"],
+        "document_count": doc_count,
+        "vector_count": collection_info["count"],
+        "collection_exists": collection_info["count"] >= 0
+    }
