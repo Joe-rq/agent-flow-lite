@@ -60,3 +60,25 @@ class DocumentListResponse(BaseModel):
     """Response model for document list."""
     documents: list[DocumentResponse]
     total: int
+
+
+class KnowledgeBase(BaseModel):
+    """Knowledge base model."""
+    id: str = Field(..., description="Knowledge base unique ID")
+    name: str = Field(..., description="Knowledge base name")
+    document_count: int = Field(default=0, description="Number of documents")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+    class Config:
+        from_attributes = True
+
+
+class KnowledgeBaseCreate(BaseModel):
+    """Model for creating a new knowledge base."""
+    name: str = Field(..., description="Knowledge base name")
+
+
+class KnowledgeBaseListResponse(BaseModel):
+    """Response model for knowledge base list."""
+    items: list[KnowledgeBase]
+    total: int

@@ -250,28 +250,24 @@ function getDocStatusText(status: Document['status']): string {
   return statusMap[status] || status
 }
 
+// 显示错误提示
+function showError(message: string) {
+  alert(message)
+}
+
 // 加载知识库列表
 async function loadKnowledgeBases() {
   try {
     const response = await axios.get(`${API_BASE}/knowledge`)
-    knowledgeBases.value = response.data
+    knowledgeBases.value = (response.data.items || []).map((kb: any) => ({
+      id: kb.id,
+      name: kb.name,
+      documentCount: kb.document_count || 0,
+      createdAt: kb.created_at,
+    }))
   } catch (error) {
     console.error('加载知识库列表失败:', error)
-    // 模拟数据用于开发测试
-    knowledgeBases.value = [
-      {
-        id: 'kb-1',
-        name: '产品文档',
-        documentCount: 5,
-        createdAt: '2024-01-15T08:00:00Z',
-      },
-      {
-        id: 'kb-2',
-        name: '技术规范',
-        documentCount: 12,
-        createdAt: '2024-01-20T10:30:00Z',
-      },
-    ]
+    showError('加载知识库列表失败')
   }
 }
 
@@ -286,26 +282,17 @@ async function selectKnowledgeBase(kb: KnowledgeBase) {
 async function loadDocuments(kbId: string) {
   try {
     const response = await axios.get(`${API_BASE}/knowledge/${kbId}/documents`)
-    documents.value = response.data
+    documents.value = (response.data.documents || []).map((doc: any) => ({
+      id: doc.id,
+      fileName: doc.filename,
+      status: doc.status,
+      fileSize: doc.file_size,
+      createdAt: doc.created_at,
+    }))
   } catch (error) {
     console.error('加载文档列表失败:', error)
-    // 模拟数据用于开发测试
-    documents.value = [
-      {
-        id: 'doc-1',
-        fileName: '产品介绍.txt',
-        status: 'completed',
-        fileSize: 10240,
-        createdAt: '2024-01-15T09:00:00Z',
-      },
-      {
-        id: 'doc-2',
-        fileName: '使用手册.md',
-        status: 'processing',
-        fileSize: 51200,
-        createdAt: '2024-01-15T09:30:00Z',
-      },
-    ]
+    showError('加载文档列表失败')
+    documents.value = []
   }
 }
 
@@ -317,21 +304,18 @@ async function createKnowledgeBase() {
     const response = await axios.post(`${API_BASE}/knowledge`, {
       name: newKBName.value.trim(),
     })
-    knowledgeBases.value.unshift(response.data)
+    const kb = response.data
+    knowledgeBases.value.unshift({
+      id: kb.id,
+      name: kb.name,
+      documentCount: kb.document_count || 0,
+      createdAt: kb.created_at,
+    })
     showCreateDialog.value = false
     newKBName.value = ''
   } catch (error) {
     console.error('创建知识库失败:', error)
-    // 模拟创建成功
-    const newKB: KnowledgeBase = {
-      id: 'kb-' + Date.now(),
-      name: newKBName.value.trim(),
-      documentCount: 0,
-      createdAt: new Date().toISOString(),
-    }
-    knowledgeBases.value.unshift(newKB)
-    showCreateDialog.value = false
-    newKBName.value = ''
+    showError('创建知识库失败')
   }
 }
 
@@ -420,9 +404,10 @@ async function uploadFile(task: UploadTask) {
     setTimeout(() => {
       task.status = 'completed'
     }, 2000)
-  } catch (error) {
+  } catch (error: any) {
     console.error('上传失败:', error)
     task.status = 'error'
+    showError(error.response?.data?.detail || '上传失败')
   }
 }
 
@@ -439,8 +424,7 @@ async function deleteDocument(docId: string) {
     documents.value = documents.value.filter(doc => doc.id !== docId)
   } catch (error) {
     console.error('删除文档失败:', error)
-    // 模拟删除成功
-    documents.value = documents.value.filter(doc => doc.id !== docId)
+    showError('删除文档失败')
   }
 }
 

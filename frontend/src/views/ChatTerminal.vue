@@ -193,15 +193,16 @@ async function sendMessage() {
   // 使用 SSE 连接
   try {
     await connectSSE(session.id, message)
-  } catch (error) {
+  } catch (error: any) {
     console.error('SSE connection error:', error)
     const lastMessage = session.messages[session.messages.length - 1]
     if (lastMessage && lastMessage.role === 'assistant') {
-      lastMessage.content = '连接错误，请重试。'
+      lastMessage.content = '连接错误: ' + (error.message || '请重试')
       lastMessage.isStreaming = false
     }
     isStreaming.value = false
     currentThought.value = ''
+    alert('发送消息失败: ' + (error.message || '请检查网络连接'))
   }
 
   session.updatedAt = Date.now()

@@ -17,12 +17,35 @@ from app.models.document import (
     DocumentResponse,
     DocumentStatus,
     DocumentListResponse,
+    KnowledgeBase,
+    KnowledgeBaseCreate,
+    KnowledgeBaseListResponse,
 )
 
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
-# Configuration
+KB_METADATA_FILE = Path(__file__).parent.parent.parent / "data" / "kb_metadata.json"
+
+
+def load_kb_metadata() -> dict:
+    if not KB_METADATA_FILE.exists():
+        return {}
+    try:
+        with open(KB_METADATA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return {}
+
+
+def save_kb_metadata(metadata: dict) -> None:
+    KB_METADATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(KB_METADATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+
+def get_kb_document_count(kb_id: str) -> int:
+    return len(load_documents_metadata(kb_id))
 ALLOWED_EXTENSIONS = {".txt", ".md"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
@@ -321,13 +344,10 @@ async def search_documents(
 
 @router.get("/{kb_id}/info")
 async def get_knowledge_base_info(kb_id: str) -> dict:
-    """Get information about a knowledge base."""
     chroma_client = get_chroma_client()
     collection_info = chroma_client.get_collection_info(kb_id)
-
     all_metadata = load_documents_metadata(kb_id)
     doc_count = len(all_metadata)
-
     return {
         "kb_id": kb_id,
         "collection_name": collection_info["name"],
@@ -335,3 +355,41 @@ async def get_knowledge_base_info(kb_id: str) -> dict:
         "vector_count": collection_info["count"],
         "collection_exists": collection_info["count"] >= 0
     }
+
+
+@router.get("", response_model=KnowledgeBaseListResponse)
+async def list_knowledge_bases() -> KnowledgeBaseListResponse:
+    metadata = load_kb_metadata()
+    items = []
+    for kb_id, kb_data in metadata.items():
+        created_at = datetime.fromisoformat(kb_data.get("created_at", datetime.utcnow().isoformat()))
+        document_count = get_kb_document_count(kb_id)
+        items.append(KnowledgeBase(
+            id=kb_id,
+            name=kb_data.get("name", kb_id),
+            document_count=document_count,
+            created_at=created_at
+        ))
+    items.sort(key=lambda x: x.created_at, reverse=True)
+    return KnowledgeBaseListResponse(items=items, total=len(items))
+
+
+@router.post("", response_model=KnowledgeBase, status_code=201)
+async def create_knowledge_base(data: KnowledgeBaseCreate) -> KnowledgeBase:
+    kb_id = str(uuid.uuid4())
+    timestamp = datetime.utcnow()
+    metadata = load_kb_metadata()
+    metadata[kb_id] = {
+        "id": kb_id,
+        "name": data.name,
+        "created_at": timestamp.isoformat()
+    }
+    save_kb_metadata(metadata)
+    chroma_client = get_chroma_client()
+    chroma_client.get_or_create_collection(kb_id)
+    return KnowledgeBase(
+        id=kb_id,
+        name=data.name,
+        document_count=0,
+        created_at=timestamp
+    )
