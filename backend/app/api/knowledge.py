@@ -8,10 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse
 
 from app.core.chroma_client import get_chroma_client
+from app.core.rag import get_rag_pipeline
 from app.models.document import (
     DocumentResponse,
     DocumentStatus,
@@ -69,10 +70,12 @@ def save_documents_metadata(kb_id: str, metadata: dict) -> None:
 @router.post("/{kb_id}/upload")
 async def upload_document(
     kb_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...)
 ) -> DocumentResponse:
     """
     Upload a document to a knowledge base.
+    Automatically triggers vectorization processing after upload.
 
     - **kb_id**: Knowledge base ID (path parameter)
     - **file**: File to upload (.txt or .md, max 5MB)
@@ -117,11 +120,14 @@ async def upload_document(
     chroma_client = get_chroma_client()
     chroma_client.get_or_create_collection(kb_id)
 
+    # Auto-trigger vectorization processing in background
+    background_tasks.add_task(process_document_task, kb_id, doc_id)
+
     return DocumentResponse(
         id=doc_id,
         kb_id=kb_id,
         filename=file.filename,
-        status=DocumentStatus.PENDING,
+        status=DocumentStatus.PROCESSING,
         file_size=file_size,
         created_at=timestamp
     )
@@ -192,6 +198,125 @@ async def delete_document(kb_id: str, doc_id: str) -> JSONResponse:
         content={"message": "Document deleted successfully.", "doc_id": doc_id},
         status_code=status.HTTP_200_OK
     )
+
+
+def update_document_status(kb_id: str, doc_id: str, status: DocumentStatus, error_message: str | None = None):
+    """Update document status in metadata."""
+    all_metadata = load_documents_metadata(kb_id)
+    if doc_id in all_metadata:
+        all_metadata[doc_id]["status"] = status.value
+        all_metadata[doc_id]["updated_at"] = datetime.utcnow().isoformat()
+        if error_message:
+            all_metadata[doc_id]["error_message"] = error_message
+        save_documents_metadata(kb_id, all_metadata)
+
+
+def process_document_task(kb_id: str, doc_id: str):
+    """Background task to process a document."""
+    all_metadata = load_documents_metadata(kb_id)
+    if doc_id not in all_metadata:
+        return
+
+    doc_data = all_metadata[doc_id]
+    file_path = doc_data["file_path"]
+
+    update_document_status(kb_id, doc_id, DocumentStatus.PROCESSING)
+
+    try:
+        rag_pipeline = get_rag_pipeline()
+        result = rag_pipeline.process_document(kb_id, doc_id, file_path)
+
+        if result["status"] == "completed":
+            update_document_status(kb_id, doc_id, DocumentStatus.COMPLETED)
+        else:
+            update_document_status(kb_id, doc_id, DocumentStatus.FAILED, result.get("message", "Unknown error"))
+    except Exception as e:
+        update_document_status(kb_id, doc_id, DocumentStatus.FAILED, str(e))
+
+
+@router.post("/{kb_id}/process/{doc_id}")
+async def process_document(
+    kb_id: str,
+    doc_id: str,
+    background_tasks: BackgroundTasks
+) -> JSONResponse:
+    """
+    Process a document: parse, chunk, embed, and store to ChromaDB.
+    
+    - **kb_id**: Knowledge base ID
+    - **doc_id**: Document ID to process
+    """
+    all_metadata = load_documents_metadata(kb_id)
+    
+    if doc_id not in all_metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found."
+        )
+    
+    doc_data = all_metadata[doc_id]
+
+    current_status = DocumentStatus(doc_data["status"])
+    if current_status == DocumentStatus.PROCESSING:
+        return JSONResponse(
+            content={"message": "Document is already being processed.", "doc_id": doc_id},
+            status_code=status.HTTP_200_OK
+        )
+
+    if current_status == DocumentStatus.COMPLETED:
+        return JSONResponse(
+            content={"message": "Document has already been processed.", "doc_id": doc_id},
+            status_code=status.HTTP_200_OK
+        )
+
+    background_tasks.add_task(process_document_task, kb_id, doc_id)
+    
+    return JSONResponse(
+        content={"message": "Document processing started.", "doc_id": doc_id},
+        status_code=status.HTTP_202_ACCEPTED
+    )
+
+
+@router.get("/{kb_id}/search")
+async def search_documents(
+    kb_id: str,
+    query: str = Query(..., description="Search query"),
+    top_k: int = Query(5, description="Number of top results to return", ge=1, le=20)
+) -> dict:
+    """
+    Search for relevant chunks in a knowledge base.
+    
+    - **kb_id**: Knowledge base ID
+    - **query**: Search query string
+    - **top_k**: Number of top results to return (default: 5, max: 20)
+    """
+    if not query.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Query cannot be empty."
+        )
+    
+    try:
+        rag_pipeline = get_rag_pipeline()
+        results = rag_pipeline.search(kb_id, query, top_k=top_k)
+        
+        return {
+            "kb_id": kb_id,
+            "query": query,
+            "top_k": top_k,
+            "results": results,
+            "total": len(results)
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search failed: {str(e)}"
+        )
 
 
 @router.get("/{kb_id}/info")
