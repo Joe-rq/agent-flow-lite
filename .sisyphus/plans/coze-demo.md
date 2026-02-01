@@ -66,19 +66,19 @@
    - ChromaDB 向量存储（本地文件，零配置）
 
 ### Definition of Done
-- [ ] 能拖拽创建包含 Start → LLM → End 的工作流并保存
-- [ ] 能上传 .txt/.md 文件，后台自动解析并向量化
-- [ ] 能在聊天界面提问，收到基于知识库的回答
-- [ ] 答辩时可完整演示上述流程（5分钟演示脚本）
+- [x] 能拖拽创建包含 Start → LLM → End 的工作流并保存
+- [x] 能上传 .txt/.md 文件，后台自动解析并向量化
+- [x] 能在聊天界面提问，收到基于知识库的回答
+- [x] 答辩时可完整演示上述流程（5分钟演示脚本）
 
 ### Must Have
-- [ ] 3种节点类型：Start、LLM、Knowledge
-- [ ] 节点间连线与数据传递
-- [ ] 文件上传与 ChromaDB 存储
-- [ ] 基于 LlamaIndex 的 RAG 检索
-- [ ] DeepSeek API 集成
-- [ ] SSE 流式响应
-- [ ] 会话历史存储
+- [x] 3种节点类型：Start、LLM、Knowledge
+- [x] 节点间连线与数据传递
+- [x] 文件上传与 ChromaDB 存储
+- [x] 基于 LlamaIndex 的 RAG 检索
+- [x] DeepSeek API 集成
+- [x] SSE 流式响应
+- [x] 会话历史存储
 
 ### Must NOT Have (Guardrails)
 - ❌ 多用户/认证系统（单用户 Demo）
