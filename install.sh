@@ -20,6 +20,7 @@ else
     cd "$BACKEND_DIR"
     uv venv .venv
 fi
+cd "$BACKEND_DIR"
 source "$BACKEND_DIR/.venv/bin/activate"
 uv pip install -e .
 

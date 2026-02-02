@@ -59,6 +59,6 @@ fswatch -r \
         echo -e "\033[0;32m✅ 自动提交: $COMMIT_MSG\033[0m"
 
         # 自动推送到远程
-        git push origin main 2>/dev/null && echo -e "\033[0;34" || echo -e "\033[0;31推送失败\033[0m"
+        git push origin main 2>/dev/null && echo -e "\033[0;34m✅ 已推送到远程\033[0m" || echo -e "\033[0;31m❌ 推送失败\033[0m"
     fi
 done
