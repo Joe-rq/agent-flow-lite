@@ -121,8 +121,8 @@ body {
 
 .app-main {
   flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+  padding: 0;
+  overflow: hidden;
   background-color: #fff;
 }
 </style>

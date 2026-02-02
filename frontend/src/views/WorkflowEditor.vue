@@ -18,6 +18,7 @@
           class="node-item"
           draggable="true"
           @dragstart="onDragStart($event, 'start')"
+          @click="addNodeFromPanel('start')"
         >
           <span class="node-item-icon">▶</span>
           <span class="node-item-label">开始节点</span>
@@ -26,6 +27,7 @@
           class="node-item"
           draggable="true"
           @dragstart="onDragStart($event, 'llm')"
+          @click="addNodeFromPanel('llm')"
         >
           <span class="node-item-icon">🤖</span>
           <span class="node-item-label">LLM 节点</span>
@@ -34,6 +36,7 @@
           class="node-item"
           draggable="true"
           @dragstart="onDragStart($event, 'knowledge')"
+          @click="addNodeFromPanel('knowledge')"
         >
           <span class="node-item-icon">📚</span>
           <span class="node-item-label">知识库节点</span>
@@ -42,6 +45,7 @@
           class="node-item"
           draggable="true"
           @dragstart="onDragStart($event, 'condition')"
+          @click="addNodeFromPanel('condition')"
         >
           <span class="node-item-icon">⚡</span>
           <span class="node-item-label">条件节点</span>
@@ -50,6 +54,7 @@
           class="node-item"
           draggable="true"
           @dragstart="onDragStart($event, 'end')"
+          @click="addNodeFromPanel('end')"
         >
           <span class="node-item-icon">⏹</span>
           <span class="node-item-label">结束节点</span>
@@ -163,6 +168,7 @@ const API_BASE = '/api/v1'
 const isSaving = ref(false)
 const showLoadDialog = ref(false)
 const workflows = ref<{ id: string; name: string; created_at: string }[]>([])
+const panelAddCount = ref(0)
 
 // 配置面板状态
 const configPanelVisible = ref(false)
@@ -339,6 +345,29 @@ function onDrop(event: DragEvent) {
   addNodes([newNode])
 }
 
+function addNodeFromPanel(type: string) {
+  const labelMap: Record<string, string> = {
+    start: '开始',
+    llm: 'LLM',
+    knowledge: '知识库',
+    end: '结束',
+    condition: '条件'
+  }
+
+  const offset = panelAddCount.value * 40
+  panelAddCount.value += 1
+
+  const newNode = {
+    id: `${Date.now()}-${panelAddCount.value}`,
+    type,
+    position: { x: 260 + offset, y: 120 + offset },
+    label: labelMap[type] || type,
+    data: {},
+  }
+
+  addNodes([newNode])
+}
+
 // 节点点击事件
 function onNodeClick(event: any) {
   selectedNodeId.value = event.node.id
@@ -364,12 +393,14 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
 <style scoped>
 .workflow-editor {
   display: flex;
-  height: 100vh;
+  height: 100%;
   width: 100%;
 }
 
 .node-panel {
-  width: 240px;
+  width: 25%;
+  min-width: 200px;
+  max-width: 300px;
   background: #f9fafb;
   border-right: 1px solid #e5e7eb;
   display: flex;
@@ -471,6 +502,7 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
 }
 
 .canvas-container {
+  width: 75%;
   flex: 1;
   position: relative;
   background: #f3f4f6;
