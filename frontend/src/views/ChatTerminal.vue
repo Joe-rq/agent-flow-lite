@@ -141,11 +141,7 @@ function createNewSession() {
   currentThought.value = ''
 }
 
-function switchSession(sessionId: string) {
-  currentSessionId.value = sessionId
-  currentThought.value = ''
-  scrollToBottom()
-}
+
 
 function scrollToBottom() {
   nextTick(() => {
@@ -242,8 +238,11 @@ async function connectSSE(sessionId: string, message: string) {
     const chunk = decoder.decode(value, { stream: true })
     const lines = chunk.split('\n')
 
+    let currentEvent = ''
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
+      if (line.startsWith('event: ')) {
+        currentEvent = line.slice(7).trim()
+      } else if (line.startsWith('data: ')) {
         const dataStr = line.slice(6)
         if (dataStr === '[DONE]') {
           isStreaming.value = false
@@ -256,7 +255,7 @@ async function connectSSE(sessionId: string, message: string) {
 
         try {
           const data = JSON.parse(dataStr)
-          handleSSEEvent(data, lastMessage)
+          handleSSEEvent(currentEvent, data, lastMessage)
         } catch (e) {
           // 忽略解析错误
         }
@@ -271,13 +270,32 @@ async function connectSSE(sessionId: string, message: string) {
   currentThought.value = ''
 }
 
-function handleSSEEvent(data: any, lastMessage: Message | undefined) {
+function handleSSEEvent(eventType: string, data: any, lastMessage: Message | undefined) {
   if (!lastMessage || lastMessage.role !== 'assistant') return
 
-  switch (data.type) {
+  switch (eventType) {
     case 'thought':
-      // 思维链
-      currentThought.value = data.content
+      // 思维链 - 处理 RAG 检索状态
+      if (data.type === 'retrieval') {
+        if (data.status === 'start') {
+          currentThought.value = '正在检索知识库...'
+        } else if (data.status === 'searching') {
+          currentThought.value = '正在搜索相关文档...'
+        } else if (data.status === 'complete') {
+          const count = data.results_count || 0
+          currentThought.value = `检索完成，找到 ${count} 个相关片段`
+          // 延迟清除思维链
+          setTimeout(() => {
+            if (currentThought.value === `检索完成，找到 ${count} 个相关片段`) {
+              currentThought.value = ''
+            }
+          }, 2000)
+        } else if (data.status === 'error') {
+          currentThought.value = '检索出错: ' + (data.error || '未知错误')
+        }
+      } else {
+        currentThought.value = data.content || ''
+      }
       break
     case 'token':
       // 打字机效果：逐字追加
@@ -285,8 +303,15 @@ function handleSSEEvent(data: any, lastMessage: Message | undefined) {
       scrollToBottom()
       break
     case 'citation':
-      // 引用来源
-      lastMessage.content += `\n[引用: ${data.content}]`
+      // 引用来源 - 处理 sources 数组
+      if (data.sources && Array.isArray(data.sources)) {
+        const citations = data.sources.map((s: any, i: number) =>
+          `[引用${i + 1}] doc:${s.doc_id}, chunk:${s.chunk_index}, score:${(s.score || 0).toFixed(2)}`
+        ).join('\n')
+        lastMessage.content += `\n\n${citations}`
+      } else if (data.content) {
+        lastMessage.content += `\n[引用: ${data.content}]`
+      }
       break
     case 'done':
       // 完成
@@ -296,12 +321,41 @@ function handleSSEEvent(data: any, lastMessage: Message | undefined) {
       break
     case 'error':
       // 错误
-      lastMessage.content += `\n[错误: ${data.content}]`
+      lastMessage.content += `\n[错误: ${data.content || data.message || '未知错误'}]`
       isStreaming.value = false
       lastMessage.isStreaming = false
       currentThought.value = ''
       break
   }
+}
+
+// 从后端加载会话历史
+async function loadSessionHistory(sessionId: string) {
+  try {
+    const response = await axios.get(`/api/v1/chat/sessions/${sessionId}`)
+    const data = response.data
+    if (data && data.messages) {
+      const session = currentSession.value
+      if (session) {
+        session.messages = data.messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content,
+          isStreaming: false
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('加载会话历史失败:', error)
+    // 如果加载失败，保持当前内存中的会话
+  }
+}
+
+// 切换会话时加载历史
+async function switchSession(sessionId: string) {
+  currentSessionId.value = sessionId
+  currentThought.value = ''
+  await loadSessionHistory(sessionId)
+  scrollToBottom()
 }
 
 // 初始化

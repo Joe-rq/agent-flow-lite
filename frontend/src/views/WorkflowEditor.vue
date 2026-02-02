@@ -38,6 +38,22 @@
           <span class="node-item-icon">📚</span>
           <span class="node-item-label">知识库节点</span>
         </div>
+        <div
+          class="node-item"
+          draggable="true"
+          @dragstart="onDragStart($event, 'condition')"
+        >
+          <span class="node-item-icon">⚡</span>
+          <span class="node-item-label">条件节点</span>
+        </div>
+        <div
+          class="node-item"
+          draggable="true"
+          @dragstart="onDragStart($event, 'end')"
+        >
+          <span class="node-item-icon">⏹</span>
+          <span class="node-item-label">结束节点</span>
+        </div>
       </div>
     </div>
 
@@ -48,8 +64,10 @@
         :default-zoom="1"
         :min-zoom="0.2"
         :max-zoom="4"
+        :default-edge-options="{ type: 'smoothstep', animated: true }"
         @dragover="onDragOver"
         @drop="onDrop"
+        @node-click="onNodeClick"
         fit-view-on-init
       >
         <!-- 背景 -->
@@ -74,6 +92,14 @@
           <KnowledgeNode v-bind="props" />
           <Handle type="target" :position="Position.Left" />
           <Handle type="source" :position="Position.Right" />
+        </template>
+
+        <template #node-end="props">
+          <EndNode v-bind="props" />
+        </template>
+
+        <template #node-condition="props">
+          <ConditionNode v-bind="props" />
         </template>
       </VueFlow>
     </div>
@@ -101,29 +127,62 @@
         </div>
       </div>
     </div>
+
+    <!-- 节点配置面板 -->
+    <NodeConfigPanel
+      :visible="configPanelVisible"
+      :node-id="selectedNodeId"
+      :node-type="selectedNodeType"
+      :node-data="selectedNodeData"
+      @close="closeConfigPanel"
+      @save="saveNodeConfig"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { VueFlow, useVueFlow, Handle, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import StartNode from '../components/nodes/StartNode.vue'
 import LLMNode from '../components/nodes/LLMNode.vue'
 import KnowledgeNode from '../components/nodes/KnowledgeNode.vue'
+import EndNode from '../components/nodes/EndNode.vue'
+import ConditionNode from '../components/nodes/ConditionNode.vue'
+import NodeConfigPanel from '../components/NodeConfigPanel.vue'
 import axios from 'axios'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
-const { addNodes, addEdges, project, toObject, setNodes, setEdges } = useVueFlow()
+const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges } = useVueFlow()
 
 const API_BASE = '/api/v1'
 const isSaving = ref(false)
 const showLoadDialog = ref(false)
 const workflows = ref<{ id: string; name: string; created_at: string }[]>([])
+
+// 配置面板状态
+const configPanelVisible = ref(false)
+const selectedNodeId = ref<string | null>(null)
+
+// 计算选中的节点类型
+const selectedNodeType = computed(() => {
+  if (!selectedNodeId.value) return null
+  const nodes = getNodes.value
+  const node = nodes.find((n: any) => n.id === selectedNodeId.value)
+  return node?.type || null
+})
+
+// 计算选中的节点数据
+const selectedNodeData = computed(() => {
+  if (!selectedNodeId.value) return {}
+  const nodes = getNodes.value
+  const node = nodes.find((n: any) => n.id === selectedNodeId.value)
+  return node?.data || {}
+})
 
 // 初始节点
 const elements = ref([
@@ -261,14 +320,44 @@ function onDrop(event: DragEvent) {
     y: event.clientY - top,
   })
 
+  const labelMap: Record<string, string> = {
+    start: '开始',
+    llm: 'LLM',
+    knowledge: '知识库',
+    end: '结束',
+    condition: '条件'
+  }
+
   const newNode = {
     id: `${Date.now()}`,
     type,
     position,
-    label: type === 'start' ? '开始' : type === 'llm' ? 'LLM' : '知识库',
+    label: labelMap[type] || type,
+    data: {},
   }
 
   addNodes([newNode])
+}
+
+// 节点点击事件
+function onNodeClick(event: any) {
+  selectedNodeId.value = event.node.id
+  configPanelVisible.value = true
+}
+
+// 关闭配置面板
+function closeConfigPanel() {
+  configPanelVisible.value = false
+  selectedNodeId.value = null
+}
+
+// 保存节点配置
+function saveNodeConfig(nodeId: string, data: Record<string, any>) {
+  const nodes = getNodes.value
+  const node = nodes.find((n: any) => n.id === nodeId)
+  if (node) {
+    node.data = { ...node.data, ...data }
+  }
 }
 </script>
 

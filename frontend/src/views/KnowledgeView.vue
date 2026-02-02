@@ -92,6 +92,49 @@
         </div>
       </div>
 
+      <!-- 检索测试区 -->
+      <div class="search-section">
+        <h3>检索测试</h3>
+        <div class="search-box">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="输入查询内容测试检索效果..."
+            class="search-input"
+            @keyup.enter="performSearch"
+          />
+          <button
+            class="btn-search"
+            :disabled="!searchQuery.trim() || isSearching"
+            @click="performSearch"
+          >
+            {{ isSearching ? '检索中...' : '检索' }}
+          </button>
+        </div>
+
+        <!-- 检索结果 -->
+        <div v-if="searchResults.length > 0" class="search-results">
+          <div class="results-header">
+            <span>找到 {{ searchResults.length }} 个相关片段</span>
+          </div>
+          <div
+            v-for="(result, index) in searchResults"
+            :key="index"
+            class="result-item"
+          >
+            <div class="result-meta">
+              <span class="result-index">#{{ index + 1 }}</span>
+              <span class="result-score">相似度: {{ (result.score * 100).toFixed(1) }}%</span>
+            </div>
+            <div class="result-text">{{ result.text }}</div>
+          </div>
+        </div>
+
+        <div v-if="searchError" class="search-error">
+          {{ searchError }}
+        </div>
+      </div>
+
       <!-- 文档列表 -->
       <div class="document-list">
         <h3>文档列表</h3>
@@ -192,6 +235,15 @@ interface UploadTask {
   file: File
 }
 
+interface SearchResult {
+  text: string
+  score: number
+  metadata?: {
+    doc_id?: string
+    chunk_index?: number
+  }
+}
+
 // 状态
 const knowledgeBases = ref<KnowledgeBase[]>([])
 const selectedKB = ref<KnowledgeBase | null>(null)
@@ -201,6 +253,12 @@ const newKBName = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 const uploadTasks = ref<UploadTask[]>([])
+
+// 检索测试状态
+const searchQuery = ref('')
+const searchResults = ref<SearchResult[]>([])
+const isSearching = ref(false)
+const searchError = ref('')
 
 // 轮询定时器
 let pollInterval: number | null = null
@@ -425,6 +483,33 @@ async function deleteDocument(docId: string) {
   } catch (error) {
     console.error('删除文档失败:', error)
     showError('删除文档失败')
+  }
+}
+
+// 执行检索
+async function performSearch() {
+  if (!selectedKB.value || !searchQuery.value.trim()) return
+
+  isSearching.value = true
+  searchError.value = ''
+  searchResults.value = []
+
+  try {
+    const response = await axios.get(
+      `${API_BASE}/knowledge/${selectedKB.value.id}/search`,
+      {
+        params: {
+          query: searchQuery.value.trim(),
+          top_k: 5
+        }
+      }
+    )
+    searchResults.value = response.data.results || []
+  } catch (error: any) {
+    console.error('检索失败:', error)
+    searchError.value = error.response?.data?.detail || '检索失败，请重试'
+  } finally {
+    isSearching.value = false
   }
 }
 
@@ -884,5 +969,112 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* 检索测试区 */
+.search-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.search-section h3 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #bdc3c7;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3498db;
+}
+
+.btn-search {
+  padding: 12px 24px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-search:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.btn-search:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.search-results {
+  margin-top: 16px;
+}
+
+.results-header {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.result-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.result-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.result-index {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.result-score {
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.result-text {
+  font-size: 14px;
+  color: #2c3e50;
+  line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.search-error {
+  color: #e74c3c;
+  font-size: 14px;
+  padding: 12px;
+  background: #ffebee;
+  border-radius: 6px;
 }
 </style>

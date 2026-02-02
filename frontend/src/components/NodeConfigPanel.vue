@@ -63,6 +63,35 @@
         </div>
       </div>
 
+      <!-- End 节点配置 -->
+      <div v-if="nodeType === 'end'" class="config-section">
+        <h4>结束节点</h4>
+        <div class="form-group">
+          <label>输出变量</label>
+          <input
+            v-model="config.outputVariable"
+            type="text"
+            placeholder="例如: result"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <!-- Condition 节点配置 -->
+      <div v-if="nodeType === 'condition'" class="config-section">
+        <h4>条件节点</h4>
+        <div class="form-group">
+          <label>条件表达式 (JavaScript)</label>
+          <textarea
+            v-model="config.expression"
+            rows="4"
+            placeholder="例如: {{step1.output}} === 'yes'"
+            class="form-textarea"
+          ></textarea>
+          <small class="form-hint">使用 &#123;&#123;stepId.output&#125;&#125; 引用其他节点的输出</small>
+        </div>
+      </div>
+
       <!-- 未知节点类型 -->
       <div v-if="!nodeType" class="config-section">
         <p class="empty-text">请选择节点进行配置</p>
@@ -89,6 +118,8 @@ interface NodeConfig {
   systemPrompt?: string
   temperature?: number
   knowledgeBaseId?: string
+  outputVariable?: string
+  expression?: string
 }
 
 interface Props {
@@ -109,7 +140,9 @@ const config = ref<NodeConfig>({
   inputVariable: '',
   systemPrompt: '',
   temperature: 0.7,
-  knowledgeBaseId: ''
+  knowledgeBaseId: '',
+  outputVariable: '',
+  expression: ''
 })
 
 // 知识库列表
@@ -120,12 +153,17 @@ const loadKnowledgeBases = async () => {
   try {
     // 调用后端 API 获取知识库列表
     const response = await axios.get('/api/v1/knowledge/')
-    if (response.data && Array.isArray(response.data)) {
-      knowledgeBases.value = response.data.map((kb: any) => ({
-        id: kb.id || kb.kb_id,
-        name: kb.name || kb.kb_name || '未命名知识库'
-      }))
+    // 适配后端返回格式 { items: [...], total: number }
+    let kbList = []
+    if (response.data && Array.isArray(response.data.items)) {
+      kbList = response.data.items
+    } else if (Array.isArray(response.data)) {
+      kbList = response.data
     }
+    knowledgeBases.value = kbList.map((kb: any) => ({
+      id: kb.id || kb.kb_id,
+      name: kb.name || kb.kb_name || '未命名知识库'
+    }))
   } catch (error) {
     console.error('加载知识库列表失败:', error)
     // 使用模拟数据作为后备
@@ -144,7 +182,9 @@ const syncFromNodeData = () => {
       inputVariable: props.nodeData.inputVariable || '',
       systemPrompt: props.nodeData.systemPrompt || '',
       temperature: props.nodeData.temperature ?? 0.7,
-      knowledgeBaseId: props.nodeData.knowledgeBaseId || ''
+      knowledgeBaseId: props.nodeData.knowledgeBaseId || '',
+      outputVariable: props.nodeData.outputVariable || '',
+      expression: props.nodeData.expression || ''
     }
   }
 }
@@ -156,6 +196,16 @@ watch(() => props.nodeData, syncFromNodeData, { immediate: true, deep: true })
 watch(() => props.nodeType, (newType) => {
   if (newType === 'knowledge') {
     loadKnowledgeBases()
+  }
+})
+
+// 监听 visible 变化，当面板打开时同步数据
+watch(() => props.visible, (isVisible) => {
+  if (isVisible) {
+    syncFromNodeData()
+    if (props.nodeType === 'knowledge') {
+      loadKnowledgeBases()
+    }
   }
 })
 
@@ -366,5 +416,12 @@ onMounted(() => {
 
 .save-btn:active {
   background: #1d4ed8;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
 }
 </style>
