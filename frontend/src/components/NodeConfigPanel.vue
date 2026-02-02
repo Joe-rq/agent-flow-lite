@@ -99,7 +99,7 @@
     </div>
 
     <div class="config-footer">
-      <button class="save-btn" @click="handleSave">保存</button>
+      <button class="save-btn" @click="() => { console.log('按钮被点击'); handleSave(); }">保存</button>
     </div>
   </div>
 </template>
@@ -216,8 +216,12 @@ const handleClose = () => {
 
 // 保存配置
 const handleSave = () => {
+  console.log('保存按钮被点击', props.nodeId, config.value)
   if (props.nodeId) {
     emit('save', props.nodeId, { ...config.value })
+    emit('close')
+  } else {
+    console.warn('无法保存：nodeId 为空')
   }
 }
 

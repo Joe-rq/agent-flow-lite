@@ -26,6 +26,19 @@ class Settings(BaseSettings):
         default="https://api.deepseek.com",
         description="Base URL for DeepSeek API"
     )
+
+    siliconflow_api_key: str = Field(
+        default="",
+        description="SiliconFlow API key for embedding models"
+    )
+    siliconflow_api_base: str = Field(
+        default="https://api.siliconflow.cn/v1",
+        description="Base URL for SiliconFlow API"
+    )
+    embedding_model: str = Field(
+        default="BAAI/bge-m3",
+        description="Embedding model name (SiliconFlow)"
+    )
     
     # Application Configuration
     log_level: str = Field(

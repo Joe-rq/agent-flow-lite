@@ -162,7 +162,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
-const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges } = useVueFlow()
+const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode } = useVueFlow()
 
 const API_BASE = '/api/v1'
 const isSaving = ref(false)
@@ -382,10 +382,16 @@ function closeConfigPanel() {
 
 // 保存节点配置
 function saveNodeConfig(nodeId: string, data: Record<string, any>) {
+  console.log('saveNodeConfig 被调用', nodeId, data)
   const nodes = getNodes.value
   const node = nodes.find((n: any) => n.id === nodeId)
   if (node) {
-    node.data = { ...node.data, ...data }
+    console.log('找到节点，更新数据', node)
+    // 使用 updateNode 方法更新节点数据，触发响应式更新
+    updateNode(nodeId, { data: { ...node.data, ...data } })
+    console.log('节点数据已更新')
+  } else {
+    console.warn('未找到节点', nodeId)
   }
 }
 </script>
