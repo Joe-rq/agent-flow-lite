@@ -48,3 +48,4 @@ htmlcov/
 # Database
 *.db
 *.sqlite3
+.startup_pids

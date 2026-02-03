@@ -5,7 +5,6 @@ This module provides the chat completion endpoint with SSE streaming support,
 integrating RAG retrieval and DeepSeek LLM for AI-powered conversations.
 """
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional
