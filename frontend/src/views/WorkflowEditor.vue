@@ -73,9 +73,11 @@
         :min-zoom="0.2"
         :max-zoom="4"
         :default-edge-options="{ type: 'smoothstep', animated: true }"
+        :delete-key-code="'Delete'"
         @dragover="onDragOver"
         @drop="onDrop"
         @node-click="onNodeClick"
+        @edge-click="onEdgeClick"
         @connect="onConnect"
         fit-view-on-init
       >
@@ -179,6 +181,7 @@
       :node-data="selectedNodeData"
       @close="closeConfigPanel"
       @save="saveNodeConfig"
+      @delete="deleteNode"
     />
   </div>
 </template>
@@ -200,7 +203,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
-const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode } = useVueFlow()
+const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode, removeNodes, removeEdges } = useVueFlow()
 
 const API_BASE = '/api/v1'
 const isSaving = ref(false)
@@ -551,6 +554,22 @@ function addNodeFromPanel(type: string) {
 function onNodeClick(event: any) {
   selectedNodeId.value = event.node.id
   configPanelVisible.value = true
+}
+
+// 边点击事件 - 删除边
+function onEdgeClick(event: any) {
+  const edgeId = event.edge.id
+  if (confirm('确定要删除这条连线吗？')) {
+    removeEdges([edgeId])
+  }
+}
+
+// 删除节点
+function deleteNode(nodeId: string) {
+  if (confirm('确定要删除此节点吗？')) {
+    removeNodes([nodeId])
+    closeConfigPanel()
+  }
 }
 
 // 关闭配置面板

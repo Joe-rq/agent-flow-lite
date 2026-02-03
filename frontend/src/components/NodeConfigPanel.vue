@@ -100,6 +100,7 @@
 
     <div class="config-footer">
       <button class="save-btn" @click="() => { console.log('按钮被点击'); handleSave(); }">保存</button>
+      <button class="delete-btn" @click="handleDelete">删除节点</button>
     </div>
   </div>
 </template>
@@ -133,6 +134,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   close: []
   save: [nodeId: string, data: Record<string, any>]
+  delete: [nodeId: string]
 }>()
 
 // 本地配置状态
@@ -222,6 +224,13 @@ const handleSave = () => {
     emit('close')
   } else {
     console.warn('无法保存：nodeId 为空')
+  }
+}
+
+// 删除节点
+const handleDelete = () => {
+  if (props.nodeId) {
+    emit('delete', props.nodeId)
   }
 }
 
@@ -420,6 +429,29 @@ onMounted(() => {
 
 .save-btn:active {
   background: #1d4ed8;
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.delete-btn:active {
+  background: #fee2e2;
 }
 
 .form-hint {
