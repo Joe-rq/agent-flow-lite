@@ -277,7 +277,7 @@ Wave 3 (Feature Pages + Tests):
 
 ---
 
-- [ ] 10. Add Vitest smoke tests
+- [x] 10. Add Vitest smoke tests
 
   **What to do**:
   - Add tests that mount Home/Workflow/Knowledge/Chat
@@ -319,7 +319,7 @@ npm run build
 ```
 
 ### Final Checklist
-- [ ] 全站文案中文化
-- [ ] 视觉统一且为浅色主题
-- [ ] 测试框架可运行
-- [ ] 构建成功
+- [x] 全站文案中文化
+- [x] 视觉统一且为浅色主题
+- [x] 测试框架可运行
+- [x] 构建成功
