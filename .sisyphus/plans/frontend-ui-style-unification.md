@@ -56,11 +56,11 @@
 - `frontend/vitest.config.ts` + `frontend/src/__tests__/*`
 
 ### Definition of Done
-- [ ] 全站可见文案均为中文
-- [ ] 主页/工作流/知识库/对话视觉一致且为浅色风格
-- [ ] UI 组件与页面均使用浅色主题变量
-- [ ] Vitest 可运行且关键页面有基础测试
-- [ ] `npm run lint` 和 `npm run type-check` 通过
+- [x] 全站可见文案均为中文
+- [x] 主页/工作流/知识库/对话视觉一致且为浅色风格
+- [x] UI 组件与页面均使用浅色主题变量
+- [x] Vitest 可运行且关键页面有基础测试
+- [x] `npm run lint` 和 `npm run type-check` 通过
 
 ### Must Have
 - 仅浅色主题（替换深色）
@@ -84,10 +84,10 @@
 - **Framework**: Vitest + @vue/test-utils
 
 ### Test Setup Task (required)
-- [ ] 安装 Vitest + @vue/test-utils + jsdom
-- [ ] 新增 `vitest.config.ts`
-- [ ] 在 `package.json` 增加 `test` 脚本
-- [ ] 创建示例测试，确保 `npm run test` 可执行
+- [x] 安装 Vitest + @vue/test-utils + jsdom
+- [x] 新增 `vitest.config.ts`
+- [x] 在 `package.json` 增加 `test` 脚本
+- [x] 创建示例测试，确保 `npm run test` 可执行
 
 ---
 
@@ -139,8 +139,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/styles/animations.css` - keep consistent motion
 
   **Acceptance Criteria**:
-  - [ ] `theme.css` defines light backgrounds, borders, and text colors
-  - [ ] Accent colors preserved (cyan/purple) with lighter soft variants
+  - [x] `theme.css` defines light backgrounds, borders, and text colors
+  - [x] Accent colors preserved (cyan/purple) with lighter soft variants
 
 ---
 
@@ -158,8 +158,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/components/ui/Modal.vue`
 
   **Acceptance Criteria**:
-  - [ ] All UI components render correctly on light background
-  - [ ] Hover/focus states visible but subtle
+  - [x] All UI components render correctly on light background
+  - [x] Hover/focus states visible but subtle
 
 ---
 
@@ -175,8 +175,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/package.json`
 
   **Acceptance Criteria**:
-  - [ ] `npm run test` executes Vitest successfully
-  - [ ] At least one passing test
+  - [x] `npm run test` executes Vitest successfully
+  - [x] At least one passing test
 
 ---
 
@@ -191,8 +191,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/App.vue`
 
   **Acceptance Criteria**:
-  - [ ] Sidebar uses light surfaces and borders
-  - [ ] Navigation labels are Chinese
+  - [x] Sidebar uses light surfaces and borders
+  - [x] Navigation labels are Chinese
 
 ---
 
@@ -207,8 +207,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/views/HomeView.vue`
 
   **Acceptance Criteria**:
-  - [ ] All visible text on home is Chinese
-  - [ ] Page matches light theme palette
+  - [x] All visible text on home is Chinese
+  - [x] Page matches light theme palette
 
 ---
 
@@ -224,8 +224,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/components/NodeConfigPanel.vue`
 
   **Acceptance Criteria**:
-  - [ ] Canvas grid visible on light background
-  - [ ] Toolbar visually consistent with home
+  - [x] Canvas grid visible on light background
+  - [x] Toolbar visually consistent with home
 
 ---
 
@@ -240,8 +240,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/components/nodes/*.vue`
 
   **Acceptance Criteria**:
-  - [ ] Nodes look cohesive on light canvas
-  - [ ] No logic changes to node behavior
+  - [x] Nodes look cohesive on light canvas
+  - [x] No logic changes to node behavior
 
 ---
 
@@ -256,8 +256,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/views/KnowledgeView.vue`
 
   **Acceptance Criteria**:
-  - [ ] All visible text is Chinese
-  - [ ] Cards and tables use light surfaces
+  - [x] All visible text is Chinese
+  - [x] Cards and tables use light surfaces
 
 ---
 
@@ -272,8 +272,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/views/ChatTerminal.vue`
 
   **Acceptance Criteria**:
-  - [ ] All visible text is Chinese
-  - [ ] Chat UI matches light theme
+  - [x] All visible text is Chinese
+  - [x] Chat UI matches light theme
 
 ---
 
@@ -291,8 +291,8 @@ Wave 3 (Feature Pages + Tests):
   - `frontend/src/views/ChatTerminal.vue`
 
   **Acceptance Criteria**:
-  - [ ] Tests pass with `npm run test`
-  - [ ] Assertions validate Chinese UI labels
+  - [x] Tests pass with `npm run test`
+  - [x] Assertions validate Chinese UI labels
 
 ---
 
