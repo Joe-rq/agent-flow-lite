@@ -9,6 +9,7 @@ This module provides core RAG functionality:
 - Retrieval of top-k relevant chunks
 """
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
@@ -125,7 +126,11 @@ class RAGPipeline:
 
             # Step 4: Embed and store chunks
             texts = [chunk["text"] for chunk in chunks]
-            embeddings = self.embed_model.get_text_embedding_batch(texts)
+            raw_embeddings = self.embed_model.get_text_embedding_batch(texts)
+            embeddings: list[list[float]] = [
+                [float(value) for value in embedding]
+                for embedding in raw_embeddings
+            ]
 
             # Prepare IDs and metadata for ChromaDB
             ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
@@ -185,7 +190,7 @@ class RAGPipeline:
                 # Lower distance = higher similarity
                 distance = results["distances"][0][i] if results["distances"] else 0
                 # Normalize to 0-1 range (approximate)
-                similarity = max(0, 1 - distance)
+                similarity = 1 / (1 + distance)
 
                 formatted_results.append({
                     "text": results["documents"][0][i],
@@ -196,13 +201,7 @@ class RAGPipeline:
         return formatted_results
 
 
-# Global RAG pipeline instance
-_rag_pipeline: Optional[RAGPipeline] = None
-
-
+@lru_cache(maxsize=1)
 def get_rag_pipeline() -> RAGPipeline:
     """Get the global RAG pipeline instance."""
-    global _rag_pipeline
-    if _rag_pipeline is None:
-        _rag_pipeline = RAGPipeline()
-    return _rag_pipeline
+    return RAGPipeline()

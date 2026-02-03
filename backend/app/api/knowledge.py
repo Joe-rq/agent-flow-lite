@@ -3,6 +3,8 @@ Knowledge base API endpoints for document management.
 """
 import json
 import os
+import re
+import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +12,7 @@ from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse
+from filelock import FileLock
 
 from app.core.chroma_client import get_chroma_client
 from app.core.rag import get_rag_pipeline
@@ -26,22 +29,28 @@ from app.models.document import (
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
 KB_METADATA_FILE = Path(__file__).parent.parent.parent / "data" / "kb_metadata.json"
+processing_tasks: dict[str, dict] = {}
+processing_tasks: dict[str, dict] = {}
 
 
 def load_kb_metadata() -> dict:
-    if not KB_METADATA_FILE.exists():
-        return {}
-    try:
-        with open(KB_METADATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
+    lock = FileLock(str(KB_METADATA_FILE) + ".lock")
+    with lock:
+        if not KB_METADATA_FILE.exists():
+            return {}
+        try:
+            with open(KB_METADATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
 
 
 def save_kb_metadata(metadata: dict) -> None:
     KB_METADATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(KB_METADATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    lock = FileLock(str(KB_METADATA_FILE) + ".lock")
+    with lock:
+        with open(KB_METADATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
 
 
 def get_kb_document_count(kb_id: str) -> int:
@@ -55,12 +64,32 @@ def allowed_file(filename: str) -> bool:
     return any(filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS)
 
 
-def get_upload_path(kb_id: str, filename: str) -> Path:
-    """Get the full path for saving an uploaded file."""
+def secure_filename(filename: str) -> str:
+    """Sanitize a filename to prevent path traversal."""
+    filename = Path(filename).name
+    filename = re.sub(r"[^\w\s\-.]", "", filename)
+    filename = filename.lstrip(".")
+    filename = " ".join(filename.split())
+    return filename or "unnamed_file"
+
+
+def get_upload_path(kb_id: str, filename: str) -> tuple[Path, str]:
+    """Get a safe path for saving an uploaded file."""
+    safe_kb_id = re.sub(r"[^\w-]", "", kb_id) or "default"
     project_root = Path(__file__).parent.parent.parent
-    upload_dir = project_root / "data" / "uploads" / kb_id
+    upload_dir = project_root / "data" / "uploads" / safe_kb_id
     upload_dir.mkdir(parents=True, exist_ok=True)
-    return upload_dir / filename
+
+    safe_name = secure_filename(filename)
+    unique_filename = f"{uuid.uuid4().hex[:12]}_{safe_name}"
+    full_path = upload_dir / unique_filename
+
+    try:
+        full_path.resolve().relative_to(upload_dir.resolve())
+    except ValueError as exc:
+        raise ValueError("Invalid file path detected") from exc
+
+    return full_path, unique_filename
 
 
 def get_metadata_path(kb_id: str) -> Path:
@@ -74,20 +103,24 @@ def get_metadata_path(kb_id: str) -> Path:
 def load_documents_metadata(kb_id: str) -> dict:
     """Load document metadata from JSON file."""
     metadata_path = get_metadata_path(kb_id)
-    if not metadata_path.exists():
-        return {}
-    try:
-        with open(metadata_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {}
+    lock = FileLock(str(metadata_path) + ".lock")
+    with lock:
+        if not metadata_path.exists():
+            return {}
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
 
 
 def save_documents_metadata(kb_id: str, metadata: dict) -> None:
     """Save document metadata to JSON file."""
     metadata_path = get_metadata_path(kb_id)
-    with open(metadata_path, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    lock = FileLock(str(metadata_path) + ".lock")
+    with lock:
+        with open(metadata_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
 
 
 @router.post("/{kb_id}/upload")
@@ -119,9 +152,10 @@ async def upload_document(
         )
 
     doc_id = str(uuid.uuid4())
+    task_id = str(uuid.uuid4())
     timestamp = datetime.utcnow()
 
-    file_path = get_upload_path(kb_id, file.filename)
+    file_path, stored_filename = get_upload_path(kb_id, file.filename)
     with open(file_path, "wb") as f:
         f.write(content)
 
@@ -129,6 +163,7 @@ async def upload_document(
         "id": doc_id,
         "kb_id": kb_id,
         "filename": file.filename,
+        "stored_filename": stored_filename,
         "file_path": str(file_path),
         "file_size": file_size,
         "status": DocumentStatus.PENDING.value,
@@ -143,8 +178,16 @@ async def upload_document(
     chroma_client = get_chroma_client()
     chroma_client.get_or_create_collection(kb_id)
 
+    processing_tasks[task_id] = {
+        "status": "pending",
+        "progress": 0,
+        "doc_id": doc_id,
+        "kb_id": kb_id,
+        "started_at": timestamp.isoformat()
+    }
+
     # Auto-trigger vectorization processing in background
-    background_tasks.add_task(process_document_task, kb_id, doc_id)
+    background_tasks.add_task(process_document_task, kb_id, doc_id, task_id)
 
     return DocumentResponse(
         id=doc_id,
@@ -152,7 +195,8 @@ async def upload_document(
         filename=file.filename,
         status=DocumentStatus.PROCESSING,
         file_size=file_size,
-        created_at=timestamp
+        created_at=timestamp,
+        task_id=task_id
     )
 
 
@@ -234,7 +278,7 @@ def update_document_status(kb_id: str, doc_id: str, status: DocumentStatus, erro
         save_documents_metadata(kb_id, all_metadata)
 
 
-def process_document_task(kb_id: str, doc_id: str):
+def process_document_task(kb_id: str, doc_id: str, task_id: str | None = None):
     """Background task to process a document."""
     all_metadata = load_documents_metadata(kb_id)
     if doc_id not in all_metadata:
@@ -244,6 +288,9 @@ def process_document_task(kb_id: str, doc_id: str):
     file_path = doc_data["file_path"]
 
     update_document_status(kb_id, doc_id, DocumentStatus.PROCESSING)
+    if task_id and task_id in processing_tasks:
+        processing_tasks[task_id]["status"] = "processing"
+        processing_tasks[task_id]["progress"] = 10
 
     try:
         rag_pipeline = get_rag_pipeline()
@@ -251,10 +298,24 @@ def process_document_task(kb_id: str, doc_id: str):
 
         if result["status"] == "completed":
             update_document_status(kb_id, doc_id, DocumentStatus.COMPLETED)
+            if task_id and task_id in processing_tasks:
+                processing_tasks[task_id]["status"] = "completed"
+                processing_tasks[task_id]["progress"] = 100
         else:
-            update_document_status(kb_id, doc_id, DocumentStatus.FAILED, result.get("message", "Unknown error"))
+            update_document_status(
+                kb_id,
+                doc_id,
+                DocumentStatus.FAILED,
+                result.get("message", "Unknown error")
+            )
+            if task_id and task_id in processing_tasks:
+                processing_tasks[task_id]["status"] = "failed"
+                processing_tasks[task_id]["error"] = result.get("message", "Unknown error")
     except Exception as e:
         update_document_status(kb_id, doc_id, DocumentStatus.FAILED, str(e))
+        if task_id and task_id in processing_tasks:
+            processing_tasks[task_id]["status"] = "failed"
+            processing_tasks[task_id]["error"] = str(e)
 
 
 @router.post("/{kb_id}/process/{doc_id}")
@@ -292,12 +353,31 @@ async def process_document(
             status_code=status.HTTP_200_OK
         )
 
-    background_tasks.add_task(process_document_task, kb_id, doc_id)
+    task_id = str(uuid.uuid4())
+    processing_tasks[task_id] = {
+        "status": "pending",
+        "progress": 0,
+        "doc_id": doc_id,
+        "kb_id": kb_id,
+        "started_at": datetime.utcnow().isoformat()
+    }
+    background_tasks.add_task(process_document_task, kb_id, doc_id, task_id)
     
     return JSONResponse(
-        content={"message": "Document processing started.", "doc_id": doc_id},
+        content={
+            "message": "Document processing started.",
+            "doc_id": doc_id,
+            "task_id": task_id
+        },
         status_code=status.HTTP_202_ACCEPTED
     )
+
+
+@router.get("/tasks/{task_id}")
+async def get_task_status(task_id: str) -> dict:
+    if task_id not in processing_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return processing_tasks[task_id]
 
 
 @router.get("/{kb_id}/search")
@@ -393,3 +473,30 @@ async def create_knowledge_base(data: KnowledgeBaseCreate) -> KnowledgeBase:
         document_count=0,
         created_at=timestamp
     )
+
+
+
+
+@router.delete("/{kb_id}", status_code=204)
+async def delete_knowledge_base(kb_id: str) -> None:
+    metadata = load_kb_metadata()
+    if kb_id not in metadata:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Knowledge base '{kb_id}' not found"
+        )
+
+    chroma_client = get_chroma_client()
+    chroma_client.delete_collection(kb_id)
+
+    project_root = Path(__file__).parent.parent.parent
+    upload_dir = project_root / "data" / "uploads" / kb_id
+    if upload_dir.exists():
+        shutil.rmtree(upload_dir)
+
+    metadata_dir = project_root / "data" / "metadata" / kb_id
+    if metadata_dir.exists():
+        shutil.rmtree(metadata_dir)
+
+    del metadata[kb_id]
+    save_kb_metadata(metadata)

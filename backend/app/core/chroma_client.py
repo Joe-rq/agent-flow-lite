@@ -2,6 +2,7 @@
 ChromaDB client wrapper for knowledge base storage.
 """
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
@@ -127,9 +128,12 @@ class ChromaClient:
         """
         try:
             collection = self._client.get_collection(name=f"kb_{kb_id}")
-            collection.delete(ids=[document_id])
+            collection.delete(where={"doc_id": document_id})
             return True
         except ValueError:
+            return False
+        except Exception as e:
+            print(f"Error deleting document {document_id}: {e}")
             return False
 
     def get_collection_info(self, kb_id: str) -> dict:
@@ -157,10 +161,7 @@ class ChromaClient:
             }
 
 
-# Global client instance
-_chroma_client: Optional[ChromaClient] = None
-
-
+@lru_cache(maxsize=1)
 def get_chroma_client() -> ChromaClient:
     """
     Get the global ChromaDB client instance.
@@ -168,7 +169,4 @@ def get_chroma_client() -> ChromaClient:
     Returns:
         ChromaClient instance
     """
-    global _chroma_client
-    if _chroma_client is None:
-        _chroma_client = ChromaClient()
-    return _chroma_client
+    return ChromaClient()

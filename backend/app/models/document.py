@@ -51,6 +51,7 @@ class DocumentResponse(BaseModel):
     status: DocumentStatus
     file_size: int
     created_at: datetime
+    task_id: Optional[str] = None
 
     class Config:
         from_attributes = True

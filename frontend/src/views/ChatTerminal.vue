@@ -54,6 +54,30 @@
         </div>
       </div>
 
+      <div class="config-bar">
+        <div class="config-item">
+          <label>工作流</label>
+          <select v-model="selectedWorkflowId" :disabled="isStreaming">
+            <option value="">无（普通对话）</option>
+            <option v-for="wf in workflows" :key="wf.id" :value="wf.id">
+              {{ wf.name }}
+            </option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label>知识库</label>
+          <select
+            v-model="selectedKbId"
+            :disabled="isStreaming || !!selectedWorkflowId"
+          >
+            <option value="">无</option>
+            <option v-for="kb in knowledgeBases" :key="kb.id" :value="kb.id">
+              {{ kb.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
       <!-- 输入区域 -->
       <div class="input-area">
         <div class="input-wrapper">
@@ -103,6 +127,10 @@ const inputMessage = ref('')
 const isStreaming = ref(false)
 const currentThought = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const selectedWorkflowId = ref<string>('')
+const selectedKbId = ref<string>('')
+const workflows = ref<{ id: string; name: string }[]>([])
+const knowledgeBases = ref<{ id: string; name: string }[]>([])
 
 // 计算属性
 const currentSession = computed(() => {
@@ -115,7 +143,12 @@ const currentMessages = computed(() => {
 
 // 方法
 function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+  if (crypto && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
 }
 
 function formatTime(timestamp: number): string {
@@ -214,6 +247,8 @@ async function connectSSE(sessionId: string, message: string) {
     body: JSON.stringify({
       session_id: sessionId,
       message: message,
+      workflow_id: selectedWorkflowId.value || undefined,
+      kb_id: selectedKbId.value || undefined,
     }),
   })
 
@@ -270,13 +305,76 @@ async function connectSSE(sessionId: string, message: string) {
   currentThought.value = ''
 }
 
+async function loadWorkflows() {
+  try {
+    const response = await axios.get('/api/v1/workflows')
+    workflows.value = (response.data.items || []).map((wf: any) => ({
+      id: wf.id,
+      name: wf.name
+    }))
+  } catch (error) {
+    console.error('加载工作流列表失败:', error)
+  }
+}
+
+async function loadKnowledgeBases() {
+  try {
+    const response = await axios.get('/api/v1/knowledge')
+    const items = response.data.items || response.data || []
+    knowledgeBases.value = items.map((kb: any) => ({
+      id: kb.id || kb.kb_id,
+      name: kb.name || kb.kb_name || '未命名知识库'
+    }))
+  } catch (error) {
+    console.error('加载知识库列表失败:', error)
+  }
+}
+
+async function loadSessions() {
+  try {
+    const response = await axios.get('/api/v1/chat/sessions')
+    const items = response.data.sessions || []
+    sessions.value = items.map((s: any) => ({
+      id: s.session_id,
+      title: s.title || '新会话',
+      createdAt: new Date(s.created_at).getTime(),
+      updatedAt: new Date(s.updated_at).getTime(),
+      messages: []
+    }))
+    if (sessions.value.length > 0) {
+      currentSessionId.value = sessions.value[0].id
+    }
+  } catch (error) {
+    console.error('加载会话列表失败:', error)
+  }
+}
+
 function handleSSEEvent(eventType: string, data: any, lastMessage: Message | undefined) {
   if (!lastMessage || lastMessage.role !== 'assistant') return
 
   switch (eventType) {
     case 'thought':
       // 思维链 - 处理 RAG 检索状态
-      if (data.type === 'retrieval') {
+      if (data.type === 'workflow') {
+        if (data.status === 'start') {
+          currentThought.value = `开始执行工作流: ${data.workflow_name || ''}`
+        }
+      } else if (data.type === 'node') {
+        if (data.status === 'start') {
+          const labels: Record<string, string> = {
+            start: '开始',
+            llm: 'LLM',
+            knowledge: '知识库',
+            condition: '条件',
+            end: '结束'
+          }
+          currentThought.value = `执行节点: ${labels[data.node_type] || data.node_type || ''}`
+        } else if (data.status === 'complete') {
+          currentThought.value = `节点完成: ${data.node_id || ''}`
+        }
+      } else if (data.type === 'condition') {
+        currentThought.value = `条件判断: ${data.expression || ''} → ${data.branch || ''}`
+      } else if (data.type === 'retrieval') {
         if (data.status === 'start') {
           currentThought.value = '正在检索知识库...'
         } else if (data.status === 'searching') {
@@ -360,16 +458,25 @@ async function switchSession(sessionId: string) {
 
 // 初始化
 onMounted(() => {
-  // 创建一个默认会话
-  if (sessions.value.length === 0) {
-    createNewSession()
-  }
+  loadSessions().finally(() => {
+    if (sessions.value.length === 0) {
+      createNewSession()
+    }
+  })
+  loadWorkflows()
+  loadKnowledgeBases()
 })
 
 // 监听消息变化，自动滚动
 watch(currentMessages, () => {
   scrollToBottom()
 }, { deep: true })
+
+watch(selectedWorkflowId, (value) => {
+  if (value) {
+    selectedKbId.value = ''
+  }
+})
 </script>
 
 <style scoped>
@@ -470,6 +577,43 @@ watch(currentMessages, () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* 配置栏 */
+.config-bar {
+  display: flex;
+  gap: 16px;
+  padding: 12px 20px;
+  background-color: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-item label {
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.config-item select {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: #ffffff;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.config-item select:disabled {
+  background-color: #e2e8f0;
+  cursor: not-allowed;
 }
 
 /* 消息样式 */

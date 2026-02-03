@@ -223,12 +223,15 @@ async function saveWorkflow() {
           id: n.id,
           type: n.type,
           position: n.position,
-          label: n.label
+          label: n.label,
+          data: n.data || {}
         })),
         edges: flowData.edges.map((e: any) => ({
           id: e.id,
           source: e.source,
-          target: e.target
+          target: e.target,
+          sourceHandle: e.sourceHandle,
+          targetHandle: e.targetHandle
         }))
       }
     })
@@ -266,7 +269,7 @@ async function loadWorkflow(workflowId: string) {
         id: n.id,
         type: n.type,
         position: n.position,
-        label: n.label || (n.type === 'start' ? '开始' : n.type === 'llm' ? 'LLM' : '知识库'),
+        label: n.label || getDefaultLabel(n.type),
         data: n.data || {}
       })))
     }
@@ -275,7 +278,9 @@ async function loadWorkflow(workflowId: string) {
       setEdges(graphData.edges.map((e: any) => ({
         id: e.id,
         source: e.source,
-        target: e.target
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle
       })))
     }
 
@@ -285,6 +290,17 @@ async function loadWorkflow(workflowId: string) {
     console.error('加载工作流失败:', error)
     showError('加载工作流失败')
   }
+}
+
+function getDefaultLabel(type: string): string {
+  const labels: Record<string, string> = {
+    start: '开始',
+    llm: 'LLM',
+    knowledge: '知识库',
+    end: '结束',
+    condition: '条件'
+  }
+  return labels[type] || type
 }
 
 // 格式化日期

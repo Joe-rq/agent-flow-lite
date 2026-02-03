@@ -6,9 +6,11 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import AsyncGenerator, List, Optional
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from filelock import FileLock
 
 from app.models.workflow import (
     GraphData,
@@ -32,20 +34,24 @@ def ensure_data_dir() -> None:
 def load_workflows() -> dict:
     """Load workflows from JSON file"""
     ensure_data_dir()
-    if not WORKFLOW_FILE.exists():
-        return {"workflows": {}}
-    try:
-        with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError):
-        return {"workflows": {}}
+    lock = FileLock(str(WORKFLOW_FILE) + ".lock")
+    with lock:
+        if not WORKFLOW_FILE.exists():
+            return {"workflows": {}}
+        try:
+            with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"workflows": {}}
 
 
 def save_workflows(data: dict) -> None:
     """Save workflows to JSON file"""
     ensure_data_dir()
-    with open(WORKFLOW_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    lock = FileLock(str(WORKFLOW_FILE) + ".lock")
+    with lock:
+        with open(WORKFLOW_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def workflow_to_model(workflow_id: str, data: dict) -> Workflow:
@@ -185,3 +191,34 @@ async def delete_workflow(workflow_id: str) -> None:
     save_workflows(data)
     
     return None
+
+
+def format_sse(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+@router.post("/{workflow_id}/execute")
+async def execute_workflow(workflow_id: str, input_data: dict) -> StreamingResponse:
+    initial_input = input_data.get("input", "")
+    if not initial_input:
+        raise HTTPException(status_code=400, detail="Input cannot be empty")
+
+    workflow = await get_workflow(workflow_id)
+
+    async def generate() -> AsyncGenerator[str, None]:
+        from app.core.workflow_engine import WorkflowEngine
+
+        engine = WorkflowEngine(workflow)
+        async for event in engine.execute(initial_input):
+            event_type = event.pop("type", "unknown")
+            yield format_sse(event_type, event)
+        yield format_sse("done", {"status": "complete"})
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
