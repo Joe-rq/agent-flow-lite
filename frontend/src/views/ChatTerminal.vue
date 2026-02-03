@@ -341,8 +341,9 @@ async function loadSessions() {
       updatedAt: new Date(s.updated_at).getTime(),
       messages: []
     }))
-    if (sessions.value.length > 0) {
-      currentSessionId.value = sessions.value[0].id
+    const firstSession = sessions.value[0]
+    if (firstSession) {
+      currentSessionId.value = firstSession.id
     }
   } catch (error) {
     console.error('加载会话列表失败:', error)

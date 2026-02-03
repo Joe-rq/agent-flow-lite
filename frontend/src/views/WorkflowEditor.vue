@@ -9,7 +9,7 @@
         <button class="btn-save" @click="saveWorkflow" :disabled="isSaving">
           {{ isSaving ? '保存中...' : '保存工作流' }}
         </button>
-        <button class="btn-load" @click="showLoadDialog = true">
+        <button class="btn-load" @click="loadWorkflows">
           加载工作流
         </button>
       </div>
@@ -73,6 +73,7 @@
         @dragover="onDragOver"
         @drop="onDrop"
         @node-click="onNodeClick"
+        @connect="onConnect"
         fit-view-on-init
       >
         <!-- 背景 -->
@@ -147,7 +148,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { VueFlow, useVueFlow, Handle, Position } from '@vue-flow/core'
+import { VueFlow, useVueFlow, Handle, Position, type Connection } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import StartNode from '../components/nodes/StartNode.vue'
@@ -199,6 +200,20 @@ const elements = ref([
     position: { x: 100, y: 100 },
   },
 ])
+
+function onConnect(params: Connection) {
+  const edgeIdParts = [params.source, params.target, params.sourceHandle, params.targetHandle]
+  const edgeId = `e${edgeIdParts.filter(Boolean).join('-')}`
+  addEdges({
+    id: edgeId,
+    source: params.source,
+    target: params.target,
+    sourceHandle: params.sourceHandle,
+    targetHandle: params.targetHandle,
+    type: 'smoothstep',
+    animated: true
+  })
+}
 
 // 显示错误提示
 function showError(message: string) {
