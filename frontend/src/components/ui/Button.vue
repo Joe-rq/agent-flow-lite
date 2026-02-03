@@ -50,7 +50,7 @@ function handleClick(event: MouseEvent) {
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--color-accent, #3b82f6);
+  outline: 2px solid var(--accent-cyan, #0891b2);
   outline-offset: 2px;
 }
 
@@ -75,40 +75,40 @@ function handleClick(event: MouseEvent) {
 
 /* Primary variant */
 .btn--primary {
-  background: linear-gradient(135deg, var(--color-accent, #3b82f6), var(--color-accent-hover, #2563eb));
+  background: linear-gradient(135deg, var(--accent-cyan, #0891b2), var(--accent-purple, #7c3aed));
   color: white;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-accent-hover, #2563eb), var(--color-accent, #3b82f6));
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  background: linear-gradient(135deg, var(--accent-purple, #7c3aed), var(--accent-cyan, #0891b2));
+  box-shadow: var(--shadow-glow-cyan);
   transform: translateY(-1px);
 }
 
 .btn--primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Secondary variant */
 .btn--secondary {
-  background: var(--color-surface-elevated, rgba(255, 255, 255, 0.05));
-  color: var(--color-text-primary, rgba(255, 255, 255, 0.9));
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
+  box-shadow: var(--shadow-sm);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  background: var(--color-surface-hover, rgba(255, 255, 255, 0.1));
-  border-color: var(--color-border-hover, rgba(255, 255, 255, 0.2));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--bg-primary, #f8fafc);
+  border-color: var(--accent-cyan, #0891b2);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .btn--secondary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Danger variant */

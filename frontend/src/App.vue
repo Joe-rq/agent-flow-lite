@@ -73,18 +73,8 @@ body {
 .app-sidebar {
   width: 240px;
   padding: 20px;
-  /* Glassmorphism effect */
-  background: rgba(18, 18, 26, 0.6);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--bg-secondary);
   border-right: 1px solid var(--border-primary);
-}
-
-/* Fallback for browsers without backdrop-filter support */
-@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
-  .app-sidebar {
-    background: var(--bg-secondary);
-  }
 }
 
 .app-sidebar nav {

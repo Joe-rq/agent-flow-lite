@@ -19,42 +19,12 @@ withDefaults(defineProps<Props>(), {
 <style scoped>
 .card {
   position: relative;
-  background: var(--color-surface, rgba(30, 30, 40, 0.6));
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
-  border-radius: 1rem;
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
+  border-radius: var(--radius-lg, 12px);
   overflow: hidden;
   transition: all 0.3s ease;
-}
-
-/* Glassmorphism effect with fallback */
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.02) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-/* Backdrop filter with webkit prefix and fallback */
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-  .card {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    background: var(--color-surface-glass, rgba(30, 30, 40, 0.4));
-  }
-}
-
-/* Fallback for browsers without backdrop-filter support */
-@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
-  .card {
-    background: var(--color-surface-solid, rgba(40, 40, 55, 0.95));
-  }
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
 }
 
 /* Padding variants */
@@ -76,27 +46,8 @@ withDefaults(defineProps<Props>(), {
 
 /* Hover effect */
 .card--hover:hover {
-  border-color: var(--color-border-hover, rgba(255, 255, 255, 0.15));
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  border-color: var(--accent-cyan, #0891b2);
+  box-shadow: var(--shadow-md, 0 4px 6px rgba(15, 23, 42, 0.07));
   transform: translateY(-2px);
-}
-
-/* Subtle inner glow */
-.card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  pointer-events: none;
 }
 </style>

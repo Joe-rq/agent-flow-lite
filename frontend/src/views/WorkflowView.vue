@@ -20,9 +20,9 @@
         :max-zoom="4"
         fit-view-on-init
         @node-click="onNodeClick"
-        class="dark-flow"
+        class="light-flow"
       >
-        <Background color="#30363d" :gap="20" />
+        <Background color="#e2e8f0" :gap="20" />
         <Controls />
 
         <template #node-start="nodeProps">

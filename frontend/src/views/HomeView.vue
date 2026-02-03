@@ -11,20 +11,20 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    title: 'Workflow',
-    description: 'Visual workflow editor with drag-and-drop nodes for building AI pipelines',
+    title: '工作流',
+    description: '可视化工作流编辑器，通过拖拽节点构建 AI 流程',
     route: '/workflow',
     icon: 'workflow',
   },
   {
-    title: 'Knowledge Base',
-    description: 'Manage documents and build RAG pipelines for semantic retrieval',
+    title: '知识库',
+    description: '管理文档并构建 RAG 流程，实现语义检索',
     route: '/knowledge',
     icon: 'knowledge',
   },
   {
-    title: 'Chat',
-    description: 'Interactive chat terminal with streaming responses and citation tracing',
+    title: '对话',
+    description: '交互式对话终端，支持流式响应和引用追溯',
     route: '/chat',
     icon: 'chat',
   },
@@ -36,13 +36,13 @@ const features: Feature[] = [
     <section class="hero">
       <div class="hero__content">
         <h1 class="hero__title">Agent Flow</h1>
-        <p class="hero__tagline">Build, manage, and deploy intelligent AI workflows</p>
+        <p class="hero__tagline">构建、管理和部署智能 AI 工作流</p>
         <div class="hero__actions">
           <Button variant="primary" size="lg" @click="$router.push('/workflow')">
-            Create Workflow
+            创建工作流
           </Button>
           <Button variant="secondary" size="lg" @click="$router.push('/knowledge')">
-            Upload Documents
+            上传文档
           </Button>
         </div>
       </div>

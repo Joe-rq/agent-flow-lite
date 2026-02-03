@@ -1,32 +1,37 @@
-/* Dark Tech Theme - CSS Variables */
-/* A cohesive dark theme with cyan and purple accents for the Agent Flow UI */
+/* Clean Tech Light Theme - CSS Variables */
+/* A cohesive light theme with cyan and purple accents for the Agent Flow UI */
 
 :root {
-  /* Background Colors */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a25;
-  --bg-elevated: #222230;
-  --bg-overlay: rgba(0, 0, 0, 0.8);
+  /* Background Colors - Clean Gray Base */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(15, 23, 42, 0.6);
 
-  /* Accent Colors */
-  --accent-cyan: #00d4ff;
-  --accent-cyan-soft: rgba(0, 212, 255, 0.15);
-  --accent-cyan-glow: rgba(0, 212, 255, 0.4);
-  --accent-purple: #a855f7;
-  --accent-purple-soft: rgba(168, 85, 247, 0.15);
-  --accent-purple-glow: rgba(168, 85, 247, 0.4);
+  /* Surface Colors for Cards/Panels */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f8fafc;
+  --surface-tertiary: #f1f5f9;
 
-  /* Text Colors */
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-tertiary: rgba(255, 255, 255, 0.5);
-  --text-muted: rgba(255, 255, 255, 0.35);
+  /* Accent Colors - Preserved Cyan/Purple */
+  --accent-cyan: #0891b2;
+  --accent-cyan-soft: rgba(8, 145, 178, 0.1);
+  --accent-cyan-glow: rgba(8, 145, 178, 0.3);
+  --accent-purple: #7c3aed;
+  --accent-purple-soft: rgba(124, 58, 237, 0.1);
+  --accent-purple-glow: rgba(124, 58, 237, 0.3);
+
+  /* Text Colors - Slate Dark */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
 
   /* Border Colors */
-  --border-primary: rgba(255, 255, 255, 0.1);
-  --border-secondary: rgba(255, 255, 255, 0.06);
-  --border-accent: rgba(0, 212, 255, 0.3);
+  --border-primary: rgba(148, 163, 184, 0.3);
+  --border-secondary: rgba(148, 163, 184, 0.2);
+  --border-accent: rgba(8, 145, 178, 0.4);
 
   /* Border Radius */
   --radius-sm: 4px;
@@ -35,10 +40,10 @@
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  /* Shadows - Soft and Subtle */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.1);
   --shadow-glow-cyan: 0 0 20px var(--accent-cyan-glow);
   --shadow-glow-purple: 0 0 20px var(--accent-purple-glow);
 
