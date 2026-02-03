@@ -153,6 +153,83 @@
       },
       "created_at": "2026-02-03T02:49:14.079806",
       "updated_at": "2026-02-03T02:49:14.079806"
+    },
+    "4203934d-ac09-4b23-9515-860d35a92a0e": {
+      "name": "1",
+      "description": "",
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "1",
+            "type": "start",
+            "position": {
+              "x": 0.3771527366464653,
+              "y": 99.67012302230677
+            },
+            "label": "开始",
+            "data": {
+              "inputVariable": "input",
+              "systemPrompt": "",
+              "temperature": 0.7,
+              "knowledgeBaseId": "",
+              "outputVariable": "",
+              "expression": ""
+            }
+          },
+          {
+            "id": "1770096004142-1",
+            "type": "llm",
+            "position": {
+              "x": 243,
+              "y": 96.49999999999999
+            },
+            "label": "LLM",
+            "data": {
+              "inputVariable": "",
+              "systemPrompt": "我是一个律师{input}",
+              "temperature": 0.7,
+              "knowledgeBaseId": "",
+              "outputVariable": "",
+              "expression": ""
+            }
+          },
+          {
+            "id": "1770096025646-2",
+            "type": "end",
+            "position": {
+              "x": 242,
+              "y": 216.5
+            },
+            "label": "结束",
+            "data": {
+              "inputVariable": "",
+              "systemPrompt": "",
+              "temperature": 0.7,
+              "knowledgeBaseId": "",
+              "outputVariable": "result",
+              "expression": ""
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1-1770096004142-1",
+            "source": "1",
+            "target": "1770096004142-1",
+            "sourceHandle": null,
+            "targetHandle": null
+          },
+          {
+            "id": "e1770096004142-1-1770096025646-2",
+            "source": "1770096004142-1",
+            "target": "1770096025646-2",
+            "sourceHandle": null,
+            "targetHandle": null
+          }
+        ]
+      },
+      "created_at": "2026-02-03T05:20:54.837152",
+      "updated_at": "2026-02-03T05:20:54.837152"
     }
   }
 }
