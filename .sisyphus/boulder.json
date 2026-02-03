@@ -1,10 +1,8 @@
 {
-  "active_plan": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/.sisyphus/plans/coze-demo.md",
-  "started_at": "2026-02-01T14:42:24.566Z",
+  "active_plan": "D:\\03resource\\_Projects\\agent-flow-lite\\.sisyphus\\plans\\frontend-ui-refresh.md",
+  "started_at": "2026-02-03T06:00:18.547Z",
   "session_ids": [
-    "ses_3e6653436ffeKb5Z8JbBDBEriF",
-    "ses_3e409f8b4ffecLI1sjdJC3DHiD",
-    "ses_3e2ec4a0dffe01Ms33y2fnt7RW"
+    "ses_3ddf592e8ffe9cyHwzYEniVb7W"
   ],
-  "plan_name": "coze-demo"
+  "plan_name": "frontend-ui-refresh"
 }

@@ -5,10 +5,10 @@
         <h2>工作流编辑器</h2>
       </div>
       <div class="toolbar-right">
-        <button class="toolbar-btn" @click="addStartNode">+ 开始节点</button>
-        <button class="toolbar-btn primary" @click="addLLMNode">+ LLM 节点</button>
-        <button class="toolbar-btn" @click="addKnowledgeNode">+ 知识库节点</button>
-        <button class="toolbar-btn save-btn" @click="saveWorkflow">💾 保存</button>
+        <Button variant="secondary" size="sm" @click="addStartNode">+ 开始节点</Button>
+        <Button variant="primary" size="sm" @click="addLLMNode">+ LLM 节点</Button>
+        <Button variant="secondary" size="sm" @click="addKnowledgeNode">+ 知识库节点</Button>
+        <Button variant="primary" size="sm" @click="saveWorkflow">💾 保存</Button>
       </div>
     </div>
 
@@ -20,8 +20,9 @@
         :max-zoom="4"
         fit-view-on-init
         @node-click="onNodeClick"
+        class="dark-flow"
       >
-        <Background pattern-color="#e5e7eb" :gap="20" />
+        <Background color="#30363d" :gap="20" />
         <Controls />
 
         <template #node-start="nodeProps">
@@ -59,6 +60,8 @@ import StartNode from '../components/nodes/StartNode.vue'
 import LLMNode from '../components/nodes/LLMNode.vue'
 import KnowledgeNode from '../components/nodes/KnowledgeNode.vue'
 import NodeConfigPanel from '../components/NodeConfigPanel.vue'
+
+import Button from '@/components/ui/Button.vue'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -213,7 +216,7 @@ const saveWorkflow = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f9fafb;
+  background: var(--bg-primary);
 }
 
 .workflow-toolbar {
@@ -221,15 +224,15 @@ const saveWorkflow = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .toolbar-left h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .toolbar-right {
@@ -237,49 +240,39 @@ const saveWorkflow = async () => {
   gap: 10px;
 }
 
-.toolbar-btn {
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #374151;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.toolbar-btn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.toolbar-btn.primary {
-  background: #8b5cf6;
-  color: white;
-  border-color: #8b5cf6;
-}
-
-.toolbar-btn.primary:hover {
-  background: #7c3aed;
-}
-
-.toolbar-btn.save-btn {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-}
-
-.toolbar-btn.save-btn:hover {
-  background: #2563eb;
-}
-
 .workflow-canvas-container {
   flex: 1;
   position: relative;
   overflow: hidden;
+  background: var(--bg-primary);
 }
 
-:deep(.vue-flow) {
-  height: 100%;
+.dark-flow {
+  background: var(--bg-primary);
+}
+
+.dark-flow :deep(.vue-flow__node) {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
+}
+
+.dark-flow :deep(.vue-flow__handle) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+}
+
+.dark-flow :deep(.vue-flow__controls) {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
+}
+
+.dark-flow :deep(.vue-flow__controls-button) {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+.dark-flow :deep(.vue-flow__controls-button:hover) {
+  background: var(--bg-tertiary);
 }
 </style>
