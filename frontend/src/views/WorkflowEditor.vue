@@ -22,27 +22,6 @@
 
     <!-- 主内容区 -->
     <div class="editor-main">
-      <!-- 左侧信息面板 -->
-      <div class="node-panel">
-        <div class="panel-header">
-          <h3>工作流信息</h3>
-        </div>
-        <div class="panel-info">
-          <div class="info-item">
-            <span class="info-label">名称</span>
-            <span class="info-value">{{ currentWorkflowName || '未命名工作流' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">ID</span>
-            <span class="info-value">{{ currentWorkflowId || '未保存' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">状态</span>
-            <span class="info-value">{{ isRunning ? '运行中' : isSaving ? '保存中' : '空闲' }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Vue Flow 画布 -->
       <div class="canvas-container">
       <VueFlow
@@ -761,77 +740,14 @@ function autoLayout() {
   overflow: hidden;
 }
 
-.node-panel {
-  width: 25%;
-  min-width: 200px;
-  max-width: 300px;
-  background: #f9fafb;
-  border-right: 1px solid #e5e7eb;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-header {
-  padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: white;
-}
-
-.panel-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.panel-info {
-  padding: 16px;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.info-label {
-  color: var(--text-secondary, #6b7280);
-}
-
-.info-value {
-  color: var(--text-primary, #111827);
-  font-weight: 500;
-}
-
-.panel-info {
-  padding: 16px;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 14px;
-}
-
-.info-label {
-  color: var(--text-secondary, #6b7280);
-}
-
-.info-value {
-  color: var(--text-primary, #111827);
-  font-weight: 500;
-}
-
 .canvas-container {
-  width: 75%;
+  width: 100%;
   flex: 1;
   position: relative;
   background: #f3f4f6;
 }
 
-/* Drawer toggle button */
+  /* Drawer toggle button */
 .drawer-toggle {
   position: absolute;
   right: 0;
