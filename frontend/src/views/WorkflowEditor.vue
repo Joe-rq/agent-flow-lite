@@ -1,79 +1,50 @@
 <template>
   <div class="workflow-editor">
-    <!-- 左侧节点面板 -->
-    <div class="node-panel">
-      <div class="panel-header">
-        <h3>节点面板</h3>
+    <!-- 顶部工具栏 -->
+    <div class="workflow-toolbar">
+      <div class="toolbar-left">
+        <h2>工作流编辑器</h2>
       </div>
-      <div class="panel-actions">
-        <button class="btn-save" @click="saveWorkflow" :disabled="isSaving">
+      <div class="toolbar-right">
+        <Button variant="primary" size="sm" @click="saveWorkflow" :disabled="isSaving">
           {{ isSaving ? '保存中...' : '保存工作流' }}
-        </button>
-        <button class="btn-load" @click="loadWorkflows">
-          加载工作流
-        </button>
-        <button class="btn-run" @click="openRunDialog" :disabled="isRunning">
+        </Button>
+        <Button variant="secondary" size="sm" @click="loadWorkflows">加载工作流</Button>
+        <Button variant="primary" size="sm" @click="openRunDialog" :disabled="isRunning">
           {{ isRunning ? '运行中...' : '运行工作流' }}
-        </button>
-        <button
-          class="btn-delete-wf"
-          @click="deleteWorkflow"
-          :disabled="!currentWorkflowId"
-        >
+        </Button>
+        <Button variant="danger" size="sm" @click="deleteWorkflow" :disabled="!currentWorkflowId">
           删除工作流
-        </button>
-      </div>
-      <div class="panel-content">
-        <div
-          class="node-item"
-          draggable="true"
-          @dragstart="onDragStart($event, 'start')"
-          @click="addNodeFromPanel('start')"
-        >
-          <span class="node-item-icon">▶</span>
-          <span class="node-item-label">开始节点</span>
-        </div>
-        <div
-          class="node-item"
-          draggable="true"
-          @dragstart="onDragStart($event, 'llm')"
-          @click="addNodeFromPanel('llm')"
-        >
-          <span class="node-item-icon">🤖</span>
-          <span class="node-item-label">LLM 节点</span>
-        </div>
-        <div
-          class="node-item"
-          draggable="true"
-          @dragstart="onDragStart($event, 'knowledge')"
-          @click="addNodeFromPanel('knowledge')"
-        >
-          <span class="node-item-icon">📚</span>
-          <span class="node-item-label">知识库节点</span>
-        </div>
-        <div
-          class="node-item"
-          draggable="true"
-          @dragstart="onDragStart($event, 'condition')"
-          @click="addNodeFromPanel('condition')"
-        >
-          <span class="node-item-icon">⚡</span>
-          <span class="node-item-label">条件节点</span>
-        </div>
-        <div
-          class="node-item"
-          draggable="true"
-          @dragstart="onDragStart($event, 'end')"
-          @click="addNodeFromPanel('end')"
-        >
-          <span class="node-item-icon">⏹</span>
-          <span class="node-item-label">结束节点</span>
-        </div>
+        </Button>
+        <Button variant="secondary" size="sm" @click="autoLayout">⚡ 自动布局</Button>
       </div>
     </div>
 
-    <!-- Vue Flow 画布 -->
-    <div class="canvas-container">
+    <!-- 主内容区 -->
+    <div class="editor-main">
+      <!-- 左侧信息面板 -->
+      <div class="node-panel">
+        <div class="panel-header">
+          <h3>工作流信息</h3>
+        </div>
+        <div class="panel-info">
+          <div class="info-item">
+            <span class="info-label">名称</span>
+            <span class="info-value">{{ currentWorkflowName || '未命名工作流' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">ID</span>
+            <span class="info-value">{{ currentWorkflowId || '未保存' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">状态</span>
+            <span class="info-value">{{ isRunning ? '运行中' : isSaving ? '保存中' : '空闲' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vue Flow 画布 -->
+      <div class="canvas-container">
       <VueFlow
         v-model="elements"
         :default-zoom="1"
@@ -81,6 +52,8 @@
         :max-zoom="4"
         :default-edge-options="{ type: 'smoothstep', animated: true }"
         :delete-key-code="'Delete'"
+        :snap-to-grid="true"
+        :snap-grid="[20, 20]"
         @dragover="onDragOver"
         @drop="onDrop"
         @node-click="onNodeClick"
@@ -120,77 +93,140 @@
           <ConditionNode v-bind="props" />
         </template>
       </VueFlow>
-    </div>
 
-    <!-- 加载工作流对话框 -->
-    <div v-if="showLoadDialog" class="dialog-overlay" @click.self="showLoadDialog = false">
-      <div class="dialog">
-        <h3>加载工作流</h3>
-        <div v-if="workflows.length === 0" class="empty-dialog">
-          <p>暂无保存的工作流</p>
-        </div>
-        <div v-else class="workflow-list">
+      <!-- 抽屉切换按钮 -->
+      <button
+        class="drawer-toggle"
+        :class="{ 'drawer-open': drawerOpen }"
+        @click="drawerOpen = !drawerOpen"
+        :title="drawerOpen ? '收起面板' : '展开面板'"
+      >
+        <span class="toggle-icon">{{ drawerOpen ? '▶' : '◀' }}</span>
+      </button>
+
+      <!-- 节点创建抽屉 -->
+      <div class="node-drawer" :class="{ open: drawerOpen }">
+        <h3 class="drawer-title">添加节点</h3>
+        <div class="drawer-content">
           <div
-            v-for="workflow in workflows"
-            :key="workflow.id"
-            class="workflow-item"
-            @click="loadWorkflow(workflow.id)"
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'start')"
+            @click="addNodeFromPanel('start')"
           >
-            <div class="workflow-name">{{ workflow.name }}</div>
-            <div class="workflow-meta">创建于 {{ formatDate(workflow.created_at) }}</div>
+            <span class="drawer-node-icon">▶</span>
+            <span class="drawer-node-label">开始节点</span>
+          </div>
+          <div
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'llm')"
+            @click="addNodeFromPanel('llm')"
+          >
+            <span class="drawer-node-icon">🤖</span>
+            <span class="drawer-node-label">LLM 节点</span>
+          </div>
+          <div
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'knowledge')"
+            @click="addNodeFromPanel('knowledge')"
+          >
+            <span class="drawer-node-icon">📚</span>
+            <span class="drawer-node-label">知识库节点</span>
+          </div>
+          <div
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'condition')"
+            @click="addNodeFromPanel('condition')"
+          >
+            <span class="drawer-node-icon">⚡</span>
+            <span class="drawer-node-label">条件节点</span>
+          </div>
+          <div
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'end')"
+            @click="addNodeFromPanel('end')"
+          >
+            <span class="drawer-node-icon">⏹</span>
+            <span class="drawer-node-label">结束节点</span>
           </div>
         </div>
-        <div class="dialog-actions">
-          <button class="btn-secondary" @click="showLoadDialog = false">关闭</button>
-        </div>
       </div>
     </div>
-
-    <div v-if="showRunDialog" class="dialog-overlay" @click.self="closeRunDialog">
-      <div class="dialog run-dialog">
-        <h3>运行工作流</h3>
-        <div class="run-meta">
-          <span>工作流：</span>
-          <strong>{{ currentWorkflowName || currentWorkflowId }}</strong>
-        </div>
-        <textarea
-          v-model="runInput"
-          class="run-input"
-          placeholder="请输入测试输入"
-          :disabled="isRunning"
-        ></textarea>
-        <div class="run-actions">
-          <button class="btn-run" @click="executeWorkflow" :disabled="isRunning">
-            运行
-          </button>
-          <button class="btn-secondary" @click="closeRunDialog" :disabled="isRunning">
-            关闭
-          </button>
-        </div>
-        <div class="run-output">
-          <div class="run-section-title">输出</div>
-          <pre>{{ runOutput }}</pre>
-        </div>
-        <div class="run-logs" v-if="runLogs.length">
-          <div class="run-section-title">事件</div>
-          <ul>
-            <li v-for="(log, index) in runLogs" :key="index">{{ log }}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- 节点配置面板 -->
-    <NodeConfigPanel
-      :visible="configPanelVisible"
-      :node-id="selectedNodeId"
-      :node-type="selectedNodeType"
-      :node-data="selectedNodeData"
-      @close="closeConfigPanel"
-      @save="saveNodeConfig"
-      @delete="deleteNode"
-    />
   </div>
+
+  <!-- 加载工作流对话框 -->
+  <div v-if="showLoadDialog" class="dialog-overlay" @click.self="showLoadDialog = false">
+    <div class="dialog">
+      <h3>加载工作流</h3>
+      <div v-if="workflows.length === 0" class="empty-dialog">
+        <p>暂无保存的工作流</p>
+      </div>
+      <div v-else class="workflow-list">
+        <div
+          v-for="workflow in workflows"
+          :key="workflow.id"
+          class="workflow-item"
+          @click="loadWorkflow(workflow.id)"
+        >
+          <div class="workflow-name">{{ workflow.name }}</div>
+          <div class="workflow-meta">创建于 {{ formatDate(workflow.created_at) }}</div>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-secondary" @click="showLoadDialog = false">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showRunDialog" class="dialog-overlay" @click.self="closeRunDialog">
+    <div class="dialog run-dialog">
+      <h3>运行工作流</h3>
+      <div class="run-meta">
+        <span>工作流：</span>
+        <strong>{{ currentWorkflowName || currentWorkflowId }}</strong>
+      </div>
+      <textarea
+        v-model="runInput"
+        class="run-input"
+        placeholder="请输入测试输入"
+        :disabled="isRunning"
+      ></textarea>
+        <div class="run-actions">
+        <button class="btn-run" @click="executeWorkflow" :disabled="isRunning">
+          运行
+        </button>
+        <button class="btn-secondary" @click="closeRunDialog" :disabled="isRunning">
+          关闭
+        </button>
+      </div>
+      <div class="run-output">
+        <div class="run-section-title">输出</div>
+        <pre>{{ runOutput }}</pre>
+      </div>
+      <div class="run-logs" v-if="runLogs.length">
+        <div class="run-section-title">事件</div>
+        <ul>
+          <li v-for="(log, index) in runLogs" :key="index">{{ log }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 节点配置面板 -->
+  <NodeConfigPanel
+    :visible="configPanelVisible"
+    :node-id="selectedNodeId"
+    :node-type="selectedNodeType"
+    :node-data="selectedNodeData"
+    @close="closeConfigPanel"
+    @save="saveNodeConfig"
+    @delete="deleteNode"
+  />
+</div>
 </template>
 
 <script setup lang="ts">
@@ -204,19 +240,26 @@ import KnowledgeNode from '../components/nodes/KnowledgeNode.vue'
 import EndNode from '../components/nodes/EndNode.vue'
 import ConditionNode from '../components/nodes/ConditionNode.vue'
 import NodeConfigPanel from '../components/NodeConfigPanel.vue'
+import Button from '@/components/ui/Button.vue'
 import axios from 'axios'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
-const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode, removeNodes, removeEdges } = useVueFlow()
+const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode, removeNodes, removeEdges, fitView } = useVueFlow()
 
 const API_BASE = '/api/v1'
 const isSaving = ref(false)
 const showLoadDialog = ref(false)
-const workflows = ref<{ id: string; name: string; created_at: string }[]>([])
+interface WorkflowItem {
+  id: string
+  name: string
+  created_at: string
+}
+const workflows = ref<WorkflowItem[]>([])
 const panelAddCount = ref(0)
+const drawerOpen = ref(true) // 默认展开
 const showRunDialog = ref(false)
 const runInput = ref('')
 const runOutput = ref('')
@@ -643,13 +686,79 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
     console.warn('未找到节点', nodeId)
   }
 }
+
+// 自动布局
+function autoLayout() {
+  const nodes = getNodes.value
+  const xPositions: Record<string, number> = {
+    start: 100,
+    llm: 350,
+    knowledge: 600,
+    condition: 850,
+    end: 1100
+  }
+
+  // 按类型分组并记录每个类型的当前索引
+  const typeIndices: Record<string, number> = {}
+
+  // 创建新的节点数组，更新位置
+  const updatedNodes = nodes.map((node: any) => {
+    const type = node.type || 'default'
+    if (!typeIndices[type]) typeIndices[type] = 0
+
+    const x = xPositions[type] || 100
+    const y = 100 + typeIndices[type] * 120
+    typeIndices[type]++
+
+    return {
+      ...node,
+      position: { x, y }
+    }
+  })
+
+  // 使用 setNodes 批量更新
+  setNodes(updatedNodes)
+
+  // 适应视图
+  setTimeout(() => {
+    fitView()
+  }, 100)
+}
 </script>
 
 <style scoped>
 .workflow-editor {
   display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
+}
+
+.workflow-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+}
+
+.toolbar-left h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .node-panel {
@@ -675,116 +784,43 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
   color: #111827;
 }
 
-.panel-actions {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid #e5e7eb;
+.panel-info {
+  padding: 16px;
 }
 
-.btn-save, .btn-load, .btn-run {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
   font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
 }
 
-.btn-save {
-  background-color: #2c3e50;
-  color: white;
+.info-label {
+  color: var(--text-secondary, #6b7280);
 }
 
-.btn-save:hover:not(:disabled) {
-  background-color: #34495e;
+.info-value {
+  color: var(--text-primary, #111827);
+  font-weight: 500;
 }
 
-.btn-save:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
+.panel-info {
+  padding: 16px;
 }
 
-.btn-load {
-  background-color: #ecf0f1;
-  color: #2c3e50;
-  border: 1px solid #bdc3c7;
-}
-
-.btn-load:hover {
-  background-color: #d5dbdb;
-}
-
-.btn-run {
-  background-color: #16a34a;
-  color: white;
-}
-
-.btn-run:hover:not(:disabled) {
-  background-color: #15803d;
-}
-
-.btn-run:disabled {
-  background-color: #86efac;
-  cursor: not-allowed;
-}
-
-.btn-delete-wf {
-  background-color: #ffffff;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
-}
-
-.btn-delete-wf:hover:not(:disabled) {
-  background-color: #fef2f2;
-  border-color: #dc2626;
-}
-
-.btn-delete-wf:disabled {
-  background-color: #f9fafb;
-  color: #d1d5db;
-  border-color: #e5e7eb;
-  cursor: not-allowed;
-}
-
-.panel-content {
-  padding: 12px;
+.info-item {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.node-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  cursor: grab;
-  transition: all 0.2s;
-}
-
-.node-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.node-item:active {
-  cursor: grabbing;
-}
-
-.node-item-icon {
-  font-size: 18px;
-}
-
-.node-item-label {
+  justify-content: space-between;
+  margin-bottom: 12px;
   font-size: 14px;
-  color: #374151;
+}
+
+.info-label {
+  color: var(--text-secondary, #6b7280);
+}
+
+.info-value {
+  color: var(--text-primary, #111827);
   font-weight: 500;
 }
 
@@ -793,6 +829,96 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
   flex: 1;
   position: relative;
   background: #f3f4f6;
+}
+
+/* Drawer toggle button */
+.drawer-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: var(--bg-secondary, #f9fafb);
+  border: 1px solid var(--border-primary, #e5e7eb);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: right 0.3s ease;
+}
+
+.drawer-toggle.drawer-open {
+  right: 220px;
+}
+
+.toggle-icon {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* Node creation drawer */
+.node-drawer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 220px;
+  background: var(--bg-secondary, #f9fafb);
+  border-left: 1px solid var(--border-primary, #e5e7eb);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-title {
+  margin: 0;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+}
+
+.drawer-content {
+  padding: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drawer-node-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: white;
+  border: 1px solid var(--border-primary, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.drawer-node-item:hover {
+  background: var(--bg-primary, #f3f4f6);
+  border-color: var(--accent-primary, #3b82f6);
+}
+
+.drawer-node-icon {
+  font-size: 18px;
+}
+
+.drawer-node-label {
+  font-size: 14px;
+  color: var(--text-primary, #111827);
 }
 
 :deep(.vue-flow__node) {

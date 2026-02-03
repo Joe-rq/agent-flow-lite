@@ -5,10 +5,10 @@
         <h2>工作流编辑器</h2>
       </div>
       <div class="toolbar-right">
-        <Button variant="secondary" size="sm" @click="addStartNode">+ 开始节点</Button>
-        <Button variant="primary" size="sm" @click="addLLMNode">+ LLM 节点</Button>
-        <Button variant="secondary" size="sm" @click="addKnowledgeNode">+ 知识库节点</Button>
+        <Button variant="secondary" size="sm" @click="loadWorkflow">📂 加载</Button>
+        <Button variant="danger" size="sm" @click="deleteWorkflow">🗑️ 删除</Button>
         <Button variant="primary" size="sm" @click="saveWorkflow">💾 保存</Button>
+        <Button variant="secondary" size="sm" @click="autoLayout">⚡ 自动布局</Button>
       </div>
     </div>
 
@@ -19,6 +19,8 @@
         :min-zoom="0.2"
         :max-zoom="4"
         fit-view-on-init
+        :snap-to-grid="true"
+        :snap-grid="[20, 20]"
         @node-click="onNodeClick"
         class="light-flow"
       >
@@ -35,6 +37,32 @@
           <KnowledgeNode v-bind="nodeProps" />
         </template>
       </VueFlow>
+
+      <!-- Drawer toggle button -->
+      <button
+        class="drawer-toggle"
+        :class="{ 'drawer-open': drawerOpen }"
+        @click="drawerOpen = !drawerOpen"
+        :title="drawerOpen ? '收起面板' : '展开面板'"
+      >
+        <span class="toggle-icon">{{ drawerOpen ? '▶' : '◀' }}</span>
+      </button>
+
+      <!-- Node creation drawer -->
+      <div class="node-drawer" :class="{ open: drawerOpen }">
+        <h3 class="drawer-title">添加节点</h3>
+        <div class="drawer-content">
+          <Button variant="secondary" size="sm" @click="addStartNode" class="drawer-btn">
+            + 开始节点
+          </Button>
+          <Button variant="secondary" size="sm" @click="addLLMNode" class="drawer-btn">
+            + LLM 节点
+          </Button>
+          <Button variant="secondary" size="sm" @click="addKnowledgeNode" class="drawer-btn">
+            + 知识库节点
+          </Button>
+        </div>
+      </div>
     </div>
 
     <!-- 节点配置面板 -->
@@ -84,6 +112,9 @@ const elements = ref<(Node | Edge)[]>([
 // 配置面板状态
 const configPanelVisible = ref(false)
 const selectedNodeId = ref<string | null>(null)
+
+// 节点创建抽屉状态
+const drawerOpen = ref(true)
 
 // 计算选中的节点类型
 const selectedNodeType = computed(() => {
@@ -209,6 +240,49 @@ const saveWorkflow = async () => {
     alert('保存工作流失败，请检查网络连接。')
   }
 }
+
+// 加载工作流
+const loadWorkflow = () => {
+  // TODO: 实现加载工作流功能
+  console.log('加载工作流')
+}
+
+// 删除工作流
+const deleteWorkflow = () => {
+  // TODO: 实现删除工作流功能
+  console.log('删除工作流')
+}
+
+// 自动布局
+const autoLayout = () => {
+  const nodes = getNodes.value
+
+  // 按类型分组节点
+  const startNodes = nodes.filter((n) => n.type === 'start')
+  const llmNodes = nodes.filter((n) => n.type === 'llm')
+  const knowledgeNodes = nodes.filter((n) => n.type === 'knowledge')
+
+  // 放置开始节点 (左列)
+  startNodes.forEach((node, index) => {
+    updateNode(node.id, {
+      position: { x: 100, y: 100 + index * 120 },
+    })
+  })
+
+  // 放置 LLM 节点 (中列)
+  llmNodes.forEach((node, index) => {
+    updateNode(node.id, {
+      position: { x: 350, y: 100 + index * 120 },
+    })
+  })
+
+  // 放置知识库节点 (右列)
+  knowledgeNodes.forEach((node, index) => {
+    updateNode(node.id, {
+      position: { x: 600, y: 100 + index * 120 },
+    })
+  })
+}
 </script>
 
 <style scoped>
@@ -274,5 +348,80 @@ const saveWorkflow = async () => {
 
 .dark-flow :deep(.vue-flow__controls-button:hover) {
   background: var(--bg-tertiary);
+}
+
+/* Drawer toggle button */
+.drawer-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: right 0.3s ease;
+}
+
+.drawer-toggle.drawer-open {
+  right: 220px;
+}
+
+.drawer-toggle:hover {
+  background: var(--bg-tertiary);
+}
+
+.toggle-icon {
+  font-size: 12px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+/* Node creation drawer */
+.node-drawer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 220px;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-primary);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-title {
+  margin: 0;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.drawer-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawer-btn {
+  width: 100%;
+  justify-content: flex-start;
 }
 </style>

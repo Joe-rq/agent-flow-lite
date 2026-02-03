@@ -85,9 +85,43 @@ describe('WorkflowView Smoke Tests', () => {
       }
     })
     const text = wrapper.text()
+    // Toolbar now has management actions only
+    expect(text).toContain('加载')
+    expect(text).toContain('删除')
+    expect(text).toContain('保存')
+    expect(text).toContain('自动布局')
+  })
+
+  it('should display drawer with node creation buttons', () => {
+    const wrapper = mount(WorkflowView, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+    const text = wrapper.text()
+    // Drawer contains node creation buttons
+    expect(text).toContain('添加节点')
     expect(text).toContain('开始节点')
     expect(text).toContain('LLM 节点')
     expect(text).toContain('知识库节点')
-    expect(text).toContain('保存')
+  })
+
+  it('should have drawer toggle button', () => {
+    const wrapper = mount(WorkflowView, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+    expect(wrapper.find('.drawer-toggle').exists()).toBe(true)
+  })
+
+  it('should have auto-layout button', () => {
+    const wrapper = mount(WorkflowView, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+    const text = wrapper.text()
+    expect(text).toContain('自动布局')
   })
 })
