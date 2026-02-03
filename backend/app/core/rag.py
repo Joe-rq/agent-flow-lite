@@ -1,68 +1,57 @@
 """
-RAG (Retrieval-Augmented Generation) Pipeline using LlamaIndex.
+RAG Pipeline: document loading, chunking, embedding, and retrieval.
 
-This module provides core RAG functionality:
-- Document loading from file paths
-- Text chunking using SentenceSplitter
-- Vectorization using SiliconFlow embeddings (BGE-M3)
-- Storage to ChromaDB
-- Retrieval of top-k relevant chunks
+Uses SiliconFlow BGE-M3 for embeddings via OpenAI-compatible API,
+LlamaIndex for text chunking, and ChromaDB for vector storage.
 """
-import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional
 
+from openai import OpenAI
 from llama_index.core import Document as LlamaDocument
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.openai import OpenAIEmbedding
 
 from app.core.chroma_client import get_chroma_client
 from app.core.config import settings
 
 
-# Configuration
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 50
 TOP_K = 5
-
-# SiliconFlow BGE-M3 embedding model
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
-SILICONFLOW_API_BASE = "https://api.siliconflow.cn/v1"
 
 
-class SiliconFlowEmbedding(OpenAIEmbedding):
-    """SiliconFlow embedding adapter using OpenAI-compatible API."""
+class SiliconFlowEmbedding:
+    """SiliconFlow embedding client using OpenAI-compatible API."""
 
-    def __init__(
-        self,
-        model: str = DEFAULT_EMBEDDING_MODEL,
-        api_key: Optional[str] = None,
-        api_base: str = SILICONFLOW_API_BASE,
-        **kwargs
-    ):
-        api_key = api_key or settings().siliconflow_api_key
-        super().__init__(
-            model=model,
-            api_key=api_key,
-            api_base=api_base,
-            **kwargs
+    def __init__(self, model: str = DEFAULT_EMBEDDING_MODEL):
+        s = settings()
+        self.model = model
+        self.client = OpenAI(
+            api_key=s.siliconflow_api_key,
+            base_url=s.siliconflow_api_base,
         )
+
+    def get_text_embedding(self, text: str) -> list[float]:
+        """Get embedding for a single text."""
+        resp = self.client.embeddings.create(model=self.model, input=[text])
+        return resp.data[0].embedding
+
+    def get_text_embedding_batch(self, texts: list[str]) -> list[list[float]]:
+        """Get embeddings for a batch of texts."""
+        resp = self.client.embeddings.create(model=self.model, input=texts)
+        return [item.embedding for item in resp.data]
 
 
 class RAGPipeline:
     """RAG Pipeline for document processing and retrieval."""
 
-    def __init__(self, embedding_model: Optional[str] = None):
-        """Initialize the RAG pipeline."""
+    def __init__(self, embedding_model: str | None = None):
         self.embedding_model_name = embedding_model or DEFAULT_EMBEDDING_MODEL
         self.embed_model = SiliconFlowEmbedding(model=self.embedding_model_name)
         self.chroma_client = get_chroma_client()
-
-        # Initialize sentence splitter for chunking
         self.node_parser = SentenceSplitter(
-            chunk_size=CHUNK_SIZE,
-            chunk_overlap=CHUNK_OVERLAP,
+            chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
         )
 
     def load_document(self, file_path: str) -> str:
@@ -81,7 +70,7 @@ class RAGPipeline:
 
         return content
 
-    def chunk_document(self, content: str, doc_id: str) -> List[dict]:
+    def chunk_document(self, content: str, doc_id: str) -> list[dict]:
         """Split document content into chunks."""
         # Create LlamaIndex document
         doc = LlamaDocument(text=content)
@@ -164,7 +153,7 @@ class RAGPipeline:
         kb_id: str,
         query: str,
         top_k: int = TOP_K
-    ) -> List[dict]:
+    ) -> list[dict]:
         """Search for relevant chunks in a knowledge base."""
         # Get collection
         try:
