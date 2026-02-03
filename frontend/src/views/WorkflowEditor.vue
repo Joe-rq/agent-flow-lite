@@ -12,6 +12,9 @@
         <button class="btn-load" @click="loadWorkflows">
           加载工作流
         </button>
+        <button class="btn-run" @click="openRunDialog" :disabled="isRunning">
+          {{ isRunning ? '运行中...' : '运行工作流' }}
+        </button>
       </div>
       <div class="panel-content">
         <div
@@ -134,6 +137,40 @@
       </div>
     </div>
 
+    <div v-if="showRunDialog" class="dialog-overlay" @click.self="closeRunDialog">
+      <div class="dialog run-dialog">
+        <h3>运行工作流</h3>
+        <div class="run-meta">
+          <span>工作流：</span>
+          <strong>{{ currentWorkflowName || currentWorkflowId }}</strong>
+        </div>
+        <textarea
+          v-model="runInput"
+          class="run-input"
+          placeholder="请输入测试输入"
+          :disabled="isRunning"
+        ></textarea>
+        <div class="run-actions">
+          <button class="btn-run" @click="executeWorkflow" :disabled="isRunning">
+            运行
+          </button>
+          <button class="btn-secondary" @click="closeRunDialog" :disabled="isRunning">
+            关闭
+          </button>
+        </div>
+        <div class="run-output">
+          <div class="run-section-title">输出</div>
+          <pre>{{ runOutput }}</pre>
+        </div>
+        <div class="run-logs" v-if="runLogs.length">
+          <div class="run-section-title">事件</div>
+          <ul>
+            <li v-for="(log, index) in runLogs" :key="index">{{ log }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- 节点配置面板 -->
     <NodeConfigPanel
       :visible="configPanelVisible"
@@ -170,6 +207,13 @@ const isSaving = ref(false)
 const showLoadDialog = ref(false)
 const workflows = ref<{ id: string; name: string; created_at: string }[]>([])
 const panelAddCount = ref(0)
+const showRunDialog = ref(false)
+const runInput = ref('')
+const runOutput = ref('')
+const runLogs = ref<string[]>([])
+const isRunning = ref(false)
+const currentWorkflowId = ref<string | null>(null)
+const currentWorkflowName = ref('')
 
 // 配置面板状态
 const configPanelVisible = ref(false)
@@ -250,6 +294,8 @@ async function saveWorkflow() {
         }))
       }
     })
+    currentWorkflowId.value = response.data.id
+    currentWorkflowName.value = response.data.name
     showError('工作流保存成功！')
     console.log('Saved workflow:', response.data)
   } catch (error) {
@@ -299,6 +345,9 @@ async function loadWorkflow(workflowId: string) {
       })))
     }
 
+    currentWorkflowId.value = workflow.id
+    currentWorkflowName.value = workflow.name
+
     showLoadDialog.value = false
     showError('工作流加载成功！')
   } catch (error) {
@@ -326,6 +375,105 @@ function formatDate(dateStr: string): string {
     month: '2-digit',
     day: '2-digit',
   })
+}
+
+function openRunDialog() {
+  if (!currentWorkflowId.value) {
+    showError('请先保存或加载工作流')
+    return
+  }
+  runOutput.value = ''
+  runLogs.value = []
+  showRunDialog.value = true
+}
+
+function closeRunDialog() {
+  if (isRunning.value) return
+  showRunDialog.value = false
+}
+
+function appendRunLog(message: string) {
+  runLogs.value.push(message)
+}
+
+async function executeWorkflow() {
+  if (!currentWorkflowId.value) {
+    showError('请先保存或加载工作流')
+    return
+  }
+  if (!runInput.value.trim()) {
+    showError('请输入测试输入')
+    return
+  }
+
+  runOutput.value = ''
+  runLogs.value = []
+  isRunning.value = true
+
+  try {
+    const response = await fetch(`${API_BASE}/workflows/${currentWorkflowId.value}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: runInput.value })
+    })
+
+    if (!response.ok || !response.body) {
+      throw new Error('执行失败，请检查后端日志')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let currentEvent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7).trim()
+        } else if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6)
+          if (dataStr === '[DONE]') {
+            break
+          }
+          try {
+            const data = JSON.parse(dataStr)
+            if (currentEvent === 'token') {
+              runOutput.value += data.content || ''
+            } else if (currentEvent === 'workflow_start') {
+              appendRunLog(`开始工作流: ${data.workflow_name || ''}`)
+            } else if (currentEvent === 'node_start') {
+              appendRunLog(`执行节点: ${data.node_type || ''}`)
+            } else if (currentEvent === 'node_complete') {
+              appendRunLog(`节点完成: ${data.node_id || ''}`)
+            } else if (currentEvent === 'thought') {
+              appendRunLog(data.content || data.status || '处理中')
+            } else if (currentEvent === 'workflow_complete') {
+              appendRunLog('工作流执行完成')
+              if (data.final_output) {
+                runOutput.value = String(data.final_output)
+              }
+            } else if (currentEvent === 'workflow_error' || currentEvent === 'node_error') {
+              appendRunLog(`错误: ${data.error || '未知错误'}`)
+            } else if (currentEvent === 'done') {
+              appendRunLog(`状态: ${data.status || 'complete'}`)
+            }
+          } catch (error) {
+            console.warn('解析执行事件失败', error)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('执行工作流失败:', error)
+    showError('执行工作流失败')
+  } finally {
+    isRunning.value = false
+  }
 }
 
 // 拖拽开始
@@ -465,7 +613,7 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.btn-save, .btn-load {
+.btn-save, .btn-load, .btn-run {
   width: 100%;
   padding: 10px;
   border: none;
@@ -497,6 +645,20 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
 
 .btn-load:hover {
   background-color: #d5dbdb;
+}
+
+.btn-run {
+  background-color: #16a34a;
+  color: white;
+}
+
+.btn-run:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.btn-run:disabled {
+  background-color: #86efac;
+  cursor: not-allowed;
 }
 
 .panel-content {
@@ -584,6 +746,63 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
   max-width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+.run-dialog {
+  width: 640px;
+}
+
+.run-meta {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.run-input {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.run-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.run-output,
+.run-logs {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.run-output pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-size: 12px;
+  color: #111827;
+}
+
+.run-logs ul {
+  padding-left: 18px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #374151;
+}
+
+.run-section-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
 }
 
 .dialog h3 {
