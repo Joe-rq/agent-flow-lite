@@ -3,10 +3,10 @@
     <!-- 侧边栏：会话历史 -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <button class="new-chat-btn" @click="createNewSession">
+        <Button class="new-chat-btn" variant="primary" @click="createNewSession">
           <span class="icon">+</span>
           新建会话
-        </button>
+        </Button>
       </div>
       <div class="session-list">
         <div
@@ -97,13 +97,14 @@
             :disabled="isStreaming"
             @keydown.enter="sendMessage"
           />
-          <button
+          <Button
             class="send-btn"
+            variant="primary"
             :disabled="!inputMessage.trim() || isStreaming"
             @click="sendMessage"
           >
             发送
-          </button>
+          </Button>
         </div>
       </div>
     </main>
@@ -113,6 +114,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import axios from 'axios'
+import Button from '@/components/ui/Button.vue'
 
 // 类型定义
 interface Message {
@@ -525,41 +527,26 @@ watch(selectedWorkflowId, (value) => {
 .chat-terminal {
   display: flex;
   height: 100%;
-  background-color: #f5f5f5;
+  background-color: var(--bg-primary);
 }
 
 /* 侧边栏 */
 .sidebar {
   width: 260px;
-  background-color: #fff;
-  border-right: 1px solid #e0e0e0;
+  background-color: var(--surface-primary);
+  border-right: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
 }
 
 .sidebar-header {
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .new-chat-btn {
   width: 100%;
-  padding: 12px 16px;
-  background-color: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 8px;
-  transition: background-color 0.2s;
-}
-
-.new-chat-btn:hover {
-  background-color: #34495e;
 }
 
 .new-chat-btn .icon {
@@ -585,11 +572,11 @@ watch(selectedWorkflowId, (value) => {
 }
 
 .session-item:hover {
-  background-color: #f0f0f0;
+  background-color: var(--bg-tertiary);
 }
 
 .session-item.active {
-  background-color: #e3f2fd;
+  background-color: var(--accent-cyan-soft);
 }
 
 .session-info {
@@ -600,7 +587,7 @@ watch(selectedWorkflowId, (value) => {
 .session-title {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -608,7 +595,7 @@ watch(selectedWorkflowId, (value) => {
 
 .session-time {
   font-size: 12px;
-  color: #999;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -617,7 +604,7 @@ watch(selectedWorkflowId, (value) => {
   height: 24px;
   border: none;
   background: transparent;
-  color: #999;
+  color: var(--text-muted);
   font-size: 18px;
   cursor: pointer;
   border-radius: 4px;
@@ -634,8 +621,8 @@ watch(selectedWorkflowId, (value) => {
 }
 
 .session-delete-btn:hover {
-  background-color: #ffebee;
-  color: #e74c3c;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 /* 主聊天区域 */
@@ -643,7 +630,7 @@ watch(selectedWorkflowId, (value) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #fafafa;
+  background-color: var(--bg-primary);
 }
 
 .messages-container {
@@ -660,9 +647,9 @@ watch(selectedWorkflowId, (value) => {
   display: flex;
   gap: 16px;
   padding: 12px 20px;
-  background-color: #f1f5f9;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  background-color: var(--bg-tertiary);
+  border-top: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primary);
 }
 
 .config-item {
@@ -673,22 +660,22 @@ watch(selectedWorkflowId, (value) => {
 
 .config-item label {
   font-size: 12px;
-  color: #475569;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
 .config-item select {
   padding: 6px 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   font-size: 12px;
-  background-color: #ffffff;
+  background-color: var(--surface-primary);
   min-width: 150px;
   cursor: pointer;
 }
 
 .config-item select:disabled {
-  background-color: #e2e8f0;
+  background-color: var(--bg-tertiary);
   cursor: not-allowed;
 }
 
@@ -712,7 +699,7 @@ watch(selectedWorkflowId, (value) => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #e0e0e0;
+  background-color: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -736,15 +723,15 @@ watch(selectedWorkflowId, (value) => {
 }
 
 .message-wrapper.user .message-bubble {
-  background-color: #2c3e50;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
   color: white;
   border-bottom-right-radius: 4px;
 }
 
 .message-wrapper.assistant .message-bubble {
-  background-color: #fff;
-  color: #333;
-  border: 1px solid #e0e0e0;
+  background-color: var(--surface-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
   border-bottom-left-radius: 4px;
 }
 
@@ -758,7 +745,7 @@ watch(selectedWorkflowId, (value) => {
 .typing-indicator .dot {
   width: 6px;
   height: 6px;
-  background-color: #999;
+  background-color: var(--text-muted);
   border-radius: 50%;
   animation: typing 1.4s infinite;
 }
@@ -786,7 +773,7 @@ watch(selectedWorkflowId, (value) => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background-color: #fff3e0;
+  background-color: var(--accent-purple-soft);
   border-radius: 8px;
   margin: 0 auto;
   max-width: 60%;
@@ -799,7 +786,7 @@ watch(selectedWorkflowId, (value) => {
 
 .thought-text {
   font-size: 13px;
-  color: #e65100;
+  color: var(--accent-purple);
 }
 
 @keyframes fadeIn {
@@ -816,8 +803,8 @@ watch(selectedWorkflowId, (value) => {
 /* 输入区域 */
 .input-area {
   padding: 16px 20px;
-  background-color: #fff;
-  border-top: 1px solid #e0e0e0;
+  background-color: var(--surface-primary);
+  border-top: 1px solid var(--border-primary);
 }
 
 .input-wrapper {
@@ -830,39 +817,24 @@ watch(selectedWorkflowId, (value) => {
 .input-wrapper input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-primary);
   border-radius: 24px;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  background-color: var(--surface-primary);
 }
 
 .input-wrapper input:focus {
-  border-color: #2c3e50;
+  border-color: var(--accent-cyan);
 }
 
 .input-wrapper input:disabled {
-  background-color: #f5f5f5;
+  background-color: var(--bg-tertiary);
   cursor: not-allowed;
 }
 
 .send-btn {
-  padding: 12px 24px;
-  background-color: #2c3e50;
-  color: white;
-  border: none;
   border-radius: 24px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.send-btn:hover:not(:disabled) {
-  background-color: #34495e;
-}
-
-.send-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
 }
 </style>

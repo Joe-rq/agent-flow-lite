@@ -177,7 +177,7 @@
         </div>
       </div>
       <div class="dialog-actions">
-        <button class="btn-secondary" @click="showLoadDialog = false">关闭</button>
+        <Button variant="secondary" @click="showLoadDialog = false">关闭</Button>
       </div>
     </div>
   </div>
@@ -196,12 +196,12 @@
         :disabled="isRunning"
       ></textarea>
         <div class="run-actions">
-        <button class="btn-run" @click="executeWorkflow" :disabled="isRunning">
+        <Button variant="primary" @click="executeWorkflow" :disabled="isRunning">
           运行
-        </button>
-        <button class="btn-secondary" @click="closeRunDialog" :disabled="isRunning">
+        </Button>
+        <Button variant="secondary" @click="closeRunDialog" :disabled="isRunning">
           关闭
-        </button>
+        </Button>
       </div>
       <div class="run-output">
         <div class="run-section-title">输出</div>
@@ -1022,13 +1022,13 @@ function autoLayout() {
 .dialog h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .empty-dialog {
   text-align: center;
   padding: 40px 20px;
-  color: #7f8c8d;
+  color: var(--text-muted);
 }
 
 .workflow-list {
@@ -1041,26 +1041,26 @@ function autoLayout() {
 
 .workflow-item {
   padding: 12px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .workflow-item:hover {
-  background-color: #f8f9fa;
-  border-color: #3498db;
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-cyan);
 }
 
 .workflow-name {
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .workflow-meta {
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--text-muted);
 }
 
 .dialog-actions {
@@ -1070,9 +1070,9 @@ function autoLayout() {
 }
 
 .btn-secondary {
-  background-color: #ecf0f1;
-  color: #2c3e50;
-  border: 1px solid #bdc3c7;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
@@ -1081,6 +1081,6 @@ function autoLayout() {
 }
 
 .btn-secondary:hover {
-  background-color: #d5dbdb;
+  background-color: var(--bg-secondary);
 }
 </style>

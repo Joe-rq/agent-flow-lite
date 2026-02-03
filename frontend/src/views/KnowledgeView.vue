@@ -196,16 +196,16 @@
           />
         </div>
         <div class="dialog-actions">
-          <button class="btn-secondary" @click="showCreateDialog = false">
+          <Button variant="secondary" @click="showCreateDialog = false">
             取消
-          </button>
-          <button
-            class="btn-primary"
+          </Button>
+          <Button
+            variant="primary"
             :disabled="!newKBName.trim()"
             @click="createKnowledgeBase"
           >
             创建
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -215,6 +215,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import Button from '@/components/ui/Button.vue'
 
 // 类型定义
 interface KnowledgeBase {
@@ -969,17 +970,18 @@ onUnmounted(() => {
 }
 
 .dialog {
-  background: white;
+  background: var(--bg-secondary, #ffffff);
   border-radius: 8px;
   padding: 24px;
   width: 400px;
   max-width: 90vw;
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.2));
 }
 
 .dialog h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: #2c3e50;
+  color: var(--text-primary, #0f172a);
 }
 
 .form-group {
@@ -990,22 +992,24 @@ onUnmounted(() => {
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--text-primary, #0f172a);
   font-weight: 500;
 }
 
 .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #bdc3c7;
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
+  background: var(--bg-primary, #f8fafc);
+  color: var(--text-primary, #0f172a);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--accent-cyan, #0891b2);
 }
 
 .dialog-actions {
