@@ -16,8 +16,17 @@
           :class="{ active: currentSessionId === session.id }"
           @click="switchSession(session.id)"
         >
-          <div class="session-title">{{ session.title }}</div>
-          <div class="session-time">{{ formatTime(session.updatedAt) }}</div>
+          <div class="session-info">
+            <div class="session-title">{{ session.title }}</div>
+            <div class="session-time">{{ formatTime(session.updatedAt) }}</div>
+          </div>
+          <button
+            class="session-delete-btn"
+            @click.stop="deleteSession(session.id)"
+            title="删除会话"
+          >
+            ×
+          </button>
         </div>
       </div>
     </aside>
@@ -172,6 +181,38 @@ function createNewSession() {
   sessions.value.unshift(newSession)
   currentSessionId.value = newSession.id
   currentThought.value = ''
+}
+
+// 删除会话
+async function deleteSession(sessionId: string) {
+  if (!confirm('确定要删除此会话吗？')) return
+
+  try {
+    await axios.delete(`/api/v1/chat/sessions/${sessionId}`)
+    sessions.value = sessions.value.filter(s => s.id !== sessionId)
+
+    // 如果删除的是当前会话，切换到第一个会话或创建新会话
+    if (currentSessionId.value === sessionId) {
+      const firstSession = sessions.value[0]
+      if (firstSession) {
+        currentSessionId.value = firstSession.id
+      } else {
+        createNewSession()
+      }
+    }
+  } catch (error) {
+    console.error('删除会话失败:', error)
+    // 即使后端删除失败，也从本地移除（可能是本地创建的会话）
+    sessions.value = sessions.value.filter(s => s.id !== sessionId)
+    if (currentSessionId.value === sessionId) {
+      const firstSession = sessions.value[0]
+      if (firstSession) {
+        currentSessionId.value = firstSession.id
+      } else {
+        createNewSession()
+      }
+    }
+  }
 }
 
 
@@ -538,6 +579,9 @@ watch(selectedWorkflowId, (value) => {
   cursor: pointer;
   transition: background-color 0.2s;
   margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .session-item:hover {
@@ -546,6 +590,11 @@ watch(selectedWorkflowId, (value) => {
 
 .session-item.active {
   background-color: #e3f2fd;
+}
+
+.session-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .session-title {
@@ -561,6 +610,32 @@ watch(selectedWorkflowId, (value) => {
   font-size: 12px;
   color: #999;
   margin-top: 4px;
+}
+
+.session-delete-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.session-item:hover .session-delete-btn {
+  opacity: 1;
+}
+
+.session-delete-btn:hover {
+  background-color: #ffebee;
+  color: #e74c3c;
 }
 
 /* 主聊天区域 */

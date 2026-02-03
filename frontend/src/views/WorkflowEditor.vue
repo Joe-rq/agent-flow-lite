@@ -15,6 +15,13 @@
         <button class="btn-run" @click="openRunDialog" :disabled="isRunning">
           {{ isRunning ? '运行中...' : '运行工作流' }}
         </button>
+        <button
+          class="btn-delete-wf"
+          @click="deleteWorkflow"
+          :disabled="!currentWorkflowId"
+        >
+          删除工作流
+        </button>
       </div>
       <div class="panel-content">
         <div
@@ -270,36 +277,55 @@ function showError(message: string) {
 // 保存工作流
 async function saveWorkflow() {
   if (isSaving.value) return
-  
-  const workflowName = prompt('请输入工作流名称:', '新建工作流')
-  if (!workflowName) return
-  
+
+  const isUpdate = !!currentWorkflowId.value
+  let workflowName = currentWorkflowName.value
+
+  if (!isUpdate) {
+    workflowName = prompt('请输入工作流名称:', '新建工作流') || ''
+    if (!workflowName) return
+  }
+
   isSaving.value = true
   try {
     const flowData = toObject()
-    const response = await axios.post(`${API_BASE}/workflows`, {
-      name: workflowName,
-      description: '',
-      graph_data: {
-        nodes: flowData.nodes.map((n: any) => ({
-          id: n.id,
-          type: n.type,
-          position: n.position,
-          label: n.label,
-          data: n.data || {}
-        })),
-        edges: flowData.edges.map((e: any) => ({
-          id: e.id,
-          source: e.source,
-          target: e.target,
-          sourceHandle: e.sourceHandle,
-          targetHandle: e.targetHandle
-        }))
-      }
-    })
-    currentWorkflowId.value = response.data.id
-    currentWorkflowName.value = response.data.name
-    showError('工作流保存成功！')
+    const graphData = {
+      nodes: flowData.nodes.map((n: any) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        label: n.label,
+        data: n.data || {}
+      })),
+      edges: flowData.edges.map((e: any) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle
+      }))
+    }
+
+    let response
+    if (isUpdate) {
+      // 更新已有工作流
+      response = await axios.put(`${API_BASE}/workflows/${currentWorkflowId.value}`, {
+        name: workflowName,
+        description: '',
+        graph_data: graphData
+      })
+      showError('工作流更新成功！')
+    } else {
+      // 创建新工作流
+      response = await axios.post(`${API_BASE}/workflows`, {
+        name: workflowName,
+        description: '',
+        graph_data: graphData
+      })
+      currentWorkflowId.value = response.data.id
+      currentWorkflowName.value = response.data.name
+      showError('工作流保存成功！')
+    }
     console.log('Saved workflow:', response.data)
   } catch (error) {
     console.error('保存工作流失败:', error)
@@ -318,6 +344,31 @@ async function loadWorkflows() {
   } catch (error) {
     console.error('加载工作流列表失败:', error)
     showError('加载工作流列表失败')
+  }
+}
+
+// 删除工作流
+async function deleteWorkflow() {
+  if (!currentWorkflowId.value) {
+    showError('请先加载一个工作流')
+    return
+  }
+
+  if (!confirm(`确定要删除工作流「${currentWorkflowName.value}」吗？此操作不可恢复。`)) {
+    return
+  }
+
+  try {
+    await axios.delete(`${API_BASE}/workflows/${currentWorkflowId.value}`)
+    showError('工作流删除成功！')
+    // 重置状态
+    currentWorkflowId.value = null
+    currentWorkflowName.value = ''
+    setNodes([{ id: '1', type: 'start', label: '开始', position: { x: 100, y: 100 } }])
+    setEdges([])
+  } catch (error) {
+    console.error('删除工作流失败:', error)
+    showError('删除工作流失败')
   }
 }
 
@@ -677,6 +728,24 @@ function saveNodeConfig(nodeId: string, data: Record<string, any>) {
 
 .btn-run:disabled {
   background-color: #86efac;
+  cursor: not-allowed;
+}
+
+.btn-delete-wf {
+  background-color: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.btn-delete-wf:hover:not(:disabled) {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+.btn-delete-wf:disabled {
+  background-color: #f9fafb;
+  color: #d1d5db;
+  border-color: #e5e7eb;
   cursor: not-allowed;
 }
 

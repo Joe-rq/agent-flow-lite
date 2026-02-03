@@ -21,6 +21,12 @@
         </div>
         <div class="kb-card-footer">
           <span class="kb-created">创建于 {{ formatDate(kb.createdAt) }}</span>
+          <button
+            class="btn-delete-kb"
+            @click.stop="deleteKnowledgeBase(kb.id, kb.name)"
+          >
+            删除
+          </button>
         </div>
       </div>
 
@@ -486,6 +492,19 @@ async function deleteDocument(docId: string) {
   }
 }
 
+// 删除知识库
+async function deleteKnowledgeBase(kbId: string, kbName: string) {
+  if (!confirm(`确定要删除知识库「${kbName}」吗？所有文档和向量数据将被永久删除。`)) return
+
+  try {
+    await axios.delete(`${API_BASE}/knowledge/${kbId}`)
+    knowledgeBases.value = knowledgeBases.value.filter(kb => kb.id !== kbId)
+  } catch (error) {
+    console.error('删除知识库失败:', error)
+    showError('删除知识库失败')
+  }
+}
+
 // 执行检索
 async function performSearch() {
   if (!selectedKB.value || !searchQuery.value.trim()) return
@@ -677,6 +696,30 @@ onUnmounted(() => {
 .kb-card-footer {
   color: #95a5a6;
   font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-delete-kb {
+  padding: 4px 10px;
+  background-color: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.kb-card:hover .btn-delete-kb {
+  opacity: 1;
+}
+
+.btn-delete-kb:hover {
+  background-color: #e74c3c;
+  color: white;
 }
 
 .empty-state {
