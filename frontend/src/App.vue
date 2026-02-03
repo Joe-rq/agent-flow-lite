@@ -1,5 +1,20 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { ref, onMounted } from 'vue'
+
+const sidebarCollapsed = ref(false)
+
+onMounted(() => {
+  const saved = localStorage.getItem('sidebar-collapsed')
+  if (saved !== null) {
+    sidebarCollapsed.value = saved === 'true'
+  }
+})
+
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('sidebar-collapsed', String(sidebarCollapsed.value))
+}
 </script>
 
 <template>
@@ -9,12 +24,27 @@ import { RouterLink, RouterView } from 'vue-router'
     </header>
 
     <div class="app-body">
-      <aside class="app-sidebar">
+      <aside class="app-sidebar" :class="{ collapsed: sidebarCollapsed }">
+        <button class="sidebar-toggle" @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'">
+          <span class="toggle-icon">{{ sidebarCollapsed ? '→' : '←' }}</span>
+        </button>
         <nav>
-          <RouterLink to="/">首页</RouterLink>
-          <RouterLink to="/workflow">工作流</RouterLink>
-          <RouterLink to="/knowledge">知识库</RouterLink>
-          <RouterLink to="/chat">对话</RouterLink>
+          <RouterLink to="/" :title="sidebarCollapsed ? '首页' : ''">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">首页</span>
+          </RouterLink>
+          <RouterLink to="/workflow" :title="sidebarCollapsed ? '工作流' : ''">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-text">工作流</span>
+          </RouterLink>
+          <RouterLink to="/knowledge" :title="sidebarCollapsed ? '知识库' : ''">
+            <span class="nav-icon">📚</span>
+            <span class="nav-text">知识库</span>
+          </RouterLink>
+          <RouterLink to="/chat" :title="sidebarCollapsed ? '对话' : ''">
+            <span class="nav-icon">💬</span>
+            <span class="nav-text">对话</span>
+          </RouterLink>
         </nav>
       </aside>
 
@@ -75,12 +105,55 @@ body {
   padding: 20px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-primary);
+  transition: width 300ms ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.app-sidebar.collapsed {
+  width: 60px;
+  padding: 20px 10px;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  z-index: 10;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--accent-cyan-soft);
+  color: var(--accent-cyan);
+}
+
+.toggle-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.app-sidebar.collapsed .sidebar-toggle {
+  right: 50%;
+  transform: translateX(50%);
 }
 
 .app-sidebar nav {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 40px;
 }
 
 .app-sidebar a {
@@ -92,6 +165,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .app-sidebar a:hover {
@@ -103,6 +178,33 @@ body {
   color: var(--accent-cyan);
   background-color: var(--accent-cyan-soft);
   box-shadow: 0 0 15px var(--accent-cyan-glow);
+}
+
+.nav-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.nav-text {
+  transition: opacity 300ms ease, width 300ms ease;
+  opacity: 1;
+}
+
+.app-sidebar.collapsed .nav-text {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.app-sidebar.collapsed a {
+  padding: 12px;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .nav-icon {
+  width: auto;
 }
 
 .app-main {
