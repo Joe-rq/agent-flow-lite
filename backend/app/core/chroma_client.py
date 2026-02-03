@@ -66,9 +66,11 @@ class ChromaClient:
         try:
             self._client.delete_collection(name=collection_name)
             return True
-        except ValueError:
-            # Collection doesn't exist
-            return False
+        except (ValueError, Exception) as e:
+            # Collection doesn't exist or other error
+            if "does not exist" in str(e).lower() or "not found" in str(e).lower():
+                return False
+            raise
 
     def collection_exists(self, kb_id: str) -> bool:
         """
