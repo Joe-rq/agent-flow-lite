@@ -113,10 +113,13 @@ uv run python test_deepseek.py
 **Views** (`frontend/src/views/`):
 - `HomeView.vue` - Landing page
 - `WorkflowView.vue` - Workflow list and management
-- `WorkflowEditor.vue` - Visual workflow editor (Vue Flow canvas)
+- `WorkflowEditor.vue` - Visual workflow editor (Vue Flow canvas with top toolbar + right drawer + left info panel)
 - `KnowledgeView.vue` - Knowledge base management with document upload
 - `ChatView.vue` - Chat interface selector
 - `ChatTerminal.vue` - SSE streaming chat terminal with thought process display
+
+**Node Components** (`frontend/src/components/nodes/`):
+- `StartNode.vue`, `LLMNode.vue`, `KnowledgeNode.vue`, `ConditionNode.vue`, `EndNode.vue`
 
 **State Management** (`frontend/src/stores/`):
 - Uses Pinia for global state (minimal usage, mostly component-local state)
@@ -129,16 +132,25 @@ uv run python test_deepseek.py
 - Endpoint: `POST /api/v1/chat/completions`
 - Events: `thought` (RAG retrieval), `token` (LLM output), `citation` (sources), `done` (completion)
 - Supports three modes: simple chat, RAG-enhanced chat, workflow execution
+- Session persistence via `data/sessions/{session_id}.json` with FileLock for concurrency
 
 **Workflow Execution** (`backend/app/core/workflow_engine.py`):
 - BFS graph traversal with execution context
 - Supports conditional branching via `sourceHandle` (true/false)
 - Streams events: `workflow_start`, `node_start`, `token`, `node_complete`, `workflow_complete`
+- Node executors mapped in `_execute_node`: start, llm, knowledge, condition, end
+- Variable resolution via `{{step1.output}}` interpolation in `ExecutionContext`
 
 **RAG Pipeline** (`backend/app/core/rag.py`):
 - Document processing: load → chunk (512 tokens, 50 overlap) → embed → store
 - Retrieval: query embedding → ChromaDB similarity search → top-k results
 - Embedding model: SiliconFlow BGE-M3 via OpenAI-compatible API
+- Chunking: LlamaIndex SentenceSplitter with configurable chunk_size/overlap
+
+**ChromaDB Client** (`backend/app/core/chroma_client.py`):
+- Singleton pattern: `get_chroma_client()`
+- One collection per knowledge base (kb_id)
+- PersistentClient storage at `backend/data/chromadb/`
 
 ## Configuration
 
@@ -199,6 +211,7 @@ CORS_ORIGINS=http://localhost:5173
 - Test runner: Vitest with jsdom
 - Run: `npm run test` or `npm run test:ui`
 - Test files: `frontend/src/__tests__/**/*.spec.ts`
+- Mock Vue Flow components in tests (see `WorkflowView.spec.ts`)
 
 **Backend:**
 - No pytest configured (manual test scripts only)
@@ -209,10 +222,11 @@ CORS_ORIGINS=http://localhost:5173
 - **Python package management:** Use `uv` exclusively (not pip directly)
 - **Virtual environment:** Always create `.venv` in project folder with `uv venv`
 - **API documentation:** Available at http://localhost:8000/docs (Swagger) and http://localhost:8000/redoc
-- **Session persistence:** Chat sessions stored as JSON files in `backend/data/sessions/`
+- **Session persistence:** Chat sessions stored as JSON files in `backend/data/sessions/` with FileLock
 - **ChromaDB collections:** One collection per knowledge base (kb_id)
 - **Workflow execution:** Stateless (no persistence of execution state)
 - **SSE streaming:** Requires `X-Accel-Buffering: no` header for nginx compatibility
+- **WorkflowEditor layout:** Top toolbar (save/load/run/delete/auto-layout) + Right drawer (node addition) + Left info panel (workflow info only)
 
 ## Common Patterns
 
@@ -226,23 +240,23 @@ CORS_ORIGINS=http://localhost:5173
 
 ### Adding a New Workflow Node Type
 
-1. Add node type to `backend/app/core/workflow_nodes.py`
-2. Create `execute_{type}_node` async generator function
-3. Register executor in `WorkflowEngine._execute_node` (workflow_engine.py)
-4. Update frontend node palette in `WorkflowEditor.vue`
-5. Define node data schema in `backend/app/models/workflow.py`
+1. Add `execute_{type}_node` async generator function to `backend/app/core/workflow_nodes.py`
+2. Register executor in `WorkflowEngine._execute_node` (workflow_engine.py) with mapping
+3. Add node component to `frontend/src/components/nodes/{Type}Node.vue`
+4. Update frontend node palette in `WorkflowEditor.vue` drawer
+5. Define node data schema in `backend/app/models/workflow.py` if needed
 
 ### Extending RAG Pipeline
 
 - Embedding logic: `backend/app/core/rag.py` → `SiliconFlowEmbedding`
-- Chunking strategy: `backend/app/core/rag.py` → `RAGPipeline.__init__` (SentenceSplitter params)
+- Chunking strategy: `backend/app/core/rag.py` → `RAGPipeline.__init__` (SentenceSplitter params: CHUNK_SIZE=512, CHUNK_OVERLAP=50)
 - Retrieval logic: `backend/app/core/rag.py` → `RAGPipeline.search`
 - ChromaDB operations: `backend/app/core/chroma_client.py`
 
 ## Troubleshooting
 
-- **ChromaDB errors:** Check `backend/data/chromadb/` permissions and disk space
-- **SSE not streaming:** Verify `X-Accel-Buffering: no` header and CORS settings
+- **ChromaDB errors:** Check `backend/data/chromadb/` permissions and disk space. Delete directory to reset.
+- **SSE not streaming:** Verify `X-Accel-Buffering: no` header and CORS settings in `.env`
 - **API key errors:** Ensure `.env` file exists in `backend/` with valid keys
 - **Frontend proxy errors:** Backend must be running on port 8000
 - **Import errors:** Run `uv pip install -e .` in backend directory

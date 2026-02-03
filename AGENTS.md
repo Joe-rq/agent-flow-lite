@@ -39,6 +39,14 @@ Follow it strictly to avoid style drift and broken workflows.
   - `npm run lint:eslint`
 - Format (prettier):
   - `npm run format`
+- Run all tests:
+  - `npm run test`
+- Run tests with UI:
+  - `npm run test:ui`
+- Run single test file:
+  - `npx vitest run src/components/__tests__/MyComponent.spec.ts`
+- Run single test in watch mode:
+  - `npx vitest src/components/__tests__/MyComponent.spec.ts`
 
 ### Backend (backend/)
 
@@ -46,19 +54,27 @@ Follow it strictly to avoid style drift and broken workflows.
   - `cd backend && uv pip install -e .`
 - Run dev server:
   - `uv run uvicorn main:app --reload`
+- Run manual test scripts:
+  - `uv run python test_chat_api.py`
+  - `uv run python test_deepseek.py`
 
 ### Single Test Execution
 
-There is no pytest/vitest configured.
-Backend tests are manual scripts:
+**Frontend (Vitest):**
+```bash
+cd frontend
+# Run specific test file
+npx vitest run src/components/__tests__/MyComponent.spec.ts
 
-- Chat API sanity test:
-  - `cd backend && uv run python test_chat_api.py`
-- DeepSeek API connectivity test:
-  - `cd backend && uv run python test_deepseek.py`
+# Run specific test in watch mode
+npx vitest src/components/__tests__/MyComponent.spec.ts
 
-Frontend has no unit test runner configured.
-Use lint + type-check as the primary automated checks.
+# Run tests matching pattern
+npx vitest run --reporter=verbose MyComponent
+```
+
+**Backend:**
+No pytest configured. Use manual test scripts or create new scripts for testing.
 
 ## Code Style Guidelines
 
@@ -80,8 +96,8 @@ Use lint + type-check as the primary automated checks.
   - Source: frontend/.prettierrc.json
 - Linting uses ESLint + OXLint (essential + recommended configs)
   - Source: frontend/eslint.config.ts and frontend/.oxlintrc.json
-- Prefer <script setup lang="ts"> in .vue files
-- Keep Vue SFC order: <template>, <script setup>, <style scoped>
+- Prefer `<script setup lang="ts">` in .vue files
+- Keep Vue SFC order: `<template>`, `<script setup>`, `<style scoped>`
 - Use @/ alias for src imports (see frontend/tsconfig.app.json)
 - Keep components small and cohesive; avoid large monolithic views
 - Avoid adding new UI libraries without explicit requirement
@@ -92,7 +108,7 @@ Use lint + type-check as the primary automated checks.
 
 - Use docstrings for modules and public functions
 - Use type hints everywhere (see existing code)
-- Keep imports ordered: stdlib, third-party, local
+- Keep imports ordered: stdlib → third-party → local
 - Use APIRouter with versioned prefix (/api/v1/...) and tags
 - Prefer Path from pathlib for filesystem paths
 - Use Pydantic models in app/models for request/response schemas
