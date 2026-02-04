@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:tutorial.clouddreamai.com)",
+      "Bash(.venv/Scripts/python.exe -c \"from app.api.workflow import router; from app.api.knowledge import router; from app.api.chat import router; print\\(''All imports successful''\\)\")",
+      "Bash(curl:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(tasklist:*)",
+      "Bash(powershell.exe -Command \"Get-Process -Name python -ErrorAction SilentlyContinue | Select-Object Id, ProcessName\")",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(.venv/Scripts/python:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test)",
+      "Bash(git add CLAUDE.md)",
+      "Bash(git add README.md)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: 添加 CLAUDE.md 并全面更新 README.md\n\n- 新增 CLAUDE.md 为 Claude Code 提供项目架构和开发指南\n- 完善 README.md 的快速开始、配置说明和技术架构部分\n- 补充 SiliconFlow API 配置说明\n- 新增常见问题和故障排除部分\n- 优化文档结构和可读性\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: 重构 README 结构，提升可读性和逻辑性\n\n- 重新组织章节顺序，遵循用户使用流程\n- 新增使用指南章节，面向最终用户\n- 优化快速开始流程，使用表格展示信息\n- 改进常见问题，使用折叠标签节省空间\n- 简化技术架构说明，突出核心模块\n- 统一视觉风格，增强可读性\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(git mv:*)",
+      "Bash(git add:*)",
+      "Bash(tree docs -L 2)",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ndocs: 重构文档目录结构，提升可维护性\n\n- 将根目录 15 个文档文件整理到 docs/ 子目录\n- docs/design/ - 放置设计文档 \\(prd, api_docs, db_schema, tech_stack_analysis, implementation_plan\\)\n- docs/testing/ - 放置测试文档 \\(manual-test-guide, node-config-test-report, demo_script, test-manual-checklist\\)\n- docs/archive/ - 放置归档文档 \\(CODE_REVIEW_REPORT, OPTIMIZATION_PLAN, task\\)\n- 根目录保留 3 个核心文档 \\(README.md, CLAUDE.md, AGENTS.md\\)\n- 新增 docs/README.md 说明文档结构\nEOF\n\\)\")",
+      "Bash(tree:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
