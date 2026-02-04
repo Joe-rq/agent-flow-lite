@@ -66,13 +66,13 @@
 9. 更新的节点组件 - StartNode, LLMNode, KnowledgeNode等
 
 ### Definition of Done
-- [ ] 所有页面使用深色主题配色
-- [ ] 工作流编辑器节点具有发光效果
-- [ ] 聊天界面配置栏改为悬浮面板
-- [ ] 首页展示产品功能而非Vue欢迎信息
-- [ ] 所有交互元素有hover和active状态
-- [ ] 页面切换有平滑过渡动画
-- [ ] 在Chrome/Firefox/Safari中显示正常
+- [x] 所有页面使用深色主题配色
+- [x] 工作流编辑器节点具有发光效果
+- [x] 聊天界面配置栏改为悬浮面板
+- [x] 首页展示产品功能而非Vue欢迎信息
+- [x] 所有交互元素有hover和active状态
+- [x] 页面切换有平滑过渡动画
+- [x] 在Chrome/Firefox/Safari中显示正常
 
 ### Must Have
 - 深色主题配色系统
@@ -113,11 +113,11 @@
 ```
 
 **Visual Verification Checklist**:
-- [ ] 页面背景为深色（#0d1117或类似）
-- [ ] 文字对比度足够，清晰可读
-- [ ] 侧边栏有毛玻璃效果
-- [ ] 工作流节点有彩色发光边框
-- [ ] 按钮有hover状态变化
+- [x] 页面背景为深色（#0d1117或类似）
+- [x] 文字对比度足够，清晰可读
+- [x] 侧边栏有毛玻璃效果
+- [x] 工作流节点有彩色发光边框
+- [x] 按钮有hover状态变化
 
 ---
 
@@ -173,7 +173,7 @@ Wave 4 (Polish - After Wave 3):
 
 ## TODOs
 
-- [ ] 1. Create theme.css - CSS variable system
+- [x] 1. Create theme.css - CSS variable system
 
   **What to do**:
   - Create `frontend/src/styles/theme.css`
@@ -204,10 +204,10 @@ Wave 4 (Polish - After Wave 3):
   - Neon accents: #00d4ff (cyan), #a855f7 (purple)
 
   **Acceptance Criteria**:
-  - [ ] File created at `frontend/src/styles/theme.css`
-  - [ ] Contains :root with all CSS variables
-  - [ ] Variables include: bg-primary, bg-secondary, accent-cyan, accent-purple, text-primary, text-secondary
-  - [ ] Can be imported in main.ts
+- [x] File created at `frontend/src/styles/theme.css`
+  - [x] Contains :root with all CSS variables
+  - [x] Variables include: bg-primary, bg-secondary, accent-cyan, accent-purple, text-primary, text-secondary
+  - [x] Can be imported in main.ts
 
   **Commit**: YES
   - Message: `feat(ui): add dark theme CSS variable system`
@@ -215,7 +215,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 2. Create animations.css - Global animations
+- [x] 2. Create animations.css - Global animations
 
   **What to do**:
   - Create `frontend/src/styles/animations.css`
@@ -242,10 +242,10 @@ Wave 4 (Polish - After Wave 3):
   - Performance: use transform and opacity only
 
   **Acceptance Criteria**:
-  - [ ] File created at `frontend/src/styles/animations.css`
-  - [ ] Contains keyframes for: fadeIn, slideInUp, pulse, glow
-  - [ ] Contains utility classes: .animate-fade-in, .animate-slide-up
-  - [ ] Can be imported in main.ts
+- [x] File created at `frontend/src/styles/animations.css`
+  - [x] Contains keyframes for: fadeIn, slideInUp, pulse, glow
+  - [x] Contains utility classes: .animate-fade-in, .animate-slide-up
+  - [x] Can be imported in main.ts
 
   **Commit**: YES
   - Message: `feat(ui): add global animation utilities`
@@ -253,7 +253,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 3. Create UI component library
+- [x] 3. Create UI component library
 
   **What to do**:
   - Create `frontend/src/components/ui/` directory
@@ -280,11 +280,11 @@ Wave 4 (Polish - After Wave 3):
   - Vue 3 script setup syntax
 
   **Acceptance Criteria**:
-  - [ ] Directory created: `frontend/src/components/ui/`
-  - [ ] Button.vue with variants: primary, secondary, danger
-  - [ ] Card.vue with glassmorphism effect
-  - [ ] Modal.vue with backdrop blur
-  - [ ] Input.vue with focus states
+- [x] Directory created: `frontend/src/components/ui/`
+  - [x] Button.vue with variants: primary, secondary, danger
+  - [x] Card.vue with glassmorphism effect
+  - [x] Modal.vue with backdrop blur
+  - [x] Input.vue with focus states
 
   **Commit**: YES
   - Message: `feat(ui): add reusable UI component library`
@@ -292,7 +292,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 4. Refactor App.vue layout
+- [x] 4. Refactor App.vue layout
 
   **What to do**:
   - Update `frontend/src/App.vue`
@@ -321,11 +321,11 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/src/styles/animations.css` (created in Task 2)
 
   **Acceptance Criteria**:
-  - [ ] Header only shows logo and user menu
-  - [ ] Sidebar has glassmorphism effect
-  - [ ] Background is dark (#0d1117)
-  - [ ] Navigation links have hover effects
-  - [ ] Active route highlighted with accent color
+  - [x] Header only shows logo and user menu
+  - [x] Sidebar has glassmorphism effect
+  - [x] Background is dark (#0d1117)
+  - [x] Navigation links have hover effects
+  - [x] Active route highlighted with accent color
 
   **Commit**: YES
   - Message: `feat(ui): refactor App.vue with dark theme layout`
@@ -333,7 +333,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 5. Redesign HomeView.vue
+- [x] 5. Redesign HomeView.vue
 
   **What to do**:
   - Replace Vue default welcome content
@@ -361,11 +361,11 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/src/components/ui/Card.vue` (created in Task 3)
 
   **Acceptance Criteria**:
-  - [ ] Shows product name and tagline
-  - [ ] Feature cards for: Workflow, Knowledge, Chat
-  - [ ] Quick action buttons
-  - [ ] Dark theme styling
-  - [ ] Responsive layout
+  - [x] Shows product name and tagline
+  - [x] Feature cards for: Workflow, Knowledge, Chat
+  - [x] Quick action buttons
+  - [x] Dark theme styling
+  - [x] Responsive layout
 
   **Commit**: YES
   - Message: `feat(ui): redesign homepage with product focus`
@@ -373,7 +373,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 6. Upgrade WorkflowView.vue
+- [x] 6. Upgrade WorkflowView.vue
 
   **What to do**:
   - Update `frontend/src/views/WorkflowView.vue`
@@ -402,10 +402,10 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/src/components/nodes/*.vue`
 
   **Acceptance Criteria**:
-  - [ ] Vue Flow uses dark mode
-  - [ ] Toolbar has dark styling
-  - [ ] Canvas has grid/dot background
-  - [ ] Buttons use UI component library
+  - [x] Vue Flow uses dark mode
+  - [x] Toolbar has dark styling
+  - [x] Canvas has grid/dot background
+  - [x] Buttons use UI component library
 
   **Commit**: YES
   - Message: `feat(ui): upgrade workflow editor with dark theme`
@@ -413,7 +413,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 7. Upgrade ChatTerminal.vue
+- [x] 7. Upgrade ChatTerminal.vue
 
   **What to do**:
   - Update `frontend/src/views/ChatTerminal.vue`
@@ -441,11 +441,11 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/src/styles/animations.css` (typing indicator)
 
   **Acceptance Criteria**:
-  - [ ] Config bar is floating panel (not fixed)
-  - [ ] Message bubbles have dark theme
-  - [ ] User messages use accent color
-  - [ ] AI messages have glassmorphism
-  - [ ] Typing indicator animated
+  - [x] Config bar is floating panel (not fixed)
+  - [x] Message bubbles have dark theme
+  - [x] User messages use accent color
+  - [x] AI messages have glassmorphism
+  - [x] Typing indicator animated
 
   **Commit**: YES
   - Message: `feat(ui): upgrade chat interface with floating config`
@@ -453,7 +453,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 8. Upgrade KnowledgeView.vue
+- [x] 8. Upgrade KnowledgeView.vue
 
   **What to do**:
   - Update `frontend/src/views/KnowledgeView.vue`
@@ -481,10 +481,10 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/src/components/ui/Card.vue`
 
   **Acceptance Criteria**:
-  - [ ] Knowledge cards have glassmorphism
-  - [ ] Upload area has dashed border + hover effect
-  - [ ] Document table has dark theme
-  - [ ] Progress bars use accent colors
+  - [x] Knowledge cards have glassmorphism
+  - [x] Upload area has dashed border + hover effect
+  - [x] Document table has dark theme
+  - [x] Progress bars use accent colors
 
   **Commit**: YES
   - Message: `feat(ui): upgrade knowledge base management UI`
@@ -492,7 +492,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 9. Upgrade node components
+- [x] 9. Upgrade node components
 
   **What to do**:
   - Update all node components in `frontend/src/components/nodes/`
@@ -528,11 +528,11 @@ Wave 4 (Polish - After Wave 3):
   - CSS box-shadow for glow effects
 
   **Acceptance Criteria**:
-  - [ ] StartNode: green glow (#22c55e)
-  - [ ] LLMNode: purple glow (#a855f7)
-  - [ ] KnowledgeNode: blue glow (#3b82f6)
-  - [ ] EndNode: gray/red glow
-  - [ ] All nodes have hover scale effect
+  - [x] StartNode: green glow (#22c55e)
+  - [x] LLMNode: purple glow (#a855f7)
+  - [x] KnowledgeNode: blue glow (#3b82f6)
+  - [x] EndNode: gray/red glow
+  - [x] All nodes have hover scale effect
 
   **Commit**: YES
   - Message: `feat(ui): add glowing effects to workflow nodes`
@@ -540,7 +540,7 @@ Wave 4 (Polish - After Wave 3):
 
 ---
 
-- [ ] 10. Final polish and verification
+- [x] 10. Final polish and verification
 
   **What to do**:
   - Update `frontend/src/main.ts` to import new styles
@@ -568,11 +568,11 @@ Wave 4 (Polish - After Wave 3):
   - `frontend/package.json` scripts
 
   **Acceptance Criteria**:
-  - [ ] `npm run lint` passes
-  - [ ] `npm run type-check` passes
-  - [ ] All pages display correctly
-  - [ ] Screenshots saved to `.sisyphus/evidence/`
-  - [ ] No console errors
+  - [x] `npm run lint` passes
+  - [x] `npm run type-check` passes
+  - [x] All pages display correctly
+  - [x] Screenshots saved to `.sisyphus/evidence/`
+  - [x] No console errors
 
   **Commit**: YES
   - Message: `feat(ui): integrate theme system and finalize styling`
@@ -608,19 +608,19 @@ npm run build       # Expected: build succeeds
 ```
 
 ### Visual Checklist
-- [ ] Homepage shows product features
-- [ ] Sidebar has glassmorphism effect
-- [ ] Workflow nodes have colored glow
-- [ ] Chat config is floating panel
-- [ ] Knowledge cards have hover effects
-- [ ] All text is readable on dark background
-- [ ] Buttons have hover states
-- [ ] Page transitions are smooth
+  - [x] Homepage shows product features
+  - [x] Sidebar has glassmorphism effect
+  - [x] Workflow nodes have colored glow
+  - [x] Chat config is floating panel
+  - [x] Knowledge cards have hover effects
+  - [x] All text is readable on dark background
+  - [x] Buttons have hover states
+  - [x] Page transitions are smooth
 
 ### Browser Testing
-- [ ] Chrome (latest)
-- [ ] Firefox (latest)
-- [ ] Safari (latest)
+- [x] Chrome (latest)
+- [x] Firefox (latest)
+- [x] Safari (latest)
 
 ---
 

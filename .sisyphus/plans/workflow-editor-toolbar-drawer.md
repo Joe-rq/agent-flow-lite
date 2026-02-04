@@ -165,9 +165,9 @@ Wave 2 (Behavior & Tests):
   - `frontend/src/components/NodeConfigPanel.vue` - 右侧面板 offset 参考
 
   **Acceptance Criteria**:
-  - [ ] 顶部工具栏包含保存/加载/运行/删除/自动布局
-  - [ ] 左侧面板仅显示工作流信息（不再有节点列表与操作按钮）
-  - [ ] 主要功能入口全部可用
+- [x] 顶部工具栏包含保存/加载/运行/删除/自动布局
+- [x] 左侧面板仅显示工作流信息（不再有节点列表与操作按钮）
+- [x] 主要功能入口全部可用
 
 - [x] 2. 右侧抽屉迁移节点添加入口
 
@@ -194,8 +194,8 @@ Wave 2 (Behavior & Tests):
   - `frontend/src/views/WorkflowEditor.vue` - node-item / drag handlers
 
   **Acceptance Criteria**:
-  - [ ] 抽屉可展开/收起
-  - [ ] 抽屉内仅节点添加按钮
+- [x] 抽屉可展开/收起
+- [x] 抽屉内仅节点添加按钮
 
 - [x] 3. Auto-layout 调整与 snap-to-grid 确认
 
@@ -218,8 +218,8 @@ Wave 2 (Behavior & Tests):
   - `frontend/src/views/WorkflowEditor.vue` - autoLayout 方法
 
   **Acceptance Criteria**:
-  - [ ] 自动布局后节点从左到右排列
-  - [ ] 视图自动适配（fitView）
+- [x] 自动布局后节点从左到右排列
+- [x] 视图自动适配（fitView）
 
 - [x] 4. 更新/新增 WorkflowEditor Vitest 测试
 
@@ -242,8 +242,8 @@ Wave 2 (Behavior & Tests):
   - `frontend/src/__tests__/views/WorkflowView.spec.ts` - 测试模式参考
 
   **Acceptance Criteria**:
-  - [ ] `npm run test` 通过
-  - [ ] 断言覆盖 toolbar/drawer/info panel
+- [x] `npm run test` 通过
+- [x] 断言覆盖 toolbar/drawer/info panel
 
 ---
 
