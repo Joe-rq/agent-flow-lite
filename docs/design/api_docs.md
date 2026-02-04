@@ -43,8 +43,29 @@
 
 ### 3.1 发送消息 (SSE Streaming)
 - **POST** `/chat/completions`
+- **Request Body:**
+  ```json
+  {
+    "message": "用户消息",
+    "session_id": "会话ID（可选）",
+    "kb_id": "知识库ID（可选）",
+    "workflow_id": "工作流ID（可选）",
+    "user_id": "用户ID（必需，用于 Zep 记忆）"
+  }
+  ```
 - **Response:** `EventSourceResponse` (text/event-stream)
 - **Stream Events:**
   - `event: thought` -> 检索过程 / 思考链
   - `event: token` -> LLM 生成的字符
-  - `event: citation` -> 引用源 metadata
+  - `event: citation` -> 引用源 metadata（包含 doc_id, chunk_index, score, text）
+  - `event: done` -> 完成状态
+
+### 3.2 引用源数据结构
+```json
+{
+  "doc_id": "文档ID",
+  "chunk_index": 0,
+  "score": 0.85,
+  "text": "引用文本摘录（前200字符）"
+}
+```
