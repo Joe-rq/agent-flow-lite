@@ -5,18 +5,23 @@ This module provides the chat completion endpoint with SSE streaming support,
 integrating RAG retrieval and DeepSeek LLM for AI-powered conversations.
 """
 import json
+import re
 from datetime import datetime
 from pathlib import Path
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, List, Optional, Tuple
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from filelock import FileLock
 
+from app.core.auth import User, get_current_user
+from app.models.user import UserRole
 from app.core.llm import chat_completion_stream
 from app.core.rag import get_rag_pipeline
 from app.core.workflow_engine import WorkflowEngine
 from app.core.zep import zep_client
+from app.core.skill_loader import SkillLoader, SkillValidationError
+from app.core.skill_executor import get_skill_executor
 from app.api.workflow import get_workflow
 from app.models.chat import ChatMessage, ChatRequest, SessionHistory
 
@@ -25,10 +30,37 @@ router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 SESSIONS_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
+SKILLS_DIR = Path(__file__).parent.parent.parent.parent.parent / "skills"
+skill_loader = SkillLoader(SKILLS_DIR)
+
 
 def get_session_path(session_id: str) -> Path:
     """Get the file path for a session."""
     return SESSIONS_DIR / f"{session_id}.json"
+
+
+def check_session_ownership(session: SessionHistory, user: User) -> bool:
+    """
+    Check if a user owns a session or is an admin.
+    
+    Args:
+        session: The session to check
+        user: The current authenticated user
+        
+    Returns:
+        True if user owns the session or is admin, False otherwise
+    """
+    # Admin can access any session
+    if user.role == UserRole.ADMIN:
+        return True
+    
+    # If session has no user_id, treat as orphaned - allow access for backward compatibility
+    # but ideally should be migrated
+    if session.user_id is None:
+        return True
+    
+    # Check if user owns the session
+    return session.user_id == str(user.id)
 
 
 def load_session(session_id: str) -> Optional[SessionHistory]:
@@ -73,6 +105,149 @@ def build_excerpt(text: str, limit: int = 200) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "..."
+
+
+def parse_at_skill(message: str) -> Tuple[Optional[str], str]:
+    """
+    Parse @skill invocation from message.
+
+    Pattern: ^@([a-z0-9-]+)\s+(.+)$
+    Example: "@article-summary This is an article..."
+    Returns: ("article-summary", "This is an article...")
+
+    If no @skill pattern found, returns (None, original_message).
+
+    Args:
+        message: User input message
+
+    Returns:
+        Tuple of (skill_name or None, remaining_text)
+    """
+    pattern = r'^@([a-z0-9-]+)\s+(.+)$'
+    match = re.match(pattern, message, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    return None, message
+
+
+async def skill_stream_generator(
+    skill_name: str,
+    remaining_text: str,
+    session: SessionHistory,
+    user: User
+) -> AsyncGenerator[str, None]:
+    """
+    Generate SSE stream for @skill execution.
+
+    Args:
+        skill_name: Name of the skill to execute
+        remaining_text: Text after @skill (mapped to first required input)
+        session: Current chat session
+        user: Current authenticated user
+
+    Yields:
+        SSE event strings (thought, token, citation, done)
+    """
+    zep = zep_client()
+    executor = get_skill_executor()
+
+    try:
+        # Load the skill
+        yield format_sse_event("thought", {
+            "type": "skill",
+            "status": "start",
+            "skill_name": skill_name
+        })
+
+        try:
+            skill = skill_loader.get_skill(skill_name)
+        except SkillValidationError as e:
+            yield format_sse_event("thought", {
+                "type": "skill",
+                "status": "error",
+                "error": str(e)
+            })
+            yield format_sse_event("done", {
+                "status": "error",
+                "message": f"Skill '{skill_name}' not found"
+            })
+            return
+
+        yield format_sse_event("thought", {
+            "type": "skill",
+            "status": "loaded",
+            "skill_name": skill.name,
+            "description": skill.description
+        })
+
+        # Build inputs: map remaining_text to first required input
+        inputs: dict = {}
+        skill_inputs = skill.inputs or []
+
+        # Find first required input
+        first_required = None
+        for inp in skill_inputs:
+            if inp.required:
+                first_required = inp.name
+                break
+
+        # If no required input, use first input
+        if first_required is None and skill_inputs:
+            first_required = skill_inputs[0].name
+
+        if first_required:
+            inputs[first_required] = remaining_text
+        else:
+            # Skill has no inputs, treat remaining_text as the entire prompt
+            pass
+
+        # Execute skill
+        full_output = ""
+        async for event in executor.execute(skill, inputs):
+            yield event
+
+            # Accumulate output for session save
+            if event.startswith("event: token"):
+                try:
+                    lines = event.strip().split("\n")
+                    for line in lines:
+                        if line.startswith("data: "):
+                            data = json.loads(line[6:])
+                            full_output += data.get("content", "")
+                except (json.JSONDecodeError, IndexError):
+                    pass
+
+        # Save to session history
+        if full_output:
+            assistant_message = ChatMessage(
+                role="assistant",
+                content=full_output,
+                timestamp=datetime.utcnow()
+            )
+            session.messages.append(assistant_message)
+            save_session(session)
+
+            if zep.enabled:
+                zep_session_id = get_zep_session_id(str(user.id), session.session_id)
+                zep.add_messages(
+                    zep_session_id,
+                    [{
+                        "role_type": "assistant",
+                        "role": "Assistant",
+                        "content": full_output
+                    }]
+                )
+
+    except Exception as e:
+        yield format_sse_event("thought", {
+            "type": "skill",
+            "status": "error",
+            "error": str(e)
+        })
+        yield format_sse_event("done", {
+            "status": "error",
+            "message": f"Skill execution failed: {str(e)}"
+        })
 
 
 def build_system_prompt(
@@ -197,14 +372,100 @@ async def chat_stream_generator(
         })
 
 
+def get_zep_session_id(user_id: str, session_id: str) -> str:
+    """
+    Generate namespaced session ID for Zep operations.
+    
+    Format: {user_id}::{session_id}
+    This ensures session isolation between users in Zep.
+    """
+    return f"{user_id}::{session_id}"
+
+
 async def workflow_stream_generator(
-    request: ChatRequest, session: SessionHistory
+    request: ChatRequest, session: SessionHistory, user: User
 ) -> AsyncGenerator[str, None]:
     zep = zep_client()
     if not request.workflow_id:
         yield format_sse_event("error", {"message": "Workflow ID is required"})
         yield format_sse_event("done", {"status": "error", "message": "Workflow ID is required"})
         return
+
+    try:
+        workflow = await get_workflow(request.workflow_id)
+    except HTTPException as exc:
+        yield format_sse_event("error", {"message": str(exc.detail)})
+        yield format_sse_event("done", {"status": "error", "message": str(exc.detail)})
+        return
+
+    engine = WorkflowEngine(workflow)
+    full_output = ""
+
+    async for event in engine.execute(request.message):
+        event_type = event.get("type")
+
+        if event_type == "workflow_start":
+            yield format_sse_event("thought", {
+                "type": "workflow",
+                "status": "start",
+                "workflow_name": event.get("workflow_name")
+            })
+
+        elif event_type == "node_start":
+            yield format_sse_event("thought", {
+                "type": "node",
+                "status": "start",
+                "node_id": event.get("node_id"),
+                "node_type": event.get("node_type")
+            })
+
+        elif event_type == "token":
+            content = event.get("content", "")
+            full_output += content
+            yield format_sse_event("token", {"content": content})
+
+        elif event_type == "thought":
+            payload = {"type": event.get("type_detail", "info")}
+            payload.update({k: v for k, v in event.items() if k not in ("type", "type_detail")})
+            yield format_sse_event("thought", payload)
+
+        elif event_type == "node_complete":
+            yield format_sse_event("thought", {
+                "type": "node",
+                "status": "complete",
+                "node_id": event.get("node_id")
+            })
+
+        elif event_type in ("node_error", "workflow_error"):
+            message = event.get("error", "Unknown workflow error")
+            yield format_sse_event("error", {"message": message})
+            yield format_sse_event("done", {"status": "error", "message": message})
+            return
+
+        elif event_type == "workflow_complete":
+            final_output = event.get("final_output", full_output)
+            assistant_message = ChatMessage(
+                role="assistant",
+                content=str(final_output),
+                timestamp=datetime.utcnow()
+            )
+            session.messages.append(assistant_message)
+            save_session(session)
+            if zep.enabled:
+                zep_session_id = get_zep_session_id(str(user.id), session.session_id)
+                zep.add_messages(
+                    zep_session_id,
+                    [{
+                        "role_type": "assistant",
+                        "role": "Assistant",
+                        "content": str(final_output)
+                    }]
+                )
+            yield format_sse_event("done", {
+                "status": "success",
+                "message": "Workflow completed"
+            })
+            return
 
     try:
         workflow = await get_workflow(request.workflow_id)
@@ -283,7 +544,10 @@ async def workflow_stream_generator(
 
 
 @router.post("/completions")
-async def chat_completions(request: ChatRequest) -> StreamingResponse:
+async def chat_completions(
+    request: ChatRequest,
+    user: User = Depends(get_current_user)
+) -> StreamingResponse:
     """
     SSE streaming chat completion endpoint.
     
@@ -308,30 +572,32 @@ async def chat_completions(request: ChatRequest) -> StreamingResponse:
         )
 
     zep = zep_client()
-    if not request.user_id or not request.user_id.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="user_id is required"
-        )
     
     # Load or create session
     session = load_session(request.session_id)
+    user_id_str = str(user.id)
     if session is None:
         session = SessionHistory(
             session_id=request.session_id,
             kb_id=request.kb_id,
             workflow_id=request.workflow_id,
-            user_id=request.user_id
+            user_id=user_id_str
         )
-    
+
+    # Check session ownership if session exists and has an owner
+    if session.user_id is not None and session.user_id != user_id_str and user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this session"
+        )
+
     # Update session metadata if provided
     if request.kb_id:
         session.kb_id = request.kb_id
     if request.workflow_id:
         session.workflow_id = request.workflow_id
-    if request.user_id:
-        session.user_id = request.user_id
-    
+    session.user_id = user_id_str
+
     # Add user message to history
     user_message = ChatMessage(
         role="user",
@@ -339,20 +605,35 @@ async def chat_completions(request: ChatRequest) -> StreamingResponse:
         timestamp=datetime.utcnow()
     )
     session.messages.append(user_message)
-    if zep.enabled and request.user_id:
-        zep.ensure_user_session(request.user_id, request.session_id)
+
+    # Use namespaced session ID for Zep operations
+    zep_session_id = get_zep_session_id(user_id_str, request.session_id)
+    if zep.enabled:
+        zep.ensure_user_session(user_id_str, zep_session_id)
         zep.add_messages(
-            request.session_id,
+            zep_session_id,
             [{
                 "role_type": "user",
-                "role": request.user_id,
+                "role": user_id_str,
                 "content": request.message
             }]
         )
     
     if request.workflow_id:
         return StreamingResponse(
-            workflow_stream_generator(request, session),
+            workflow_stream_generator(request, session, user),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
+
+    skill_name, remaining_text = parse_at_skill(request.message)
+    if skill_name:
+        return StreamingResponse(
+            skill_stream_generator(skill_name, remaining_text, session, user),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -442,13 +723,27 @@ async def chat_completions(request: ChatRequest) -> StreamingResponse:
 
 
 @router.get("/sessions")
-async def list_sessions() -> dict:
+async def list_sessions(user: User = Depends(get_current_user)) -> dict:
+    """
+    List chat sessions for the current user.
+    
+    - Regular users see only their own sessions
+    - Admin users see all sessions
+    """
     sessions = []
+    user_id_str = str(user.id)
+
     for path in SESSIONS_DIR.glob("*.json"):
         session_id = path.stem
         session = load_session(session_id)
         if not session:
             continue
+
+        # Filter by ownership (admin sees all)
+        if user.role != UserRole.ADMIN:
+            if session.user_id is not None and session.user_id != user_id_str:
+                continue
+
         title = ""
         for msg in session.messages:
             if msg.role == "user":
@@ -465,7 +760,8 @@ async def list_sessions() -> dict:
             ),
             "message_count": len(session.messages),
             "kb_id": session.kb_id,
-            "workflow_id": session.workflow_id
+            "workflow_id": session.workflow_id,
+            "user_id": session.user_id
         })
 
     sessions.sort(key=lambda s: s["updated_at"], reverse=True)
@@ -473,11 +769,15 @@ async def list_sessions() -> dict:
 
 
 @router.get("/sessions/{session_id}")
-async def get_session_history(session_id: str) -> dict:
+async def get_session_history(
+    session_id: str,
+    user: User = Depends(get_current_user)
+) -> dict:
     """
     Get chat history for a session.
     
     - **session_id**: Session identifier
+    - Users can only access their own sessions (admins can access any)
     """
     session = load_session(session_id)
     if session is None:
@@ -485,7 +785,14 @@ async def get_session_history(session_id: str) -> dict:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Session '{session_id}' not found"
         )
-    
+
+    # Check ownership
+    if not check_session_ownership(session, user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this session"
+        )
+
     return {
         "session_id": session.session_id,
         "messages": [
@@ -500,24 +807,37 @@ async def get_session_history(session_id: str) -> dict:
         "updated_at": session.updated_at.isoformat() if session.updated_at else None,
         "kb_id": session.kb_id,
         "workflow_id": session.workflow_id,
+        "user_id": session.user_id,
         "message_count": len(session.messages)
     }
 
 
 @router.delete("/sessions/{session_id}")
-async def delete_session(session_id: str) -> dict:
+async def delete_session(
+    session_id: str,
+    user: User = Depends(get_current_user)
+) -> dict:
     """
     Delete a chat session and its history.
-    
+
     - **session_id**: Session identifier to delete
+    - Users can only delete their own sessions (admins can delete any)
     """
-    session_path = get_session_path(session_id)
-    if not session_path.exists():
+    session = load_session(session_id)
+    if session is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Session '{session_id}' not found"
         )
-    
+
+    # Check ownership
+    if not check_session_ownership(session, user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this session"
+        )
+
+    session_path = get_session_path(session_id)
     try:
         session_path.unlink()
         return {

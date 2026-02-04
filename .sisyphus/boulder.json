@@ -1,10 +1,9 @@
 {
-  "active_plan": "D:\\03resource\\_Projects\\agent-flow-lite\\.sisyphus\\plans\\zep-session-memory.md",
-  "started_at": "2026-02-04T07:25:59.729Z",
+  "active_plan": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/.sisyphus/plans/skill-system-p0-p1.md",
+  "started_at": "2026-02-04T16:02:33.534Z",
   "session_ids": [
-    "ses_3d91f6358ffeuZr87sP2AYBTBS",
-    "ses_3d85ed49fffeyGvsML3mo09TFk",
-    "ses_3d85b617affeZ9xpsUt3Nkgul1"
+    "ses_3d6b6b6dfffeMi50nI6F96eSeT",
+    "ses_3d6e0cdc5ffeIlm11Rsa0mlwOM"
   ],
-  "plan_name": "zep-session-memory"
+  "plan_name": "skill-system-p0-p1"
 }

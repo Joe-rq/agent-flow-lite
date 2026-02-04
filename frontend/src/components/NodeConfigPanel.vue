@@ -23,6 +23,20 @@
       <!-- LLM 节点配置 -->
       <div v-if="nodeType === 'llm'" class="config-section">
         <h4>LLM 节点</h4>
+
+        <!-- 技能选择 -->
+        <div class="form-group">
+          <label>加载技能 (可选)</label>
+          <select v-model="config.skillName" class="form-select" @change="onLLMSkillChange">
+            <option value="">不使用技能</option>
+            <option v-for="skill in skills" :key="skill.name" :value="skill.name">
+              {{ skill.name }}
+            </option>
+          </select>
+          <small class="form-hint">选择技能将自动加载其提示词和模型配置</small>
+        </div>
+
+        <!-- 系统提示词 -->
         <div class="form-group">
           <label>系统提示词</label>
           <textarea
@@ -30,8 +44,12 @@
             rows="6"
             placeholder="输入系统提示词..."
             class="form-textarea"
+            :disabled="!!config.skillName"
           ></textarea>
+          <small v-if="config.skillName" class="form-hint">提示词由技能提供，不可编辑</small>
         </div>
+
+        <!-- 温度参数 -->
         <div class="form-group">
           <label>温度参数: {{ config.temperature }}</label>
           <input
@@ -41,11 +59,13 @@
             max="1"
             step="0.1"
             class="form-range"
+            :disabled="!!config.skillName"
           />
           <div class="range-labels">
             <span>精确</span>
             <span>创意</span>
           </div>
+          <small v-if="config.skillName" class="form-hint">温度参数由技能配置提供</small>
         </div>
       </div>
 
@@ -92,6 +112,36 @@
         </div>
       </div>
 
+      <!-- Skill 节点配置 -->
+      <div v-if="nodeType === 'skill'" class="config-section">
+        <h4>技能节点</h4>
+        <div class="form-group">
+          <label>选择技能</label>
+          <select v-model="config.skillName" class="form-select" @change="onSkillChange">
+            <option value="">请选择技能</option>
+            <option v-for="skill in skills" :key="skill.name" :value="skill.name">
+              {{ skill.name }}
+            </option>
+          </select>
+        </div>
+        <div v-if="selectedSkillInputs.length > 0" class="form-group">
+          <label>输入映射</label>
+          <div v-for="input in selectedSkillInputs" :key="input.name" class="input-mapping-row">
+            <span class="input-name">{{ input.name }}</span>
+            <select
+              v-model="(config.inputMappings || {})[input.name]"
+              class="form-select mapping-select"
+            >
+              <option value="">自动映射</option>
+              <option v-for="node in upstreamNodes" :key="node.id" :value="node.id">
+                {{ node.label || node.id }}
+              </option>
+            </select>
+          </div>
+          <small class="form-hint">选择上游节点作为输入来源，或留空自动映射</small>
+        </div>
+      </div>
+
       <!-- 未知节点类型 -->
       <div v-if="!nodeType" class="config-section">
         <p class="empty-text">请选择节点进行配置</p>
@@ -106,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 
 interface KnowledgeBase {
@@ -121,6 +171,24 @@ interface NodeConfig {
   knowledgeBaseId?: string
   outputVariable?: string
   expression?: string
+  skillName?: string
+  inputMappings?: Record<string, string>
+  skillModelConfig?: {
+    temperature?: number
+    max_tokens?: number
+  }
+}
+
+interface Skill {
+  name: string
+  description?: string
+  inputs?: Array<{ name: string; label?: string; required?: boolean }>
+}
+
+interface WorkflowNode {
+  id: string
+  label?: string
+  type?: string
 }
 
 interface Props {
@@ -144,11 +212,19 @@ const config = ref<NodeConfig>({
   temperature: 0.7,
   knowledgeBaseId: '',
   outputVariable: '',
-  expression: ''
+  expression: '',
+  skillName: '',
+  inputMappings: {}
 })
 
 // 知识库列表
 const knowledgeBases = ref<KnowledgeBase[]>([])
+
+// 技能列表
+const skills = ref<Skill[]>([])
+
+// 上游节点列表
+const upstreamNodes = ref<WorkflowNode[]>([])
 
 // 加载知识库列表
 const loadKnowledgeBases = async () => {
@@ -186,7 +262,10 @@ const syncFromNodeData = () => {
       temperature: props.nodeData.temperature ?? 0.7,
       knowledgeBaseId: props.nodeData.knowledgeBaseId || '',
       outputVariable: props.nodeData.outputVariable || '',
-      expression: props.nodeData.expression || ''
+      expression: props.nodeData.expression || '',
+      skillName: props.nodeData.skillName || '',
+      inputMappings: props.nodeData.inputMappings || {},
+      skillModelConfig: props.nodeData.skillModelConfig || undefined
     }
   }
 }
@@ -194,10 +273,15 @@ const syncFromNodeData = () => {
 // 监听节点数据变化
 watch(() => props.nodeData, syncFromNodeData, { immediate: true, deep: true })
 
-// 监听节点类型变化，加载知识库
+// 监听节点类型变化，加载知识库或技能
 watch(() => props.nodeType, (newType) => {
   if (newType === 'knowledge') {
     loadKnowledgeBases()
+  } else if (newType === 'skill' || newType === 'llm') {
+    loadSkills()
+    if (newType === 'skill') {
+      loadUpstreamNodes()
+    }
   }
 })
 
@@ -207,9 +291,78 @@ watch(() => props.visible, (isVisible) => {
     syncFromNodeData()
     if (props.nodeType === 'knowledge') {
       loadKnowledgeBases()
+    } else if (props.nodeType === 'skill' || props.nodeType === 'llm') {
+      loadSkills()
+      if (props.nodeType === 'skill') {
+        loadUpstreamNodes()
+      }
     }
   }
 })
+
+// 计算选中的技能的输入列表
+const selectedSkillInputs = computed(() => {
+  const skill = skills.value.find(s => s.name === config.value.skillName)
+  return skill?.inputs || []
+})
+
+// 加载技能列表
+const loadSkills = async () => {
+  try {
+    const response = await axios.get('/api/v1/skills')
+    skills.value = response.data.skills || []
+  } catch (error) {
+    console.error('加载技能列表失败:', error)
+    skills.value = []
+  }
+}
+
+// 加载上游节点
+const loadUpstreamNodes = () => {
+  // Get upstream nodes from parent component via custom event
+  // For now, we'll use a simple approach - the parent will pass this via nodeData
+  upstreamNodes.value = []
+}
+
+// 技能选择变化
+const onSkillChange = () => {
+  // Reset input mappings when skill changes
+  config.value.inputMappings = {}
+}
+
+// LLM节点技能选择变化
+const onLLMSkillChange = async () => {
+  const skillName = config.value.skillName
+  if (!skillName) {
+    // 清除技能时，恢复默认值
+    config.value.systemPrompt = ''
+    config.value.temperature = 0.7
+    config.value.skillModelConfig = undefined
+    return
+  }
+
+  // 加载技能详情以获取提示词和模型配置
+  try {
+    const response = await axios.get(`/api/v1/skills/${skillName}`)
+    const skill = response.data
+
+    // 更新提示词
+    if (skill.prompt) {
+      config.value.systemPrompt = skill.prompt
+    }
+
+    // 更新模型配置
+    if (skill.model) {
+      config.value.temperature = skill.model.temperature ?? 0.7
+      config.value.skillModelConfig = {
+        temperature: skill.model.temperature ?? 0.7,
+        max_tokens: skill.model.max_tokens ?? 2000
+      }
+    }
+  } catch (error) {
+    console.error('加载技能详情失败:', error)
+  }
+}
 
 // 关闭面板
 const handleClose = () => {
@@ -237,6 +390,11 @@ const handleDelete = () => {
 onMounted(() => {
   if (props.nodeType === 'knowledge') {
     loadKnowledgeBases()
+  } else if (props.nodeType === 'skill' || props.nodeType === 'llm') {
+    loadSkills()
+    if (props.nodeType === 'skill') {
+      loadUpstreamNodes()
+    }
   }
 })
 </script>
@@ -459,5 +617,23 @@ onMounted(() => {
   margin-top: 6px;
   font-size: 12px;
   color: #6b7280;
+}
+
+.input-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.input-name {
+  min-width: 80px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.mapping-select {
+  flex: 1;
 }
 </style>

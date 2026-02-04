@@ -8,9 +8,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.workflow import router as workflow_router
-from app.api.knowledge import router as knowledge_router
+from app.api.admin import router as admin_router
+from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
+from app.api.knowledge import router as knowledge_router
+from app.api.skill import router as skill_router
+from app.api.workflow import router as workflow_router
+from app.core.database import init_db
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +24,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup: Initialize resources
+    await init_db()
     yield
     # Shutdown: Cleanup resources
 
@@ -57,9 +62,12 @@ def create_app() -> FastAPI:
         """Health check endpoint"""
         return {"status": "healthy"}
 
+    app.include_router(auth_router)
     app.include_router(workflow_router)
     app.include_router(knowledge_router)
+    app.include_router(skill_router)
     app.include_router(chat_router)
+    app.include_router(admin_router)
 
     return app
 

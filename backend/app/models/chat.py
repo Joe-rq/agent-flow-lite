@@ -20,12 +20,12 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """
     Chat request model for SSE streaming chat endpoint.
-    
+
     - session_id: Unique session identifier
     - message: User's input message
-    - user_id: User identifier for memory (optional)
-    - workflow_id: Optional workflow to execute (not implemented yet)
+    - workflow_id: Optional workflow to execute
     - kb_id: Optional knowledge base ID for RAG-enhanced responses
+    - user_id: DEPRECATED - User ID is now obtained from authentication token
     """
     session_id: str = Field(
         ..., description="Unique session identifier for conversation continuity"
@@ -33,14 +33,15 @@ class ChatRequest(BaseModel):
     message: str = Field(
         ..., description="User's input message", min_length=1
     )
-    user_id: Optional[str] = Field(
-        default=None, description="User identifier for session memory"
-    )
     workflow_id: Optional[str] = Field(
-        default=None, description="Optional workflow ID (not implemented yet)"
+        default=None, description="Optional workflow ID"
     )
     kb_id: Optional[str] = Field(
         default=None, description="Optional knowledge base ID for RAG retrieval"
+    )
+    user_id: Optional[str] = Field(
+        default=None,
+        description="DEPRECATED: User ID is obtained from auth token. This field is ignored."
     )
 
 

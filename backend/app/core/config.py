@@ -52,11 +52,17 @@ class Settings(BaseSettings):
         default=False,
         description="Enable Zep session memory integration"
     )
-    
+
     # Application Configuration
     log_level: str = Field(
         default="INFO",
         description="Logging level"
+    )
+
+    # Admin Configuration
+    admin_email: str = Field(
+        default="admin@mail.com",
+        description="Email address for admin user (auto-assigned admin role)"
     )
     
     class Config:

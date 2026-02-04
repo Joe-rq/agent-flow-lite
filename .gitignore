@@ -49,3 +49,14 @@ htmlcov/
 *.db
 *.sqlite3
 .startup_pids
+
+# Node
+node_modules/
+
+# Runtime data
+backend/data/**/*.lock
+backend/data/sessions/
+backend/data/metadata/
+
+# Misc
+EOF

@@ -71,6 +71,12 @@
         <template #node-condition="props">
           <ConditionNode v-bind="props" />
         </template>
+
+        <template #node-skill="props">
+          <SkillNode v-bind="props" />
+          <Handle type="target" :position="Position.Left" />
+          <Handle type="source" :position="Position.Right" />
+        </template>
       </VueFlow>
 
       <!-- 抽屉切换按钮 -->
@@ -122,6 +128,15 @@
           >
             <span class="drawer-node-icon">⚡</span>
             <span class="drawer-node-label">条件节点</span>
+          </div>
+          <div
+            class="drawer-node-item"
+            draggable="true"
+            @dragstart="onDragStart($event, 'skill')"
+            @click="addNodeFromPanel('skill')"
+          >
+            <span class="drawer-node-icon">🎯</span>
+            <span class="drawer-node-label">技能节点</span>
           </div>
           <div
             class="drawer-node-item"
@@ -218,6 +233,7 @@ import LLMNode from '../components/nodes/LLMNode.vue'
 import KnowledgeNode from '../components/nodes/KnowledgeNode.vue'
 import EndNode from '../components/nodes/EndNode.vue'
 import ConditionNode from '../components/nodes/ConditionNode.vue'
+import SkillNode from '../components/nodes/SkillNode.vue'
 import NodeConfigPanel from '../components/NodeConfigPanel.vue'
 import Button from '@/components/ui/Button.vue'
 import axios from 'axios'
@@ -438,7 +454,8 @@ function getDefaultLabel(type: string): string {
     llm: 'LLM',
     knowledge: '知识库',
     end: '结束',
-    condition: '条件'
+    condition: '条件',
+    skill: '技能'
   }
   return labels[type] || type
 }
@@ -586,7 +603,8 @@ function onDrop(event: DragEvent) {
     llm: 'LLM',
     knowledge: '知识库',
     end: '结束',
-    condition: '条件'
+    condition: '条件',
+    skill: '技能'
   }
 
   const newNode = {
@@ -606,7 +624,8 @@ function addNodeFromPanel(type: string) {
     llm: 'LLM',
     knowledge: '知识库',
     end: '结束',
-    condition: '条件'
+    condition: '条件',
+    skill: '技能'
   }
 
   const offset = panelAddCount.value * 40
@@ -673,6 +692,7 @@ function autoLayout() {
     start: 100,
     llm: 350,
     knowledge: 600,
+    skill: 600,
     condition: 850,
     end: 1100
   }

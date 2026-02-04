@@ -1,11 +1,11 @@
 <template>
-  <div class="node llm-node">
+  <div class="node skill-node">
     <div class="node-header">
-      <span class="node-icon">🤖</span>
-      <span class="node-title">LLM</span>
+      <span class="node-icon">🎯</span>
+      <span class="node-title">Skill</span>
     </div>
     <div class="node-body">
-      <span class="node-desc">{{ displayText }}</span>
+      <span class="node-desc">{{ skillDisplayName }}</span>
     </div>
   </div>
 </template>
@@ -17,17 +17,14 @@ import { computed } from 'vue'
 interface Props {
   data?: {
     skillName?: string
-    systemPrompt?: string
+    inputMappings?: Record<string, string>
   }
 }
 
 const props = defineProps<Props>()
 
-const displayText = computed(() => {
-  if (props.data?.skillName) {
-    return `Skill: ${props.data.skillName}`
-  }
-  return 'AI 模型调用'
+const skillDisplayName = computed(() => {
+  return props.data?.skillName || '选择技能'
 })
 </script>
 
@@ -38,8 +35,8 @@ export default {
 </script>
 
 <style scoped>
-.llm-node {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+.skill-node {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   border-radius: 8px;
   padding: 12px 16px;
   min-width: 140px;
@@ -70,6 +67,11 @@ export default {
 }
 
 .node-desc {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

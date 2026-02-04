@@ -72,8 +72,7 @@ describe('ChatTerminal Smoke Tests', () => {
     expect(input.attributes('placeholder')).toBe('输入消息...')
   })
 
-  it('should include user_id in chat payload', () => {
-    localStorage.setItem('user_id', 'user-123')
+  it('should build chat payload without user_id', () => {
     const wrapper = mount(ChatTerminal, {
       global: {
         plugins: [router, pinia]
@@ -81,8 +80,9 @@ describe('ChatTerminal Smoke Tests', () => {
     })
     const setup = (wrapper.vm as any).$?.setupState
     const payload = setup.buildChatPayload('session-1', 'hello')
-    expect(payload.user_id).toBe('user-123')
-    localStorage.removeItem('user_id')
+    expect(payload.session_id).toBe('session-1')
+    expect(payload.message).toBe('hello')
+    expect(payload.user_id).toBeUndefined()
   })
 
   it('should render clickable citations and open panel', async () => {

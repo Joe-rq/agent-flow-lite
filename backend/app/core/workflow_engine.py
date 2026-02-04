@@ -12,6 +12,7 @@ from app.core.workflow_nodes import (
     execute_end_node,
     execute_knowledge_node,
     execute_llm_node,
+    execute_skill_node,
     execute_start_node
 )
 from app.models.workflow import Workflow
@@ -61,7 +62,7 @@ class WorkflowEngine:
             yield {"type": "node_error", "node_id": node_id, "error": "Node not found"}
             return
 
-        node_type = node.get("type")
+        node_type = node.get("type", "")
         executors = {
             "start": lambda n: execute_start_node(n, ctx),
             "llm": lambda n: execute_llm_node(n, ctx, self._get_input_for_node),
@@ -69,7 +70,8 @@ class WorkflowEngine:
                 n, ctx, self._get_input_for_node
             ),
             "condition": lambda n: execute_condition_node(n, ctx),
-            "end": lambda n: execute_end_node(n, ctx, self._get_input_for_node)
+            "end": lambda n: execute_end_node(n, ctx, self._get_input_for_node),
+            "skill": lambda n: execute_skill_node(n, ctx, self._get_input_for_node)
         }
         executor = executors.get(node_type)
         if not executor:

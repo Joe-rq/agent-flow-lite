@@ -98,13 +98,10 @@ describe('WorkflowEditor Smoke Tests', () => {
     expect(text).toContain('自动布局')
   })
 
-  it('should display left panel with workflow info', async () => {
+  it('should display workflow editor title', async () => {
     const wrapper = mount(WorkflowEditor, mountOptions)
     const text = wrapper.text()
-    expect(text).toContain('工作流信息')
-    expect(text).toContain('名称')
-    expect(text).toContain('ID')
-    expect(text).toContain('状态')
+    expect(text).toContain('工作流编辑器')
   })
 
   it('should display drawer with node creation buttons', async () => {
