@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import Button from '@/components/ui/Button.vue'
 
 const sidebarCollapsed = ref(false)
+const authStore = useAuthStore()
 
 onMounted(() => {
   const saved = localStorage.getItem('sidebar-collapsed')
@@ -15,12 +18,24 @@ function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
   localStorage.setItem('sidebar-collapsed', String(sidebarCollapsed.value))
 }
+
+async function handleLogout() {
+  await authStore.logout()
+}
 </script>
 
 <template>
   <div class="app-container">
     <header class="app-header">
       <div class="logo">Agent Flow</div>
+      <Button
+        v-if="authStore.isAuthenticated"
+        variant="secondary"
+        size="sm"
+        @click="handleLogout"
+      >
+        退出登录
+      </Button>
     </header>
 
     <div class="app-body">
@@ -44,6 +59,14 @@ function toggleSidebar() {
           <RouterLink to="/chat" :title="sidebarCollapsed ? '对话' : ''">
             <span class="nav-icon">💬</span>
             <span class="nav-text">对话</span>
+          </RouterLink>
+          <RouterLink
+            v-if="authStore.isAdmin"
+            to="/admin"
+            :title="sidebarCollapsed ? '管理' : ''"
+          >
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">管理</span>
           </RouterLink>
         </nav>
       </aside>
@@ -82,6 +105,7 @@ body {
 .app-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
   height: 60px;
   background-color: var(--bg-secondary);

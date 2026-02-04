@@ -120,13 +120,32 @@
       <!-- 输入区域 -->
       <div class="input-area">
         <div class="input-wrapper">
-          <input
-            v-model="inputMessage"
-            type="text"
-            placeholder="输入消息..."
-            :disabled="isStreaming"
-            @keydown.enter="sendMessage"
-          />
+          <div class="input-with-suggestions">
+            <input
+              ref="inputRef"
+              v-model="inputMessage"
+              type="text"
+              placeholder="输入消息..."
+              :disabled="isStreaming"
+              @keydown.enter="sendMessage"
+              @input="onInputChange"
+              @keydown.down.prevent="onSuggestionDown"
+              @keydown.up.prevent="onSuggestionUp"
+              @keydown.esc="closeSuggestions"
+            />
+            <div v-if="showSuggestions" class="suggestions-dropdown">
+              <div
+                v-for="(skill, index) in filteredSkills"
+                :key="skill.name"
+                class="suggestion-item"
+                :class="{ active: selectedSuggestionIndex === index }"
+                @click="selectSuggestion(skill)"
+              >
+                <span class="suggestion-name">@{{ skill.name }}</span>
+                <span class="suggestion-desc">{{ skill.description }}</span>
+              </div>
+            </div>
+          </div>
           <Button
             class="send-btn"
             variant="primary"
@@ -176,11 +195,18 @@ const inputMessage = ref('')
 const isStreaming = ref(false)
 const currentThought = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const inputRef = ref<HTMLInputElement | null>(null)
 const selectedWorkflowId = ref<string>('')
 const selectedKbId = ref<string>('')
 const workflows = ref<{ id: string; name: string }[]>([])
 const knowledgeBases = ref<{ id: string; name: string }[]>([])
 const activeCitation = ref<CitationSource | null>(null)
+
+// Skill 自动补全状态
+const skills = ref<{ name: string; description: string }[]>([])
+const showSuggestions = ref(false)
+const filteredSkills = ref<{ name: string; description: string }[]>([])
+const selectedSuggestionIndex = ref(0)
 
 // 计算属性
 const currentSession = computed(() => {
@@ -387,11 +413,9 @@ async function connectSSE(sessionId: string, message: string) {
 }
 
 function buildChatPayload(sessionId: string, message: string) {
-  const userId = localStorage.getItem('user_id')?.trim()
   return {
     session_id: sessionId,
     message: message,
-    user_id: userId || undefined,
     workflow_id: selectedWorkflowId.value || undefined,
     kb_id: selectedKbId.value || undefined,
   }
@@ -420,6 +444,75 @@ async function loadKnowledgeBases() {
   } catch (error) {
     console.error('加载知识库列表失败:', error)
   }
+}
+
+async function loadSkills() {
+  try {
+    const response = await axios.get('/api/v1/skills')
+    const items = response.data.skills || []
+    skills.value = items.map((s: any) => ({
+      name: s.name,
+      description: s.description || ''
+    }))
+  } catch (error) {
+    console.error('加载技能列表失败:', error)
+    skills.value = []
+  }
+}
+
+function onInputChange() {
+  const text = inputMessage.value
+  const atIndex = text.lastIndexOf('@')
+
+  if (atIndex === -1) {
+    showSuggestions.value = false
+    return
+  }
+
+  const afterAt = text.slice(atIndex + 1)
+  const hasSpace = afterAt.includes(' ')
+
+  if (hasSpace) {
+    showSuggestions.value = false
+    return
+  }
+
+  const query = afterAt.toLowerCase()
+  filteredSkills.value = skills.value.filter(skill =>
+    skill.name.toLowerCase().includes(query)
+  )
+
+  if (filteredSkills.value.length > 0) {
+    showSuggestions.value = true
+    selectedSuggestionIndex.value = 0
+  } else {
+    showSuggestions.value = false
+  }
+}
+
+function onSuggestionDown() {
+  if (!showSuggestions.value) return
+  selectedSuggestionIndex.value =
+    (selectedSuggestionIndex.value + 1) % filteredSkills.value.length
+}
+
+function onSuggestionUp() {
+  if (!showSuggestions.value) return
+  selectedSuggestionIndex.value =
+    (selectedSuggestionIndex.value - 1 + filteredSkills.value.length) %
+    filteredSkills.value.length
+}
+
+function closeSuggestions() {
+  showSuggestions.value = false
+}
+
+function selectSuggestion(skill: { name: string; description: string }) {
+  const text = inputMessage.value
+  const atIndex = text.lastIndexOf('@')
+  inputMessage.value = text.slice(0, atIndex) + '@' + skill.name + ' '
+  showSuggestions.value = false
+  inputRef.value?.focus()
 }
 
 async function loadSessions() {
@@ -575,6 +668,7 @@ onMounted(() => {
   })
   loadWorkflows()
   loadKnowledgeBases()
+  loadSkills()
 })
 
 // 监听消息变化，自动滚动
@@ -975,5 +1069,62 @@ watch(selectedWorkflowId, (value) => {
 
 .send-btn {
   border-radius: 24px;
+}
+
+/* Skill 自动补全下拉框 */
+.input-with-suggestions {
+  position: relative;
+  flex: 1;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--surface-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.suggestion-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background-color 0.15s;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+  background-color: var(--bg-tertiary);
+}
+
+.suggestion-item:first-child {
+  border-radius: 12px 12px 0 0;
+}
+
+.suggestion-item:last-child {
+  border-radius: 0 0 12px 12px;
+}
+
+.suggestion-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+}
+
+.suggestion-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
