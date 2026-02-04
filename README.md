@@ -15,6 +15,7 @@
 - 🎨 **可视化工作流** - 拖拽式节点编排，支持 LLM、知识库、条件分支
 - 📚 **RAG 知识管理** - 文档上传、智能分块、向量检索
 - 💬 **智能对话终端** - SSE 流式响应、多轮会话、引用溯源
+- 🧠 **长期记忆** - 集成 Zep 云服务，跨会话记忆持久化
 - ⚡ **现代化技术栈** - Vue 3 + FastAPI + LlamaIndex + ChromaDB
 
 ---
@@ -37,6 +38,7 @@
 
 - **DeepSeek API** - 用于 LLM 对话 → [注册获取](https://platform.deepseek.com/)
 - **SiliconFlow API** - 用于文本向量化 → [注册获取](https://siliconflow.cn/)
+- **Zep Cloud** - 长期记忆存储（可选）→ [注册获取](https://www.getzep.com/)
 
 ### 3. 安装与配置
 
@@ -85,6 +87,10 @@ DEEPSEEK_MODEL=deepseek-chat
 SILICONFLOW_API_KEY=sk-xxxxx
 SILICONFLOW_API_BASE=https://api.siliconflow.cn/v1
 EMBEDDING_MODEL=BAAI/bge-m3
+
+# Zep Cloud（可选 - 长期记忆）
+ZEP_API_KEY=sk-xxxxx
+ZEP_URL=https://api.getzep.com
 
 # 服务器配置（可选）
 HOST=0.0.0.0
@@ -146,6 +152,7 @@ uv run uvicorn main:app --reload
 2. 选择知识库或工作流（可选）
 3. 输入问题，实时获取回复
 4. 查看思维链和引用来源
+5. 点击「引用」按钮查看详细来源信息和文本摘录
 
 ---
 
@@ -187,8 +194,14 @@ agent-flow-lite/
 │   │   │   ├── rag.py            # RAG 管道
 │   │   │   ├── llm.py            # LLM 客户端
 │   │   │   ├── workflow_engine.py # 工作流引擎
+│   │   │   ├── zep.py            # Zep 记忆客户端
 │   │   │   └── config.py         # 配置管理
 │   │   └── models/       # 数据模型
+│   ├── tests/              # 测试套件
+│   │   ├── test_smoke.py          # 健康检查
+│   │   ├── test_zep_client.py     # Zep 客户端测试
+│   │   ├── test_chat_zep.py       # 聊天集成测试
+│   │   └── test_chat_citation.py  # 引用功能测试
 │   ├── data/             # 运行时数据
 │   │   ├── uploads/      # 上传文档
 │   │   ├── metadata/     # 知识库元数据
@@ -229,12 +242,24 @@ agent-flow-lite/
 #### 3. SSE 流式对话
 
 ```
-用户输入 → RAG 检索 → LLM 生成 → SSE 推送 → 前端渲染
+用户输入 → RAG 检索 → Zep 记忆 → LLM 生成 → SSE 推送 → 前端渲染
 ```
 
 - **协议**: Server-Sent Events
 - **事件类型**: thought（思维链）、token（内容）、citation（引用）、done（完成）
 - **会话管理**: JSON 文件 + FileLock 并发控制
+
+#### 4. Zep 长期记忆
+
+```
+消息同步 → 记忆存储 → 上下文检索 → 跨会话记忆
+      (Zep Cloud)  (Semantic Search)  (Embedding)
+```
+
+- **记忆存储**: Zep Cloud 服务
+- **检索策略**: 语义相似度搜索
+- **会话持久化**: 用户级别的跨会话记忆
+- **配置**: 通过 `.env` 文件配置 `ZEP_API_KEY` 和 `ZEP_URL`
 
 ---
 
