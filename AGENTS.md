@@ -54,6 +54,12 @@ Follow it strictly to avoid style drift and broken workflows.
   - `cd backend && uv pip install -e .`
 - Run dev server:
   - `uv run uvicorn main:app --reload`
+- Run all tests:
+  - `uv run pytest -q`
+- Run single test file:
+  - `uv run pytest tests/test_zep_client.py -q`
+- Run single test in watch mode:
+  - `uv run pytest tests backend/tests/test_chat_zep.py -q --watch`
 - Run manual test scripts:
   - `uv run python test_chat_api.py`
   - `uv run python test_deepseek.py`
@@ -64,17 +70,27 @@ Follow it strictly to avoid style drift and broken workflows.
 ```bash
 cd frontend
 # Run specific test file
-npx vitest run src/components/__tests__/MyComponent.spec.ts
+npx vitest run src/__tests__/views/ChatTerminal.spec.ts
 
 # Run specific test in watch mode
-npx vitest src/components/__tests__/MyComponent.spec.ts
+npx vitest src/__tests__/views/ChatTerminal.spec.ts
 
 # Run tests matching pattern
 npx vitest run --reporter=verbose MyComponent
 ```
 
-**Backend:**
-No pytest configured. Use manual test scripts or create new scripts for testing.
+**Backend (pytest):**
+```bash
+cd backend
+# Run specific test file
+uv run pytest tests/test_zep_client.py -q
+
+# Run with verbose output
+uv run pytest tests/test_chat_zep.py -v
+
+# Run matching pattern
+uv run pytest -k "zep" -q
+```
 
 ## Code Style Guidelines
 
