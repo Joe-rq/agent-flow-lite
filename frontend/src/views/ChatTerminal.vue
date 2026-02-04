@@ -322,18 +322,14 @@ async function sendMessage() {
 }
 
 async function connectSSE(sessionId: string, message: string) {
+  const payload = buildChatPayload(sessionId, message)
   // 使用 fetch API 发送 POST 请求建立 SSE 连接
   const response = await fetch('/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      session_id: sessionId,
-      message: message,
-      workflow_id: selectedWorkflowId.value || undefined,
-      kb_id: selectedKbId.value || undefined,
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!response.ok) {
@@ -388,6 +384,17 @@ async function connectSSE(sessionId: string, message: string) {
   }
   currentThought.value = ''
   activeCitation.value = null
+}
+
+function buildChatPayload(sessionId: string, message: string) {
+  const userId = localStorage.getItem('user_id')?.trim()
+  return {
+    session_id: sessionId,
+    message: message,
+    user_id: userId || undefined,
+    workflow_id: selectedWorkflowId.value || undefined,
+    kb_id: selectedKbId.value || undefined,
+  }
 }
 
 async function loadWorkflows() {

@@ -17,6 +17,7 @@ dependencies = [
     "pydantic-settings>=2.0.0",
     "simpleeval>=1.0.3",
     "uvicorn>=0.40.0",
+    "zep-cloud>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -34,5 +35,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["."]
 addopts = "-q"
 asyncio_mode = "auto"

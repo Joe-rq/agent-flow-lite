@@ -23,6 +23,7 @@ class ChatRequest(BaseModel):
     
     - session_id: Unique session identifier
     - message: User's input message
+    - user_id: User identifier for memory (optional)
     - workflow_id: Optional workflow to execute (not implemented yet)
     - kb_id: Optional knowledge base ID for RAG-enhanced responses
     """
@@ -31,6 +32,9 @@ class ChatRequest(BaseModel):
     )
     message: str = Field(
         ..., description="User's input message", min_length=1
+    )
+    user_id: Optional[str] = Field(
+        default=None, description="User identifier for session memory"
     )
     workflow_id: Optional[str] = Field(
         default=None, description="Optional workflow ID (not implemented yet)"
@@ -50,6 +54,7 @@ class SessionHistory(BaseModel):
     updated_at: Optional[datetime] = Field(default=None)
     kb_id: Optional[str] = Field(default=None)
     workflow_id: Optional[str] = Field(default=None)
+    user_id: Optional[str] = Field(default=None)
 
 
 class SSEEvent(BaseModel):

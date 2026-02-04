@@ -1,8 +1,10 @@
 {
-  "active_plan": "D:\\03resource\\_Projects\\agent-flow-lite\\.sisyphus\\plans\\prd-compliance-review.md",
-  "started_at": "2026-02-04T05:25:57.868Z",
+  "active_plan": "D:\\03resource\\_Projects\\agent-flow-lite\\.sisyphus\\plans\\zep-session-memory.md",
+  "started_at": "2026-02-04T07:25:59.729Z",
   "session_ids": [
-    "ses_3d91f6358ffeuZr87sP2AYBTBS"
+    "ses_3d91f6358ffeuZr87sP2AYBTBS",
+    "ses_3d85ed49fffeyGvsML3mo09TFk",
+    "ses_3d85b617affeZ9xpsUt3Nkgul1"
   ],
-  "plan_name": "prd-compliance-review"
+  "plan_name": "zep-session-memory"
 }
