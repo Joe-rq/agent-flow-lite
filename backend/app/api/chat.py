@@ -68,6 +68,12 @@ def format_sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
+def build_excerpt(text: str, limit: int = 200) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "..."
+
+
 def build_system_prompt(has_rag: bool, retrieved_context: Optional[str] = None) -> str:
     """Build system prompt based on context."""
     if has_rag and retrieved_context:
@@ -154,7 +160,8 @@ async def chat_stream_generator(
                     {
                         "doc_id": r["metadata"].get("doc_id", ""),
                         "chunk_index": r["metadata"].get("chunk_index", 0),
-                        "score": r["score"]
+                        "score": r["score"],
+                        "text": build_excerpt(r["text"])
                     }
                     for r in retrieved_results
                 ]

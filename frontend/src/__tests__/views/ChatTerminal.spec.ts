@@ -71,4 +71,47 @@ describe('ChatTerminal Smoke Tests', () => {
     const input = wrapper.find('input[type="text"]')
     expect(input.attributes('placeholder')).toBe('输入消息...')
   })
+
+  it('should render clickable citations and open panel', async () => {
+    const wrapper = mount(ChatTerminal, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    const setup = (wrapper.vm as any).$?.setupState
+    const citationSource = {
+      docId: 'doc-1',
+      chunkIndex: 1,
+      score: 0.8,
+      text: '引用内容'
+    }
+
+    setup.sessions = [
+      {
+        id: 'session-1',
+        title: '测试会话',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messages: [
+          {
+            role: 'assistant',
+            content: 'hello',
+            citations: [
+              citationSource
+            ]
+          }
+        ]
+      }
+    ]
+    setup.currentSessionId = 'session-1'
+    await wrapper.vm.$nextTick()
+
+    const citation = wrapper.find('.citation-item')
+    expect(citation.exists()).toBe(true)
+    setup.activeCitation = citationSource
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.citation-panel').exists()).toBe(true)
+    expect(wrapper.text()).toContain('引用内容')
+  })
 })

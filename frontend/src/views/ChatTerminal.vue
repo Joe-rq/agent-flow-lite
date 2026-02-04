@@ -53,6 +53,19 @@
               <span class="dot"></span>
               <span class="dot"></span>
             </div>
+            <div
+              v-if="message.role === 'assistant' && message.citations?.length"
+              class="citation-list"
+            >
+              <button
+                v-for="(citation, idx) in message.citations"
+                :key="`${citation.docId}-${citation.chunkIndex}-${idx}`"
+                class="citation-item"
+                @click="openCitation(citation)"
+              >
+                引用{{ idx + 1 }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -87,6 +100,23 @@
         </div>
       </div>
 
+      <div v-if="activeCitation" class="citation-panel">
+        <div class="citation-panel-header">
+          <div class="citation-title">引用详情</div>
+          <button class="citation-close" @click="closeCitation">×</button>
+        </div>
+        <div class="citation-meta">
+          <span>doc: {{ activeCitation.docId || '未知' }}</span>
+          <span>chunk: {{ activeCitation.chunkIndex }}</span>
+          <span>score: {{ activeCitation.score.toFixed(2) }}</span>
+        </div>
+        <div class="citation-excerpt">
+          <mark class="citation-highlight">
+            {{ activeCitation.text || '暂无引用内容' }}
+          </mark>
+        </div>
+      </div>
+
       <!-- 输入区域 -->
       <div class="input-area">
         <div class="input-wrapper">
@@ -117,10 +147,18 @@ import axios from 'axios'
 import Button from '@/components/ui/Button.vue'
 
 // 类型定义
+interface CitationSource {
+  docId: string
+  chunkIndex: number
+  score: number
+  text?: string
+}
+
 interface Message {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  citations?: CitationSource[]
 }
 
 interface Session {
@@ -142,6 +180,7 @@ const selectedWorkflowId = ref<string>('')
 const selectedKbId = ref<string>('')
 const workflows = ref<{ id: string; name: string }[]>([])
 const knowledgeBases = ref<{ id: string; name: string }[]>([])
+const activeCitation = ref<CitationSource | null>(null)
 
 // 计算属性
 const currentSession = computed(() => {
@@ -183,6 +222,7 @@ function createNewSession() {
   sessions.value.unshift(newSession)
   currentSessionId.value = newSession.id
   currentThought.value = ''
+  activeCitation.value = null
 }
 
 // 删除会话
@@ -252,6 +292,7 @@ async function sendMessage() {
   inputMessage.value = ''
   isStreaming.value = true
   currentThought.value = ''
+  activeCitation.value = null
 
   // 添加 AI 消息占位
   session.messages.push({
@@ -346,6 +387,7 @@ async function connectSSE(sessionId: string, message: string) {
     lastMessage.isStreaming = false
   }
   currentThought.value = ''
+  activeCitation.value = null
 }
 
 async function loadWorkflows() {
@@ -447,12 +489,21 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
     case 'citation':
       // 引用来源 - 处理 sources 数组
       if (data.sources && Array.isArray(data.sources)) {
-        const citations = data.sources.map((s: any, i: number) =>
-          `[引用${i + 1}] doc:${s.doc_id}, chunk:${s.chunk_index}, score:${(s.score || 0).toFixed(2)}`
-        ).join('\n')
-        lastMessage.content += `\n\n${citations}`
+        lastMessage.citations = data.sources.map((s: any) => ({
+          docId: s.doc_id || '',
+          chunkIndex: s.chunk_index || 0,
+          score: s.score || 0,
+          text: s.text
+        }))
       } else if (data.content) {
-        lastMessage.content += `\n[引用: ${data.content}]`
+        lastMessage.citations = [
+          {
+            docId: '',
+            chunkIndex: 0,
+            score: 0,
+            text: data.content
+          }
+        ]
       }
       break
     case 'done':
@@ -469,6 +520,14 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
       currentThought.value = ''
       break
   }
+}
+
+function openCitation(source: CitationSource) {
+  activeCitation.value = source
+}
+
+function closeCitation() {
+  activeCitation.value = null
 }
 
 // 从后端加载会话历史
@@ -798,6 +857,79 @@ watch(selectedWorkflowId, (value) => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* 引用列表 */
+.citation-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.citation-item {
+  border: 1px solid var(--border-primary);
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.citation-item:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+}
+
+/* 引用面板 */
+.citation-panel {
+  border-top: 1px solid var(--border-primary);
+  background-color: var(--surface-primary);
+  padding: 12px 20px;
+}
+
+.citation-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.citation-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.citation-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.citation-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.citation-excerpt {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.citation-highlight {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 /* 输入区域 */

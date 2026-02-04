@@ -15,6 +15,9 @@
 > **Parallel Execution**: YES - 2 waves
 > **Critical Path**: Layout refactor → Drawer move → Auto-layout adjust → Tests
 
+**Status**: Completed (2026-02-04)
+**Completion Note**: Left info panel requirement removed by user; plan accepted as complete.
+
 ---
 
 ## Context
@@ -131,7 +134,7 @@ Wave 2 (Behavior & Tests):
 
 ## TODOs
 
-- [ ] 1. 重构 WorkflowEditor 布局为“顶部工具栏 + 左侧信息 + 右侧抽屉”
+- [x] 1. 重构 WorkflowEditor 布局为“顶部工具栏 + 左侧信息 + 右侧抽屉”
 
   **What to do**:
   - 将 `.workflow-editor` 改为纵向结构：toolbar 在上、主内容在下
