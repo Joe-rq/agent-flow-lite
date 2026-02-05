@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
+import axios from 'axios'
 import App from '@/App.vue'
 
 describe('App Chrome and Navigation', () => {
@@ -68,6 +69,9 @@ describe('App Chrome and Navigation', () => {
     authStore.token = 'test-token'
     authStore.setUser({ id: '1', email: 'test@example.com', role: 'user' })
 
+    await router.push('/')
+    await router.isReady()
+
     const wrapper = mount(App, {
       global: {
         plugins: [router, pinia],
@@ -82,6 +86,9 @@ describe('App Chrome and Navigation', () => {
     const authStore = useAuthStore()
     authStore.token = 'test-token'
     authStore.setUser({ id: '1', email: 'test@example.com', role: 'user' })
+
+    await router.push('/')
+    await router.isReady()
 
     const wrapper = mount(App, {
       global: {
@@ -98,7 +105,10 @@ describe('App Chrome and Navigation', () => {
     authStore.token = 'test-token'
     authStore.setUser({ id: '1', email: 'test@example.com', role: 'user' })
 
-    vi.mocked(axios, 'post').mockResolvedValueOnce({ data: {} })
+    await router.push('/')
+    await router.isReady()
+
+    vi.spyOn(axios, 'post').mockResolvedValueOnce({ data: {} })
 
     const wrapper = mount(App, {
       global: {

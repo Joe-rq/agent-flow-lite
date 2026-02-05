@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 
 const sidebarCollapsed = ref(false)
 const { meta } = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
-const showChrome = computed(() => !meta.hideChrome && !authStore.isAuthenticated) !meta.hideChrome && !authStore.isAuthenticated) !meta.hideChrome)
+const showChrome = computed(() => !meta.hideChrome && authStore.isAuthenticated)
 
 onMounted(() => {
   const saved = localStorage.getItem('sidebar-collapsed')
@@ -24,12 +25,7 @@ function toggleSidebar() {
 
 async function handleLogout() {
   await authStore.logout()
-  router.push("/login")
-}
-  await authStore.logout()
-  router.push("/login")
-}
-  await authStore.logout()
+  router.push('/login')
 }
 </script>
 
