@@ -17,7 +17,6 @@
       >
         <div class="skill-card-header">
           <h3 class="skill-name">{{ skill.name }}</h3>
-          <span v-if="skill.model" class="skill-model">{{ skill.model }}</span>
         </div>
         <p class="skill-description">{{ skill.description || '暂无描述' }}</p>
         <div class="skill-inputs" v-if="skill.inputs && skill.inputs.length > 0">
@@ -146,7 +145,6 @@ interface SkillInput {
 interface Skill {
   name: string
   description?: string
-  model?: string
   inputs: SkillInput[]
   updatedAt: string
 }
@@ -185,7 +183,6 @@ async function loadSkills() {
     skills.value = (response.data.skills || []).map((skill: any) => ({
       name: skill.name,
       description: skill.description,
-      model: skill.model,
       inputs: skill.inputs || [],
       updatedAt: skill.updated_at || skill.updatedAt,
     }))
@@ -338,7 +335,7 @@ async function runSkill() {
 function handleSSEEvent(eventType: string, data: any) {
   switch (eventType) {
     case 'thought':
-      currentThought.value = data.content || ''
+      currentThought.value = data.message || data.status || ''
       scrollOutputToBottom()
       break
     case 'token':
@@ -468,15 +465,6 @@ onMounted(() => {
   font-weight: 600;
   color: #2c3e50;
   margin: 0;
-}
-
-.skill-model {
-  background-color: #e3f2fd;
-  color: #1565c0;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
 }
 
 .skill-description {

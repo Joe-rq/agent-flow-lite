@@ -8,7 +8,7 @@ const sidebarCollapsed = ref(false)
 const { meta } = useRoute()
 const authStore = useAuthStore()
 
-const showChrome = computed(() => !meta.hideChrome)
+const showChrome = computed(() => !meta.hideChrome && !authStore.isAuthenticated) !meta.hideChrome && !authStore.isAuthenticated) !meta.hideChrome)
 
 onMounted(() => {
   const saved = localStorage.getItem('sidebar-collapsed')
@@ -23,6 +23,12 @@ function toggleSidebar() {
 }
 
 async function handleLogout() {
+  await authStore.logout()
+  router.push("/login")
+}
+  await authStore.logout()
+  router.push("/login")
+}
   await authStore.logout()
 }
 </script>
