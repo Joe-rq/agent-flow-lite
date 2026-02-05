@@ -292,9 +292,9 @@ class SkillLoader:
                 if isinstance(inp, dict) and inp.get("name")
             ]
 
-        # Parse model config
+        # Parse model config (must be a dict, ignore string values)
         model = None
-        if frontmatter.get("model"):
+        if frontmatter.get("model") and isinstance(frontmatter["model"], dict):
             model_data = frontmatter["model"]
             model = SkillModelConfig(
                 temperature=model_data.get("temperature", 0.7),

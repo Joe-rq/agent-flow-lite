@@ -572,3 +572,49 @@ Just a fixed prompt."""
 
         assert skill.inputs is None
         assert skill.has_inputs is False
+
+    def test_skill_with_model_as_string_does_not_crash(self, loader):
+        """Test that model field as string is safely ignored (regression: AttributeError on .get())."""
+        content = """---
+name: string-model
+description: Skill with model as string instead of dict
+model: deepseek-chat
+---
+
+Just a prompt."""
+
+        skill = loader.create_skill("string-model", content)
+
+        assert skill.name == "string-model"
+        assert skill.model is None  # String model should be ignored
+
+    def test_skill_with_model_as_dict(self, loader):
+        """Test that model field as dict is parsed correctly."""
+        content = """---
+name: dict-model
+description: Skill with proper model config
+model:
+  temperature: 0.3
+  max_tokens: 1000
+---
+
+Just a prompt."""
+
+        skill = loader.create_skill("dict-model", content)
+
+        assert skill.model is not None
+        assert skill.model.temperature == 0.3
+        assert skill.model.max_tokens == 1000
+
+    def test_skill_without_model_field(self, loader):
+        """Test that missing model field results in None."""
+        content = """---
+name: no-model
+description: No model field
+---
+
+Just a prompt."""
+
+        skill = loader.create_skill("no-model", content)
+
+        assert skill.model is None
