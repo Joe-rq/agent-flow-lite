@@ -2,7 +2,7 @@
 Skill API endpoints for CRUD operations and execution.
 
 Provides RESTful endpoints for managing skills:
-- GET /api/v1/skills - List all skills
+- GET GET /api/v1/skills - List all skills
 - GET /api/v1/skills/{name} - Get skill details
 - POST /api/v1/skills - Create new skill
 - PUT /api/v1/skills/{name} - Update skill content
@@ -12,7 +12,7 @@ Provides RESTful endpoints for managing skills:
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.core.config import settings
@@ -26,6 +26,8 @@ from app.models.skill import (
     SkillSummary,
     SkillUpdateRequest,
 )
+from app.core.auth import User, get_current_user
+from app.models.user import UserRole
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 
@@ -49,14 +51,17 @@ def _handle_validation_error(exc: SkillValidationError) -> HTTPException:
 
 
 @router.get("", response_model=SkillListResponse)
-async def list_skills() -> SkillListResponse:
+async def list_skills(user: User = Depends(get_current_user)) -> SkillListResponse:
     """
     List all available skills.
 
     Returns a list of skill summaries sorted by updated_at (newest first).
+    Admin users see all skills, regular users only see their own.
     """
     try:
-        skills = skill_loader.list_skills()
+        # Admin sees all, regular users see only their own
+        user_id_filter = None if user.role == UserRole.ADMIN else str(user.id)
+        skills = skill_loader.list_skills(user_id=user_id_filter)
         return SkillListResponse(skills=skills, total=len(skills))
     except Exception as exc:
         raise HTTPException(
@@ -66,7 +71,7 @@ async def list_skills() -> SkillListResponse:
 
 
 @router.get("/{name}", response_model=SkillDetail)
-async def get_skill(name: str) -> SkillDetail:
+async def get_skill(name: str, user: User = Depends(get_current_user)) -> SkillDetail:
     """
     Get detailed information about a specific skill.
 
@@ -84,7 +89,7 @@ async def get_skill(name: str) -> SkillDetail:
 
 
 @router.post("", response_model=SkillDetail, status_code=status.HTTP_201_CREATED)
-async def create_skill(data: SkillCreateRequest) -> SkillDetail:
+async def create_skill(data: SkillCreateRequest, user: User = Depends(get_current_user)) -> SkillDetail:
     """
     Create a new skill.
 
@@ -95,7 +100,7 @@ async def create_skill(data: SkillCreateRequest) -> SkillDetail:
     numbers, and hyphens. Cannot start or end with hyphen.
     """
     try:
-        return skill_loader.create_skill(data.name, data.content)
+        return skill_loader.create_skill(data.name, data.content, user_id=str(user.id))
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
@@ -106,7 +111,7 @@ async def create_skill(data: SkillCreateRequest) -> SkillDetail:
 
 
 @router.put("/{name}", response_model=SkillDetail)
-async def update_skill(name: str, data: SkillUpdateRequest) -> SkillDetail:
+async def update_skill(name: str, data: SkillUpdateRequest, user: User = Depends(get_current_user)) -> SkillDetail:
     """
     Update an existing skill's SKILL.md content.
 
@@ -128,7 +133,7 @@ async def update_skill(name: str, data: SkillUpdateRequest) -> SkillDetail:
 
 
 @router.delete("/{name}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_skill(name: str) -> None:
+async def delete_skill(name: str, user: User = Depends(get_current_user)) -> None:
     """
     Delete a skill and all its contents.
 
@@ -165,7 +170,7 @@ async def _execute_skill_stream(
 
 
 @router.post("/{name}/run")
-async def run_skill(name: str, data: SkillRunRequest) -> StreamingResponse:
+async def run_skill(name: str, data: SkillRunRequest, user: User = Depends(get_current_user)) -> StreamingResponse:
     """
     Execute a skill with the provided inputs.
 

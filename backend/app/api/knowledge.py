@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse
 from filelock import FileLock
 
@@ -24,6 +24,7 @@ from app.models.document import (
     KnowledgeBaseCreate,
     KnowledgeBaseListResponse,
 )
+from app.core.auth import User, get_current_user
 
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
@@ -127,7 +128,8 @@ def save_documents_metadata(kb_id: str, metadata: dict) -> None:
 async def upload_document(
     kb_id: str,
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user)
 ) -> DocumentResponse:
     """
     Upload a document to a knowledge base.
@@ -201,7 +203,7 @@ async def upload_document(
 
 
 @router.get("/{kb_id}/documents")
-async def list_documents(kb_id: str) -> DocumentListResponse:
+async def list_documents(kb_id: str, user: User = Depends(get_current_user)) -> DocumentListResponse:
     """
     List all documents in a knowledge base.
 
@@ -231,7 +233,7 @@ async def list_documents(kb_id: str) -> DocumentListResponse:
 
 
 @router.delete("/{kb_id}/documents/{doc_id}")
-async def delete_document(kb_id: str, doc_id: str) -> JSONResponse:
+async def delete_document(kb_id: str, doc_id: str, user: User = Depends(get_current_user)) -> JSONResponse:
     """
     Delete a document from a knowledge base.
 
@@ -322,7 +324,8 @@ def process_document_task(kb_id: str, doc_id: str, task_id: str | None = None):
 async def process_document(
     kb_id: str,
     doc_id: str,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user)
 ) -> JSONResponse:
     """
     Process a document: parse, chunk, embed, and store to ChromaDB.
@@ -374,7 +377,7 @@ async def process_document(
 
 
 @router.get("/tasks/{task_id}")
-async def get_task_status(task_id: str) -> dict:
+async def get_task_status(task_id: str, user: User = Depends(get_current_user)) -> dict:
     if task_id not in processing_tasks:
         raise HTTPException(status_code=404, detail="Task not found")
     return processing_tasks[task_id]
@@ -384,7 +387,8 @@ async def get_task_status(task_id: str) -> dict:
 async def search_documents(
     kb_id: str,
     query: str = Query(..., description="Search query"),
-    top_k: int = Query(5, description="Number of top results to return", ge=1, le=20)
+    top_k: int = Query(5, description="Number of top results to return", ge=1, le=20),
+    user: User = Depends(get_current_user)
 ) -> dict:
     """
     Search for relevant chunks in a knowledge base.
@@ -423,7 +427,7 @@ async def search_documents(
 
 
 @router.get("/{kb_id}/info")
-async def get_knowledge_base_info(kb_id: str) -> dict:
+async def get_knowledge_base_info(kb_id: str, user: User = Depends(get_current_user)) -> dict:
     chroma_client = get_chroma_client()
     collection_info = chroma_client.get_collection_info(kb_id)
     all_metadata = load_documents_metadata(kb_id)
@@ -438,7 +442,7 @@ async def get_knowledge_base_info(kb_id: str) -> dict:
 
 
 @router.get("", response_model=KnowledgeBaseListResponse)
-async def list_knowledge_bases() -> KnowledgeBaseListResponse:
+async def list_knowledge_bases(user: User = Depends(get_current_user)) -> KnowledgeBaseListResponse:
     metadata = load_kb_metadata()
     items = []
     for kb_id, kb_data in metadata.items():
@@ -455,7 +459,7 @@ async def list_knowledge_bases() -> KnowledgeBaseListResponse:
 
 
 @router.post("", response_model=KnowledgeBase, status_code=201)
-async def create_knowledge_base(data: KnowledgeBaseCreate) -> KnowledgeBase:
+async def create_knowledge_base(data: KnowledgeBaseCreate, user: User = Depends(get_current_user)) -> KnowledgeBase:
     kb_id = str(uuid.uuid4())
     timestamp = datetime.utcnow()
     metadata = load_kb_metadata()
@@ -478,7 +482,7 @@ async def create_knowledge_base(data: KnowledgeBaseCreate) -> KnowledgeBase:
 
 
 @router.delete("/{kb_id}", status_code=204)
-async def delete_knowledge_base(kb_id: str) -> None:
+async def delete_knowledge_base(kb_id: str, user: User = Depends(get_current_user)) -> None:
     metadata = load_kb_metadata()
     if kb_id not in metadata:
         raise HTTPException(

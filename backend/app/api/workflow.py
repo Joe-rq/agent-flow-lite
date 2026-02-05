@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from filelock import FileLock
 
@@ -19,6 +19,7 @@ from app.models.workflow import (
     WorkflowList,
     WorkflowUpdate,
 )
+from app.core.auth import User, get_current_user
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
@@ -71,7 +72,7 @@ def workflow_to_model(workflow_id: str, data: dict) -> Workflow:
 
 
 @router.get("", response_model=WorkflowList)
-async def list_workflows() -> WorkflowList:
+async def list_workflows(user: User = Depends(get_current_user)) -> WorkflowList:
     """
     List all workflows
     
@@ -90,7 +91,7 @@ async def list_workflows() -> WorkflowList:
 
 
 @router.post("", response_model=Workflow, status_code=201)
-async def create_workflow(workflow_data: WorkflowCreate) -> Workflow:
+async def create_workflow(workflow_data: WorkflowCreate, user: User = Depends(get_current_user)) -> Workflow:
     """
     Create a new workflow
     
@@ -119,7 +120,7 @@ async def create_workflow(workflow_data: WorkflowCreate) -> Workflow:
 
 
 @router.get("/{workflow_id}", response_model=Workflow)
-async def get_workflow(workflow_id: str) -> Workflow:
+async def get_workflow(workflow_id: str, user: User = Depends(get_current_user)) -> Workflow:
     """
     Get a workflow by ID
     
@@ -139,6 +140,7 @@ async def get_workflow(workflow_id: str) -> Workflow:
 async def update_workflow(
     workflow_id: str,
     update_data: WorkflowUpdate,
+    user: User = Depends(get_current_user)
 ) -> Workflow:
     """
     Update an existing workflow
@@ -173,7 +175,7 @@ async def update_workflow(
 
 
 @router.delete("/{workflow_id}", status_code=204)
-async def delete_workflow(workflow_id: str) -> None:
+async def delete_workflow(workflow_id: str, user: User = Depends(get_current_user)) -> None:
     """
     Delete a workflow
     
@@ -198,7 +200,7 @@ def format_sse(event: str, data: dict) -> str:
 
 
 @router.post("/{workflow_id}/execute")
-async def execute_workflow(workflow_id: str, input_data: dict) -> StreamingResponse:
+async def execute_workflow(workflow_id: str, input_data: dict, user: User = Depends(get_current_user)) -> StreamingResponse:
     initial_input = input_data.get("input", "")
     if not initial_input:
         raise HTTPException(status_code=400, detail="Input cannot be empty")

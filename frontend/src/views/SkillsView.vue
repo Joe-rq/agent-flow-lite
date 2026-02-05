@@ -180,7 +180,7 @@ function formatDate(dateStr: string): string {
 async function loadSkills() {
   try {
     const response = await axios.get(`${API_BASE}/skills`)
-    skills.value = (response.data.items || []).map((skill: any) => ({
+    skills.value = (response.data.skills || []).map((skill: any) => ({
       name: skill.name,
       description: skill.description,
       model: skill.model,

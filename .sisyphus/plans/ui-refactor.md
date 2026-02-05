@@ -57,11 +57,11 @@
 - ChatTerminal.vue 对话框风格统一
 
 ### Definition of Done
-- [ ] 侧边栏可以折叠/展开，动画流畅
-- [ ] 折叠状态保存到 localStorage
-- [ ] 所有对话框使用 theme.css 变量
-- [ ] 所有对话框按钮使用 Button.vue 组件
-- [ ] 无硬编码颜色残留
+- [x] 侧边栏可以折叠/展开，动画流畅
+- [x] 折叠状态保存到 localStorage
+- [x] 所有对话框使用 theme.css 变量
+- [x] 所有对话框按钮使用 Button.vue 组件
+- [x] 无硬编码颜色残留
 
 ### Must Have
 - 侧边栏折叠/展开功能
@@ -130,7 +130,7 @@ Parallel Speedup: N/A (sequential dependencies)
 
 ## TODOs
 
-- [ ] 1. App.vue 侧边栏折叠功能
+- [x] 1. App.vue 侧边栏折叠功能
 
   **What to do**:
   - 添加 `sidebarCollapsed` ref 状态（默认 false）
@@ -203,14 +203,14 @@ Parallel Speedup: N/A (sequential dependencies)
   ```
 
   **Evidence to Capture**:
-  - [ ] Screenshots in .sisyphus/evidence/ for sidebar states
-  - [ ] localStorage state verification
+  - [x] Screenshots in .sisyphus/evidence/ for sidebar states
+  - [x] localStorage state verification
 
   **Commit**: YES
   - Message: `feat(ui): add collapsible sidebar with localStorage persistence`
   - Files: `frontend/src/App.vue`
 
-- [ ] 2. WorkflowEditor.vue 对话框风格统一
+- [x] 2. WorkflowEditor.vue 对话框风格统一
 
   **What to do**:
   - 替换所有硬编码颜色为 theme.css 变量
@@ -295,14 +295,14 @@ Parallel Speedup: N/A (sequential dependencies)
   ```
 
   **Evidence to Capture**:
-  - [ ] grep 输出验证无硬编码颜色
-  - [ ] Screenshots 验证对话框外观
+  - [x] grep 输出验证无硬编码颜色
+  - [x] Screenshots 验证对话框外观
 
   **Commit**: YES
   - Message: `style(ui): unify WorkflowEditor dialog styles with theme`
   - Files: `frontend/src/views/WorkflowEditor.vue`
 
-- [ ] 3. KnowledgeView.vue 对话框风格统一
+- [x] 3. KnowledgeView.vue 对话框风格统一
 
   **What to do**:
   - 与 Task 2 相同：替换硬编码颜色，使用 Button 组件
@@ -349,7 +349,7 @@ Parallel Speedup: N/A (sequential dependencies)
   - Message: `style(ui): unify KnowledgeView dialog styles with theme`
   - Files: `frontend/src/views/KnowledgeView.vue`
 
-- [ ] 4. ChatTerminal.vue 对话框风格统一
+- [x] 4. ChatTerminal.vue 对话框风格统一
 
   **What to do**:
   - 与 Task 2、3 相同：替换硬编码颜色，使用 Button 组件
@@ -428,11 +428,11 @@ curl -s http://localhost:5173 | head -20
 ```
 
 ### Final Checklist
-- [ ] 侧边栏可以折叠/展开，动画流畅（300ms）
-- [ ] 折叠状态保存到 localStorage
-- [ ] 折叠时仅显示图标（60px 宽度）
-- [ ] WorkflowEditor.vue 无硬编码颜色
-- [ ] KnowledgeView.vue 无硬编码颜色
-- [ ] ChatTerminal.vue 无硬编码颜色
-- [ ] 所有对话框按钮使用 Button.vue 组件
-- [ ] 所有对话框使用 theme.css 变量
+- [x] 侧边栏可以折叠/展开，动画流畅（300ms）
+- [x] 折叠状态保存到 localStorage
+- [x] 折叠时仅显示图标（60px 宽度）
+- [x] WorkflowEditor.vue 无硬编码颜色
+- [x] KnowledgeView.vue 无硬编码颜色
+- [x] ChatTerminal.vue 无硬编码颜色
+- [x] 所有对话框按钮使用 Button.vue 组件
+- [x] 所有对话框使用 theme.css 变量

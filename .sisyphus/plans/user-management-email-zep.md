@@ -57,10 +57,10 @@ Implement a demo email-based user system (admin/user), protect APIs, and enforce
 - Chat sessions and Zep memory scoped to authenticated user.
 
 ### Definition of Done
-- [ ] Unauthenticated API calls return 401 for protected endpoints.
-- [ ] Login with `admin@mail.com` returns admin role and exposes admin UI.
-- [ ] Normal user can only view their own chat sessions; admin can view all users.
-- [ ] Zep memory operations use server-side user_id and cannot be spoofed by client.
+- [x] Unauthenticated API calls return 401 for protected endpoints.
+- [x] Login with `admin@mail.com` returns admin role and exposes admin UI.
+- [x] Normal user can only view their own chat sessions; admin can view all users.
+- [x] Zep memory operations use server-side user_id and cannot be spoofed by client.
 
 ### Must Have
 - Email-only demo login (no real email delivery)
@@ -160,8 +160,8 @@ Critical Path: Task 1 → Task 3 → Task 4
 - `backend/pyproject.toml:7` - add SQLAlchemy dependency if needed
 
 **Acceptance Criteria (TDD)**:
-- [ ] `backend/tests/test_auth.py` includes login + me + logout tests
-- [ ] `uv run pytest tests/test_auth.py -q` → PASS
+- [x] `backend/tests/test_auth.py` includes login + me + logout tests
+- [x] `uv run pytest tests/test_auth.py -q` → PASS
 
 **Agent-Executed QA Scenarios**:
 
@@ -218,8 +218,8 @@ Scenario: Disabled user token rejected
 - Zep docs: `https://help.getzep.com/v3/ecosystem/livekit-memory` - user_id naming for isolation
 
 **Acceptance Criteria (TDD)**:
-- [ ] New tests assert session list returns only current user's sessions
-- [ ] Tests assert client user_id spoofing is ignored
+- [x] New tests assert session list returns only current user's sessions
+- [x] Tests assert client user_id spoofing is ignored
 
 **Agent-Executed QA Scenarios**:
 
@@ -272,8 +272,8 @@ Scenario: Zep uses server-side user_id
 - `frontend/README.md` - existing view/page structure
 
 **Acceptance Criteria (TDD)**:
-- [ ] `frontend/src/__tests__/auth/login.spec.ts` verifies login flow
-- [ ] `npx vitest run src/__tests__/auth/login.spec.ts` → PASS
+- [x] `frontend/src/__tests__/auth/login.spec.ts` verifies login flow
+- [x] `npx vitest run src/__tests__/auth/login.spec.ts` → PASS
 
 **Agent-Executed QA Scenarios**:
 
@@ -326,9 +326,9 @@ Scenario: Unauthenticated user redirected to login
 - `frontend/src/views/KnowledgeView.vue` - list + actions UI patterns
 
 **Acceptance Criteria (TDD)**:
-- [ ] `backend/tests/test_admin_users.py` covers list/disable/enable/delete
-- [ ] `uv run pytest tests/test_admin_users.py -q` → PASS
-- [ ] `frontend/src/__tests__/admin/users.spec.ts` covers admin list render
+- [x] `backend/tests/test_admin_users.py` covers list/disable/enable/delete
+- [x] `uv run pytest tests/test_admin_users.py -q` → PASS
+- [x] `frontend/src/__tests__/admin/users.spec.ts` covers admin list render
 
 **Agent-Executed QA Scenarios**:
 
@@ -371,7 +371,7 @@ cd frontend && npm run test
 ```
 
 ### Final Checklist
-- [ ] All protected APIs require Bearer token
-- [ ] Admin can manage users; normal users restricted to own data
-- [ ] Zep memory is user-scoped and not spoofable
-- [ ] No password/email verification/OAuth added
+- [x] All protected APIs require Bearer token
+- [x] Admin can manage users; normal users restricted to own data
+- [x] Zep memory is user-scoped and not spoofable
+- [x] No password/email verification/OAuth added

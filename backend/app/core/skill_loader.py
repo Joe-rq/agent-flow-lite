@@ -241,6 +241,20 @@ class SkillLoader:
         # No frontmatter, entire content is body
         return {}, content.strip()
 
+    def _rebuild_skill_md(self, frontmatter: Dict[str, Any], body: str) -> str:
+        """
+        Rebuild SKILL.md content from frontmatter and body.
+
+        Args:
+            frontmatter: Parsed YAML frontmatter
+            body: Markdown body (prompt)
+
+        Returns:
+            Reconstructed SKILL.md content
+        """
+        yaml_content = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True)
+        return f"---\n{yaml_content}---\n\n{body}"
+
     def _build_skill_detail(
         self,
         name: str,
@@ -307,9 +321,12 @@ class SkillLoader:
             updated_at=updated_at,
         )
 
-    def list_skills(self) -> List[SkillSummary]:
+    def list_skills(self, user_id: Optional[str] = None) -> List[SkillSummary]:
         """
         Scan skills directory and return list of all skills.
+
+        Args:
+            user_id: Optional user ID to filter by owner (admin sees all)
 
         Returns:
             List of SkillSummary objects
@@ -329,6 +346,14 @@ class SkillLoader:
 
             try:
                 skill = self.get_skill(skill_dir.name)
+                # Filter by user_id if provided (non-admin users only see their own skills)
+                if user_id is not None:
+                    # If skill has a user_id, must match
+                    if skill.user_id and skill.user_id != str(user_id):
+                        continue
+                    # If skill has no user_id, it's orphaned - skip for user-scoped access
+                    if not skill.user_id:
+                        continue
                 skills.append(
                     SkillSummary(
                         name=skill.name,
@@ -391,13 +416,14 @@ class SkillLoader:
 
         return self._build_skill_detail(name, frontmatter, body, content, skill_file)
 
-    def create_skill(self, name: str, content: str) -> SkillDetail:
+    def create_skill(self, name: str, content: str, user_id: Optional[str] = None) -> SkillDetail:
         """
         Create a new skill folder and SKILL.md file.
 
         Args:
             name: Skill name (used as folder name)
             content: Complete SKILL.md content
+            user_id: Owner user ID (optional)
 
         Returns:
             SkillDetail of created skill
@@ -437,6 +463,13 @@ class SkillLoader:
                 if isinstance(inp, dict) and inp.get("name")
             ]
         self._validate_placeholders(body, inputs)
+
+        # Inject user_id if provided
+        if user_id and "user_id" not in frontmatter:
+            frontmatter["user_id"] = user_id
+
+        # Rebuild content with injected user_id
+        content = self._rebuild_skill_md(frontmatter, body)
 
         # Create skill directory and file
         skill_file = self._get_skill_path(name)
