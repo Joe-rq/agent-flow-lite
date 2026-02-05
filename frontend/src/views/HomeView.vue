@@ -6,7 +6,7 @@ interface Feature {
   title: string
   description: string
   route: string
-  icon: 'workflow' | 'knowledge' | 'chat'
+  icon: 'workflow' | 'knowledge' | 'chat' | 'skill'
 }
 
 const features: Feature[] = [
@@ -27,6 +27,12 @@ const features: Feature[] = [
     description: '交互式对话终端，支持流式响应和引用追溯',
     route: '/chat',
     icon: 'chat',
+  },
+  {
+    title: '技能管理',
+    description: '管理 Agent Skills，封装可复用的 AI 能力',
+    route: '/skills',
+    icon: 'skill',
   },
 ]
 </script>
@@ -73,6 +79,11 @@ const features: Feature[] = [
           </svg>
           <svg v-else-if="feature.icon === 'chat'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <svg v-else-if="feature.icon === 'skill'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v8" />
+            <path d="M8 12h8" />
           </svg>
         </div>
         <h3 class="feature-card__title">{{ feature.title }}</h3>
@@ -166,6 +177,11 @@ const features: Feature[] = [
 .feature-card__icon--chat {
   background: rgba(34, 197, 94, 0.15);
   color: #22c55e;
+}
+
+.feature-card__icon--skill {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
 }
 
 .feature-card__title {

@@ -14,7 +14,8 @@ function createTestRouter() {
       { path: '/', component: HomeView },
       { path: '/workflow', component: { template: '<div>Workflow</div>' } },
       { path: '/knowledge', component: { template: '<div>Knowledge</div>' } },
-      { path: '/chat', component: { template: '<div>Chat</div>' } }
+      { path: '/chat', component: { template: '<div>Chat</div>' } },
+      { path: '/skills', component: { template: '<div>Skills</div>' } }
     ]
   })
 }
@@ -70,6 +71,7 @@ describe('HomeView Smoke Tests', () => {
     expect(text).toContain('工作流')
     expect(text).toContain('知识库')
     expect(text).toContain('对话')
+    expect(text).toContain('技能管理')
   })
 
   it('should display CTA buttons in Chinese', () => {
@@ -87,7 +89,7 @@ describe('HomeView Smoke Tests', () => {
     expect(text).toContain('上传文档')
   })
 
-  it('should render three feature cards', () => {
+  it('should render four feature cards', () => {
     const wrapper = mount(HomeView, {
       global: {
         plugins: [router, pinia],
@@ -98,6 +100,6 @@ describe('HomeView Smoke Tests', () => {
       }
     })
     const cards = wrapper.findAllComponents(Card)
-    expect(cards.length).toBe(3)
+    expect(cards.length).toBe(4)
   })
 })
