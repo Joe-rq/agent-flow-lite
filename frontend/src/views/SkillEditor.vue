@@ -325,6 +325,7 @@ async function saveSkill() {
           default: i.default?.trim() || undefined,
         })),
       prompt: skillPrompt.value,
+      content: generatedMarkdown.value,
     }
 
     if (isNew.value) {

@@ -697,6 +697,79 @@ describe('SkillEditor Save', () => {
       })
     )
   })
+
+  it('should include content field in create payload', async () => {
+    mockPost.mockResolvedValueOnce({ status: 201 })
+
+    const wrapper = mount(SkillEditor, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    const nameInput = wrapper.find('input[type="text"]')
+    await nameInput.setValue('new-skill')
+
+    const textarea = wrapper.find('.prompt-textarea')
+    await textarea.setValue('Test prompt content')
+
+    const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
+    if (saveButton) {
+      await saveButton.trigger('click')
+    }
+
+    await flushPromises()
+
+    // Calculate expected content (generatedMarkdown output)
+    const expectedContent = `---\nname: new-skill\n---\n\nTest prompt content`
+
+    // Verify POST was called with content field
+    expect(mockPost).toHaveBeenCalled()
+    const [, createPayload] = mockPost.mock.calls[0]
+    expect(createPayload.content).toBe(expectedContent)
+  })
+
+  it('should include content field in update payload', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        name: 'existing-skill',
+        description: 'Existing description',
+        model: 'deepseek-chat',
+        inputs: [],
+        prompt: 'Existing prompt',
+      }
+    })
+    mockPut.mockResolvedValueOnce({ status: 200 })
+
+    await router.push('/skills/existing-skill')
+    await router.isReady()
+
+    const wrapper = mount(SkillEditor, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    await flushPromises()
+
+    const textarea = wrapper.find('.prompt-textarea')
+    await textarea.setValue('Updated prompt content')
+
+    const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
+    if (saveButton) {
+      await saveButton.trigger('click')
+    }
+
+    await flushPromises()
+
+    // Calculate expected content (generatedMarkdown output)
+    const expectedContent = `---\nname: existing-skill\ndescription: Existing description\nmodel: deepseek-chat\n---\n\nUpdated prompt content`
+
+    // Verify PUT was called with content field
+    expect(mockPut).toHaveBeenCalled()
+    const [, updatePayload] = mockPut.mock.calls[0]
+    expect(updatePayload.content).toBe(expectedContent)
+  })
 })
 
 describe('SkillEditor Load', () => {
