@@ -101,7 +101,6 @@ describe('SkillEditor Smoke Tests', () => {
     const text = wrapper.text()
     expect(text).toContain('技能名称')
     expect(text).toContain('描述')
-    expect(text).toContain('模型')
     expect(text).toContain('输入参数')
     expect(text).toContain('提示词')
   })
@@ -763,12 +762,94 @@ describe('SkillEditor Save', () => {
     await flushPromises()
 
     // Calculate expected content (generatedMarkdown output)
-    const expectedContent = `---\nname: existing-skill\ndescription: Existing description\nmodel: deepseek-chat\n---\n\nUpdated prompt content`
+    const expectedContent = `---\nname: existing-skill\ndescription: Existing description\n---\n\nUpdated prompt content`
 
     // Verify PUT was called with content field
     expect(mockPut).toHaveBeenCalled()
     const [, updatePayload] = mockPut.mock.calls[0]
     expect(updatePayload.content).toBe(expectedContent)
+  })
+
+  it('should not have model field in preview', async () => {
+    const wrapper = mount(SkillEditor, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    const nameInput = wrapper.find('input[type="text"]')
+    await nameInput.setValue('test-skill')
+
+    const textarea = wrapper.find('.prompt-textarea')
+    await textarea.setValue('Test prompt content')
+
+    const previewContent = wrapper.find('.code-block').text()
+    expect(previewContent).not.toContain('model:')
+  })
+
+  it('should not include model in create payload', async () => {
+    mockPost.mockResolvedValueOnce({ status: 201 })
+
+    const wrapper = mount(SkillEditor, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    const nameInput = wrapper.find('input[type="text"]')
+    await nameInput.setValue('new-skill')
+
+    const textarea = wrapper.find('.prompt-textarea')
+    await textarea.setValue('Test prompt content')
+
+    const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
+    if (saveButton) {
+      await saveButton.trigger('click')
+    }
+
+    await flushPromises()
+
+    expect(mockPost).toHaveBeenCalled()
+    const [, createPayload] = mockPost.mock.calls[0]
+    expect(createPayload).not.toHaveProperty('model')
+  })
+
+  it('should not include model in update payload', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        name: 'existing-skill',
+        description: 'Existing description',
+        model: 'deepseek-chat',
+        inputs: [],
+        prompt: 'Existing prompt',
+      }
+    })
+    mockPut.mockResolvedValueOnce({ status: 200 })
+
+    await router.push('/skills/existing-skill')
+    await router.isReady()
+
+    const wrapper = mount(SkillEditor, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    await flushPromises()
+
+    const textarea = wrapper.find('.prompt-textarea')
+    await textarea.setValue('Updated prompt content')
+
+    const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
+    if (saveButton) {
+      await saveButton.trigger('click')
+    }
+
+    await flushPromises()
+
+    expect(mockPut).toHaveBeenCalled()
+    const [, updatePayload] = mockPut.mock.calls[0]
+    expect(updatePayload).not.toHaveProperty('model')
   })
 })
 

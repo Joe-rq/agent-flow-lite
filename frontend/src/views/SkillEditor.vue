@@ -38,14 +38,6 @@
               <span v-if="nameError" class="error-text">{{ nameError }}</span>
               <span v-else class="hint">小写字母、数字、连字符，如: text-summarizer</span>
             </div>
-            <div class="form-group">
-              <label>模型</label>
-              <input
-                v-model="skillModel"
-                type="text"
-                placeholder="deepseek-chat"
-              />
-            </div>
           </div>
 
           <div class="form-group">
@@ -172,9 +164,8 @@ const isNew = computed(() => !skillNameParam.value || skillNameParam.value === '
 // 状态
 const skillName = ref('')
 const skillDescription = ref('')
-const skillModel = ref('')
 const skillInputs = ref<SkillInput[]>([])
-const skillPrompt = ref('')
+const skillPrompt = ref<string>('')
 const isSaving = ref(false)
 const showPreview = ref(true)
 const nameError = ref('')
@@ -198,7 +189,6 @@ const generatedMarkdown = computed(() => {
   let yaml = '---\n'
   yaml += `name: ${skillName.value || 'unnamed'}\n`
   if (skillDescription.value) yaml += `description: ${skillDescription.value}\n`
-  if (skillModel.value) yaml += `model: ${skillModel.value}\n`
   if (inputsYaml) yaml += `inputs:\n${inputsYaml}\n`
   yaml += '---\n\n'
   yaml += skillPrompt.value || ''
@@ -278,7 +268,6 @@ async function loadSkill(name: string) {
 
     skillName.value = skill.name || ''
     skillDescription.value = skill.description || ''
-    skillModel.value = skill.model || ''
     skillInputs.value = skill.inputs?.map((i: any) => ({
       name: i.name || '',
       description: i.description || '',
@@ -315,7 +304,6 @@ async function saveSkill() {
     const payload = {
       name: skillName.value.trim(),
       description: skillDescription.value.trim() || undefined,
-      model: skillModel.value.trim() || undefined,
       inputs: skillInputs.value
         .filter(i => i.name.trim())
         .map(i => ({
