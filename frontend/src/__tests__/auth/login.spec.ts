@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import LoginView from '@/views/LoginView.vue'
+import App from '@/App.vue'
 import axios from 'axios'
 
 vi.mock('axios', () => ({
@@ -22,7 +23,7 @@ function createTestRouter() {
   return createRouter({
     history: createWebHistory(),
     routes: [
-      { path: '/login', component: LoginView },
+      { path: '/login', component: LoginView, meta: { public: true, hideChrome: true } },
       { path: '/', component: { template: '<div>Home</div>' } },
     ],
   })
@@ -273,5 +274,111 @@ describe('LoginView', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(wrapper.text()).toContain('用户不存在')
+  })
+
+  it('should display register CTA button', () => {
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+    expect(wrapper.text()).toContain('注册')
+  })
+
+  it('should call login API when register CTA is clicked with valid email', async () => {
+    const mockResponse = {
+      data: {
+        token: 'test-token',
+        user: { id: '1', email: 'newuser@example.com', role: 'user' },
+      },
+    }
+    vi.mocked(axios.post).mockResolvedValueOnce(mockResponse)
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const input = wrapper.find('input[type="email"]')
+    await input.setValue('newuser@example.com')
+
+    const buttons = wrapper.findAll('button')
+    const registerButton = buttons.find((btn) => btn.text().includes('注册'))
+    expect(registerButton).toBeDefined()
+    await registerButton!.trigger('click')
+
+    expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', {
+      email: 'newuser@example.com',
+    })
+  })
+})
+
+describe('App Chrome Hiding on Login', () => {
+  let router: ReturnType<typeof createTestRouter>
+  let pinia: ReturnType<typeof createPinia>
+
+  beforeEach(async () => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    router = createTestRouter()
+    localStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('should hide header on /login route', async () => {
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const header = wrapper.find('.app-header')
+    expect(header.exists()).toBe(false)
+  })
+
+  it('should hide sidebar on /login route', async () => {
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const sidebar = wrapper.find('.app-sidebar')
+    expect(sidebar.exists()).toBe(false)
+  })
+
+  it('should show header on non-login routes', async () => {
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const header = wrapper.find('.app-header')
+    expect(header.exists()).toBe(true)
+  })
+
+  it('should show sidebar on non-login routes', async () => {
+    await router.push('/')
+    await router.isReady()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const sidebar = wrapper.find('.app-sidebar')
+    expect(sidebar.exists()).toBe(true)
   })
 })

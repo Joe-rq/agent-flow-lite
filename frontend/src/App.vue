@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 
 const sidebarCollapsed = ref(false)
+const { meta } = useRoute()
 const authStore = useAuthStore()
+
+const showChrome = computed(() => !meta.hideChrome)
 
 onMounted(() => {
   const saved = localStorage.getItem('sidebar-collapsed')
@@ -26,7 +29,7 @@ async function handleLogout() {
 
 <template>
   <div class="app-container">
-    <header class="app-header">
+    <header v-if="showChrome" class="app-header">
       <div class="logo">Agent Flow</div>
       <Button
         v-if="authStore.isAuthenticated"
@@ -39,7 +42,7 @@ async function handleLogout() {
     </header>
 
     <div class="app-body">
-      <aside class="app-sidebar" :class="{ collapsed: sidebarCollapsed }">
+      <aside v-if="showChrome" class="app-sidebar" :class="{ collapsed: sidebarCollapsed }">
         <button class="sidebar-toggle" @click="toggleSidebar" :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'">
           <span class="toggle-icon">{{ sidebarCollapsed ? '→' : '←' }}</span>
         </button>

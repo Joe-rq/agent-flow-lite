@@ -70,6 +70,15 @@ async function handleLogin() {
         >
           {{ isLoading ? '登录中...' : '登录' }}
         </Button>
+
+        <Button
+          variant="secondary"
+          size="lg"
+          :disabled="isLoading"
+          @click="handleLogin"
+        >
+          {{ isLoading ? '注册中...' : '注册' }}
+        </Button>
       </div>
 
       <div class="login-footer">
@@ -123,6 +132,10 @@ async function handleLogin() {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+}
+
+.login-form .btn {
+  width: 100%;
 }
 
 .form-group {
