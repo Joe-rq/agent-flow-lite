@@ -45,9 +45,9 @@
 - 新增 App 级别测试覆盖：未登录隐藏 chrome、登出跳转。
 
 ### Definition of Done
-- [ ] 未登录时 App header/sidebar 不渲染。
-- [ ] 点击“退出登录”后路由立即变为 `/login`。
-- [ ] `npx vitest run src/__tests__/App.spec.ts` 通过。
+- [x] 未登录时 App header/sidebar 不渲染。
+- [x] 点击"退出登录"后路由立即变为 `/login`。
+- [x] `npx vitest run src/__tests__/App.spec.ts` 通过。
 
 ### Must Have
 - 未登录时只显示登录页面内容。
@@ -108,7 +108,7 @@ Wave 2: Task 2 (App logic changes)
 
 ## TODOs
 
-- [ ] 1. Add TDD tests for login chrome + logout redirect (RED)
+- [x] 1. Add TDD tests for login chrome + logout redirect (RED)
 
   **What to do**:
   - Create `frontend/src/__tests__/App.spec.ts`.
@@ -131,7 +131,7 @@ Wave 2: Task 2 (App logic changes)
   **Acceptance Criteria**:
   - [ ] `npx vitest run src/__tests__/App.spec.ts` → FAIL (before changes).
 
-- [ ] 2. Update App layout gating + logout redirect (GREEN)
+- [x] 2. Update App layout gating + logout redirect (GREEN)
 
   **What to do**:
   - Update `showChrome` to also depend on `authStore.isAuthenticated`.
@@ -173,6 +173,6 @@ npx vitest run src/__tests__/App.spec.ts
 ```
 
 ### Final Checklist
-- [ ] 未登录页面无 header/sidebar
-- [ ] 登出后立即跳转 /login
-- [ ] Tests pass
+- [x] 未登录页面无 header/sidebar
+- [x] 登出后立即跳转 /login
+- [x] Tests pass
