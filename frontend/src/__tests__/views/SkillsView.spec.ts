@@ -239,7 +239,7 @@ describe('SkillsView Navigation', () => {
   it('should navigate to edit page when clicking skill card', async () => {
     const pushSpy = vi.spyOn(router, 'push')
     const mockSkills = {
-      items: [
+      skills: [
         {
           name: 'test-skill',
           description: 'Test skill',
@@ -798,5 +798,74 @@ describe('SkillsView SSE Run', () => {
     await overlay.trigger('click')
 
     expect(wrapper.find('.dialog-overlay').exists()).toBe(true)
+  })
+})
+
+describe('SkillsView Auth Header TDD', () => {
+  let router: ReturnType<typeof createTestRouter>
+  let pinia: ReturnType<typeof createPinia>
+
+  beforeEach(async () => {
+    router = createTestRouter()
+    pinia = createPinia()
+    await router.push('/skills')
+    await router.isReady()
+    vi.clearAllMocks()
+  })
+
+  it('should include Authorization header with Bearer token when calling runSkill', async () => {
+    const mockSkills = {
+      skills: [
+        {
+          name: 'test-skill',
+          description: 'Test skill',
+          inputs: [],
+          updated_at: '2024-01-15T10:00:00Z'
+        }
+      ]
+    }
+    mockGet.mockResolvedValueOnce({ data: mockSkills })
+
+    // Mock auth store with token
+    const mockToken = 'test-jwt-token-12345'
+    vi.mocked(pinia.state.value).auth = { token: mockToken, user: null }
+
+    const mockResponse = {
+      ok: true,
+      body: {
+        getReader: () => ({
+          read: () => Promise.resolve({ done: true, value: undefined })
+        })
+      }
+    }
+    mockFetch.mockResolvedValueOnce(mockResponse)
+
+    const wrapper = mount(SkillsView, {
+      global: {
+        plugins: [router, pinia]
+      }
+    })
+
+    await flushPromises()
+
+    const runButton = wrapper.find('.btn-run')
+    await runButton.trigger('click')
+
+    const runConfirmButton = wrapper.findAll('.dialog-actions button').find(b => b.text().includes('运行'))
+    if (runConfirmButton) {
+      await runConfirmButton.trigger('click')
+    }
+
+    await flushPromises()
+
+    // TDD: Assert that fetch is called with Authorization header containing Bearer token
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/v1/skills/test-skill/run',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${mockToken}`
+        })
+      })
+    )
   })
 })

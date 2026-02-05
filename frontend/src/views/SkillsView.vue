@@ -133,6 +133,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
 // 类型定义
 interface SkillInput {
@@ -162,6 +163,7 @@ const currentThought = ref('')
 const outputContainer = ref<HTMLElement | null>(null)
 
 const API_BASE = '/api/v1'
+const authStore = useAuthStore()
 
 // 格式化日期
 function formatDate(dateStr: string): string {
@@ -271,11 +273,16 @@ async function runSkill() {
   currentThought.value = ''
 
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (authStore.token) {
+      headers['Authorization'] = `Bearer ${authStore.token}`
+    }
+
     const response = await fetch(`${API_BASE}/skills/${runningSkill.value.name}/run`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ inputs: runInputs.value }),
     })
 
