@@ -236,6 +236,7 @@ import ConditionNode from '../components/nodes/ConditionNode.vue'
 import SkillNode from '../components/nodes/SkillNode.vue'
 import NodeConfigPanel from '../components/NodeConfigPanel.vue'
 import Button from '@/components/ui/Button.vue'
+import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 
 import '@vue-flow/core/dist/style.css'
@@ -243,6 +244,7 @@ import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
 const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode, removeNodes, removeEdges, fitView } = useVueFlow()
+const authStore = useAuthStore()
 
 const API_BASE = '/api/v1'
 const isSaving = ref(false)
@@ -506,7 +508,10 @@ async function executeWorkflow() {
   try {
     const response = await fetch(`${API_BASE}/workflows/${currentWorkflowId.value}/execute`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`,
+      },
       body: JSON.stringify({ input: runInput.value })
     })
 
@@ -608,7 +613,7 @@ function onDrop(event: DragEvent) {
   }
 
   const newNode = {
-    id: `${Date.now()}`,
+    id: crypto.randomUUID(),
     type,
     position,
     label: labelMap[type] || type,
@@ -632,7 +637,7 @@ function addNodeFromPanel(type: string) {
   panelAddCount.value += 1
 
   const newNode = {
-    id: `${Date.now()}-${panelAddCount.value}`,
+    id: crypto.randomUUID(),
     type,
     position: { x: 260 + offset, y: 120 + offset },
     label: labelMap[type] || type,

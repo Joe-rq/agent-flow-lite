@@ -2,6 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## Working Rules（必须遵守）
+
+以下规则优先级最高，覆盖所有默认行为：
+
+### 行为约束
+
+1. **修 bug 优先于一切。** 用户报了 bug，在 bug 确认修复前不做任何其他事（包括写文档、重构、优化、添加注释）。
+2. **改代码前先读代码。** 不要基于猜测修改文件。先 Read 相关文件，理解现有逻辑后再提出方案。
+3. **每次改动都要验证。** 后端改动后运行 `uv run pytest`；前端改动后运行 `npx tsc --noEmit && npm run test`。验证不通过不算完成。
+4. **单任务原则。** 每轮只做一件事，做完确认后再接下一件。不要在一轮里同时改 auth、chat、workflow 等不相关模块。
+5. **大改动先列清单。** 涉及 3 个以上文件的改动，先列出要改哪些文件、每个文件改什么，用户确认后再动手。
+
+### 代码质量
+
+6. **TypeScript 文件改完必须通过类型检查。** 编辑 `.ts` 或 `.vue` 文件后，确保 `npx tsc --noEmit` 通过。
+7. **Python 文件改完必须通过语法检查。** 编辑 `.py` 文件后，确保 `python -m py_compile <file>` 通过。
+8. **不要做没被要求的事。** 不要主动添加注释、文档、类型标注、重构、优化。只做用户明确要求的事。
+9. **新功能先写测试。** 添加新功能时，先写一个失败测试来定义预期行为，再实现功能让测试通过。
+
+### 禁止事项
+
+10. **不要在修 bug 时写文档或优化计划。** 这是最常见的跑偏模式。
+11. **不要一次改太多文件。** 除非用户明确要求，否则每次改动控制在 1-3 个文件内。
+12. **不要吞掉错误。** 遇到测试失败或编译错误时，报告给用户而不是绕过。
+
+---
+
 ## Project Overview
 
 **Agent Flow Lite** is a full-stack AI agent orchestration platform with visual workflow editing, RAG knowledge retrieval, intelligent chat, skill system, and user management capabilities.

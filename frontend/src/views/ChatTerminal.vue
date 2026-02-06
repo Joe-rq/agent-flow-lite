@@ -163,6 +163,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 
 // 类型定义
@@ -207,6 +208,8 @@ const skills = ref<{ name: string; description: string }[]>([])
 const showSuggestions = ref(false)
 const filteredSkills = ref<{ name: string; description: string }[]>([])
 const selectedSuggestionIndex = ref(0)
+
+const authStore = useAuthStore()
 
 // 计算属性
 const currentSession = computed(() => {
@@ -354,6 +357,7 @@ async function connectSSE(sessionId: string, message: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authStore.token}`,
     },
     body: JSON.stringify(payload),
   })

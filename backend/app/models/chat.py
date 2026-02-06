@@ -1,7 +1,7 @@
 """
 Chat API models for request/response handling.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
@@ -51,7 +51,7 @@ class SessionHistory(BaseModel):
     messages: List[ChatMessage] = Field(
         default_factory=list, description="List of chat messages"
     )
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = Field(default=None)
     kb_id: Optional[str] = Field(default=None)
     workflow_id: Optional[str] = Field(default=None)

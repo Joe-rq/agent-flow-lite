@@ -4,7 +4,7 @@ Workflow CRUD API endpoints
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional
 
@@ -23,7 +23,7 @@ from app.core.auth import User, get_current_user
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
-DATA_DIR = Path("data")
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
 WORKFLOW_FILE = DATA_DIR / "workflows.json"
 
 
@@ -102,7 +102,7 @@ async def create_workflow(workflow_data: WorkflowCreate, user: User = Depends(ge
     workflows = data.get("workflows", {})
     
     workflow_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     new_workflow = {
         "name": workflow_data.name,
@@ -165,7 +165,7 @@ async def update_workflow(
     if update_data.graph_data is not None:
         existing["graph_data"] = update_data.graph_data.model_dump()
     
-    existing["updated_at"] = datetime.utcnow().isoformat()
+    existing["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     workflows[workflow_id] = existing
     data["workflows"] = workflows

@@ -205,7 +205,27 @@ class TestAuthEndpoints:
     async def test_login_invalid_email(self, client):
         """Test login with invalid email returns error."""
         response = await client.post("/api/v1/auth/login", json={"email": "invalid-email"})
-        
+
+        assert response.status_code == 400
+
+    async def test_login_rejects_bare_at(self, client):
+        """Test login with just @ is rejected."""
+        response = await client.post("/api/v1/auth/login", json={"email": "@"})
+        assert response.status_code == 400
+
+    async def test_login_rejects_double_at(self, client):
+        """Test login with double @ is rejected."""
+        response = await client.post("/api/v1/auth/login", json={"email": "user@@domain.com"})
+        assert response.status_code == 400
+
+    async def test_login_rejects_no_tld(self, client):
+        """Test login with no TLD is rejected."""
+        response = await client.post("/api/v1/auth/login", json={"email": "a@b"})
+        assert response.status_code == 400
+
+    async def test_login_rejects_empty_email(self, client):
+        """Test login with empty email returns error."""
+        response = await client.post("/api/v1/auth/login", json={"email": ""})
         assert response.status_code == 400
     
     async def test_me_endpoint(self, client):

@@ -6,7 +6,7 @@ import os
 import re
 import shutil
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -31,7 +31,27 @@ router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
 KB_METADATA_FILE = Path(__file__).parent.parent.parent / "data" / "kb_metadata.json"
 processing_tasks: dict[str, dict] = {}
-processing_tasks: dict[str, dict] = {}
+
+# Task retention period: 30 minutes
+_TASK_RETENTION_SECONDS = 30 * 60
+
+
+def cleanup_old_tasks() -> None:
+    """Remove completed/failed tasks older than retention period."""
+    now = datetime.now(timezone.utc)
+    to_remove = []
+    for task_id, task in processing_tasks.items():
+        if task.get("status") in ("completed", "failed"):
+            started_at = task.get("started_at")
+            if started_at:
+                try:
+                    started = datetime.fromisoformat(started_at)
+                    if (now - started).total_seconds() > _TASK_RETENTION_SECONDS:
+                        to_remove.append(task_id)
+                except (ValueError, TypeError):
+                    to_remove.append(task_id)
+    for task_id in to_remove:
+        del processing_tasks[task_id]
 
 
 def load_kb_metadata() -> dict:
@@ -95,8 +115,9 @@ def get_upload_path(kb_id: str, filename: str) -> tuple[Path, str]:
 
 def get_metadata_path(kb_id: str) -> Path:
     """Get the path for document metadata JSON file."""
+    safe_kb_id = re.sub(r"[^\w-]", "", kb_id) or "default"
     project_root = Path(__file__).parent.parent.parent
-    metadata_dir = project_root / "data" / "metadata" / kb_id
+    metadata_dir = project_root / "data" / "metadata" / safe_kb_id
     metadata_dir.mkdir(parents=True, exist_ok=True)
     return metadata_dir / "documents.json"
 
@@ -155,7 +176,7 @@ async def upload_document(
 
     doc_id = str(uuid.uuid4())
     task_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow()
+    timestamp = datetime.now(timezone.utc)
 
     file_path, stored_filename = get_upload_path(kb_id, file.filename)
     with open(file_path, "wb") as f:
@@ -274,7 +295,7 @@ def update_document_status(kb_id: str, doc_id: str, status: DocumentStatus, erro
     all_metadata = load_documents_metadata(kb_id)
     if doc_id in all_metadata:
         all_metadata[doc_id]["status"] = status.value
-        all_metadata[doc_id]["updated_at"] = datetime.utcnow().isoformat()
+        all_metadata[doc_id]["updated_at"] = datetime.now(timezone.utc).isoformat()
         if error_message:
             all_metadata[doc_id]["error_message"] = error_message
         save_documents_metadata(kb_id, all_metadata)
@@ -362,7 +383,7 @@ async def process_document(
         "progress": 0,
         "doc_id": doc_id,
         "kb_id": kb_id,
-        "started_at": datetime.utcnow().isoformat()
+        "started_at": datetime.now(timezone.utc).isoformat()
     }
     background_tasks.add_task(process_document_task, kb_id, doc_id, task_id)
     
@@ -378,6 +399,7 @@ async def process_document(
 
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str, user: User = Depends(get_current_user)) -> dict:
+    cleanup_old_tasks()
     if task_id not in processing_tasks:
         raise HTTPException(status_code=404, detail="Task not found")
     return processing_tasks[task_id]
@@ -446,7 +468,7 @@ async def list_knowledge_bases(user: User = Depends(get_current_user)) -> Knowle
     metadata = load_kb_metadata()
     items = []
     for kb_id, kb_data in metadata.items():
-        created_at = datetime.fromisoformat(kb_data.get("created_at", datetime.utcnow().isoformat()))
+        created_at = datetime.fromisoformat(kb_data.get("created_at", datetime.now(timezone.utc).isoformat()))
         document_count = get_kb_document_count(kb_id)
         items.append(KnowledgeBase(
             id=kb_id,
@@ -461,7 +483,7 @@ async def list_knowledge_bases(user: User = Depends(get_current_user)) -> Knowle
 @router.post("", response_model=KnowledgeBase, status_code=201)
 async def create_knowledge_base(data: KnowledgeBaseCreate, user: User = Depends(get_current_user)) -> KnowledgeBase:
     kb_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow()
+    timestamp = datetime.now(timezone.utc)
     metadata = load_kb_metadata()
     metadata[kb_id] = {
         "id": kb_id,

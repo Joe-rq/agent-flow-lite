@@ -1,6 +1,7 @@
 """
 ChromaDB client wrapper for knowledge base storage.
 """
+import logging
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Optional
 
 import chromadb
 from chromadb.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaClient:
@@ -135,7 +138,7 @@ class ChromaClient:
         except ValueError:
             return False
         except Exception as e:
-            print(f"Error deleting document {document_id}: {e}")
+            logger.error("Error deleting document %s: %s", document_id, e)
             return False
 
     def get_collection_info(self, kb_id: str) -> dict:

@@ -216,7 +216,6 @@ async function toggleUserStatus(user: User) {
       const endpoint = user.is_active ? 'disable' : 'enable'
       await axios.post(`${API_BASE}/admin/users/${user.id}/${endpoint}`)
       await loadUsers()
-      showConfirmDialog.value = false
     } catch (error: any) {
       console.error(`${action}用户失败:`, error)
       showError(error.response?.data?.detail || `${action}用户失败`)
@@ -241,7 +240,6 @@ async function deleteUser(user: User) {
     try {
       await axios.delete(`${API_BASE}/admin/users/${user.id}`)
       await loadUsers()
-      showConfirmDialog.value = false
     } catch (error: any) {
       console.error('删除用户失败:', error)
       showError(error.response?.data?.detail || '删除用户失败')
@@ -265,6 +263,8 @@ async function executeConfirmedAction() {
       await pendingAction.value()
     } finally {
       isLoading.value = false
+      showConfirmDialog.value = false
+      pendingAction.value = null
     }
   }
 }

@@ -1,6 +1,12 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
+let isHydrating = true
+
+export function setHydrated() {
+  isHydrating = false
+}
+
 export function setupAxiosInterceptors() {
   axios.interceptors.request.use(
     (config) => {
@@ -15,11 +21,12 @@ export function setupAxiosInterceptors() {
 
   axios.interceptors.response.use(
     (response) => response,
-    (error) => {
-      if (error.response?.status === 401) {
+    async (error) => {
+      if (error.response?.status === 401 && !isHydrating) {
         const authStore = useAuthStore()
         authStore.clearAuth()
-        window.location.href = '/login'
+        const { default: router } = await import('@/router')
+        router.push('/login')
       }
       return Promise.reject(error)
     }

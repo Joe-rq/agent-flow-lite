@@ -123,6 +123,39 @@ describe('Auth Store', () => {
     expect(authStore.user).toBeNull()
     expect(localStorage.getItem('auth_token')).toBeNull()
   })
+
+  it('should set isHydrating to true during init /me call', async () => {
+    localStorage.setItem('auth_token', 'stored-token')
+    const authStore = useAuthStore()
+
+    let resolveMe: (value: any) => void
+    const mePromise = new Promise((resolve) => { resolveMe = resolve })
+    vi.mocked(axios.get).mockReturnValueOnce(mePromise as any)
+
+    const initPromise = authStore.init()
+
+    // During the /me call, isHydrating should be true
+    expect(authStore.isHydrating).toBe(true)
+
+    resolveMe!({
+      data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
+    })
+    await initPromise
+
+    // After /me completes, isHydrating should be false
+    expect(authStore.isHydrating).toBe(false)
+  })
+
+  it('should set isHydrating to false even when /me fails', async () => {
+    localStorage.setItem('auth_token', 'stored-token')
+    const authStore = useAuthStore()
+
+    vi.mocked(axios.get).mockRejectedValueOnce(new Error('Network Error'))
+
+    await authStore.init()
+
+    expect(authStore.isHydrating).toBe(false)
+  })
 })
 
 describe('Refresh-Logout Bug (RED PHASE)', () => {
@@ -411,16 +444,16 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('用户不存在')
   })
 
-  it('should display register CTA button', () => {
+  it('should display login/register button', () => {
     const wrapper = mount(LoginView, {
       global: {
         plugins: [router, pinia],
       },
     })
-    expect(wrapper.text()).toContain('注册')
+    expect(wrapper.text()).toContain('登录 / 注册')
   })
 
-  it('should call login API when register CTA is clicked with valid email', async () => {
+  it('should call login API when button is clicked with valid email', async () => {
     const mockResponse = {
       data: {
         token: 'test-token',
@@ -438,10 +471,8 @@ describe('LoginView', () => {
     const input = wrapper.find('input[type="email"]')
     await input.setValue('newuser@example.com')
 
-    const buttons = wrapper.findAll('button')
-    const registerButton = buttons.find((btn) => btn.text().includes('注册'))
-    expect(registerButton).toBeDefined()
-    await registerButton!.trigger('click')
+    const button = wrapper.find('button')
+    await button.trigger('click')
 
     expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', {
       email: 'newuser@example.com',

@@ -5,8 +5,9 @@ This module provides the chat completion endpoint with SSE streaming support,
 integrating RAG retrieval and DeepSeek LLM for AI-powered conversations.
 """
 import json
+import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Tuple
 
@@ -26,6 +27,12 @@ from app.api.workflow import get_workflow
 from app.models.chat import ChatMessage, ChatRequest, SessionHistory
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
+logger = logging.getLogger(__name__)
+
+# Constants
+EXCERPT_LIMIT = 200
+DEFAULT_RAG_TOP_K = 5
+MAX_HISTORY_MESSAGES = 10
 
 SESSIONS_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -89,7 +96,7 @@ def load_session(session_id: str) -> Optional[SessionHistory]:
 def save_session(session: SessionHistory) -> None:
     """Save session history to JSON file."""
     session_path = get_session_path(session.session_id)
-    session.updated_at = datetime.utcnow()
+    session.updated_at = datetime.now(timezone.utc)
     lock = FileLock(str(session_path) + ".lock")
     with lock:
         with open(session_path, "w", encoding="utf-8") as f:
@@ -101,7 +108,7 @@ def format_sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-def build_excerpt(text: str, limit: int = 200) -> str:
+def build_excerpt(text: str, limit: int = EXCERPT_LIMIT) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "..."
@@ -215,14 +222,14 @@ async def skill_stream_generator(
                             data = json.loads(line[6:])
                             full_output += data.get("content", "")
                 except (json.JSONDecodeError, IndexError):
-                    pass
+                    logger.warning("Failed to parse SSE token data")
 
         # Save to session history
         if full_output:
             assistant_message = ChatMessage(
                 role="assistant",
                 content=full_output,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             session.messages.append(assistant_message)
             save_session(session)
@@ -308,7 +315,7 @@ async def chat_stream_generator(
                 try:
                     rag_pipeline = get_rag_pipeline()
                     retrieved_results = rag_pipeline.search(
-                        request.kb_id, request.message, top_k=5
+                        request.kb_id, request.message, top_k=DEFAULT_RAG_TOP_K
                     )
                 except Exception as e:
                     yield format_sse_event("thought", {
@@ -322,7 +329,7 @@ async def chat_stream_generator(
 
             top_results = [
                 {
-                    "text": r["text"][:200] + "..." if len(r["text"]) > 200 else r["text"],
+                    "text": r["text"][:EXCERPT_LIMIT] + "..." if len(r["text"]) > EXCERPT_LIMIT else r["text"],
                     "doc_id": r["metadata"].get("doc_id", ""),
                     "score": r["score"]
                 }
@@ -447,7 +454,7 @@ async def workflow_stream_generator(
             assistant_message = ChatMessage(
                 role="assistant",
                 content=str(final_output),
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             session.messages.append(assistant_message)
             save_session(session)
@@ -467,80 +474,6 @@ async def workflow_stream_generator(
             })
             return
 
-    try:
-        workflow = await get_workflow(request.workflow_id)
-    except HTTPException as exc:
-        yield format_sse_event("error", {"message": str(exc.detail)})
-        yield format_sse_event("done", {"status": "error", "message": str(exc.detail)})
-        return
-
-    engine = WorkflowEngine(workflow)
-    full_output = ""
-
-    async for event in engine.execute(request.message):
-        event_type = event.get("type")
-
-        if event_type == "workflow_start":
-            yield format_sse_event("thought", {
-                "type": "workflow",
-                "status": "start",
-                "workflow_name": event.get("workflow_name")
-            })
-
-        elif event_type == "node_start":
-            yield format_sse_event("thought", {
-                "type": "node",
-                "status": "start",
-                "node_id": event.get("node_id"),
-                "node_type": event.get("node_type")
-            })
-
-        elif event_type == "token":
-            content = event.get("content", "")
-            full_output += content
-            yield format_sse_event("token", {"content": content})
-
-        elif event_type == "thought":
-            payload = {"type": event.get("type_detail", "info")}
-            payload.update({k: v for k, v in event.items() if k not in ("type", "type_detail")})
-            yield format_sse_event("thought", payload)
-
-        elif event_type == "node_complete":
-            yield format_sse_event("thought", {
-                "type": "node",
-                "status": "complete",
-                "node_id": event.get("node_id")
-            })
-
-        elif event_type in ("node_error", "workflow_error"):
-            message = event.get("error", "Unknown workflow error")
-            yield format_sse_event("error", {"message": message})
-            yield format_sse_event("done", {"status": "error", "message": message})
-            return
-
-        elif event_type == "workflow_complete":
-            final_output = event.get("final_output", full_output)
-            assistant_message = ChatMessage(
-                role="assistant",
-                content=str(final_output),
-                timestamp=datetime.utcnow()
-            )
-            session.messages.append(assistant_message)
-            save_session(session)
-            if zep.enabled and request.user_id:
-                zep.add_messages(
-                    session.session_id,
-                    [{
-                        "role_type": "assistant",
-                        "role": "Assistant",
-                        "content": str(final_output)
-                    }]
-                )
-            yield format_sse_event("done", {
-                "status": "success",
-                "message": "Workflow completed"
-            })
-            return
 
 
 @router.post("/completions")
@@ -602,7 +535,7 @@ async def chat_completions(
     user_message = ChatMessage(
         role="user",
         content=request.message,
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)
     )
     session.messages.append(user_message)
 
@@ -661,8 +594,8 @@ async def chat_completions(
             pass  # Continue without RAG context if retrieval fails
     
     memory_context = ""
-    if zep.enabled and request.user_id:
-        memory_context = zep.get_memory_context(request.session_id)
+    if zep.enabled:
+        memory_context = zep.get_memory_context(zep_session_id)
     system_prompt = build_system_prompt(
         bool(request.kb_id),
         retrieved_context,
@@ -671,7 +604,7 @@ async def chat_completions(
     messages_for_llm.append({"role": "system", "content": system_prompt})
     
     # Add conversation history (last 10 messages)
-    for msg in session.messages[-10:]:
+    for msg in session.messages[-MAX_HISTORY_MESSAGES:]:
         messages_for_llm.append({"role": msg.role, "content": msg.content})
     
     # Create the streaming response
@@ -689,7 +622,7 @@ async def chat_completions(
                             data = json.loads(line[6:])
                             assistant_content += data.get("content", "")
                 except (json.JSONDecodeError, IndexError):
-                    pass
+                    logger.warning("Failed to parse SSE token data")
             yield chunk
         
         # Save assistant response to session
@@ -697,13 +630,13 @@ async def chat_completions(
             assistant_message = ChatMessage(
                 role="assistant",
                 content=assistant_content,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             session.messages.append(assistant_message)
             save_session(session)
-            if zep.enabled and request.user_id:
+            if zep.enabled:
                 zep.add_messages(
-                    request.session_id,
+                    zep_session_id,
                     [{
                         "role_type": "assistant",
                         "role": "Assistant",

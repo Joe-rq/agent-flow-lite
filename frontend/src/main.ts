@@ -8,7 +8,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
-import { setupAxiosInterceptors } from './utils/axios'
+import { setupAxiosInterceptors, setHydrated } from './utils/axios'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -18,6 +18,7 @@ app.use(pinia)
 const authStore = useAuthStore()
 setupAxiosInterceptors()
 await authStore.init()
+setHydrated()
 
 app.use(router)
 
