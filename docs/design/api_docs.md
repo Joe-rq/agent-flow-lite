@@ -50,7 +50,7 @@
     "session_id": "会话ID（可选）",
     "kb_id": "知识库ID（可选）",
     "workflow_id": "工作流ID（可选）",
-    "user_id": "用户ID（必需，用于 Zep 记忆）"
+    "user_id": "用户ID（必需）"
   }
   ```
 - **Response:** `EventSourceResponse` (text/event-stream)

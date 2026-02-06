@@ -19,7 +19,6 @@ dependencies = [
     "simpleeval>=1.0.3",
     "sqlalchemy[asyncio]>=2.0.0",
     "uvicorn>=0.40.0",
-    "zep-cloud>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]

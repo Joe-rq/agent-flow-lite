@@ -20,7 +20,6 @@ from app.models.user import UserRole
 from app.core.llm import chat_completion_stream
 from app.core.rag import get_rag_pipeline
 from app.core.workflow_engine import WorkflowEngine
-from app.core.zep import zep_client
 from app.core.skill_loader import SkillLoader, SkillValidationError
 from app.core.skill_executor import get_skill_executor
 from app.api.workflow import get_workflow
@@ -155,7 +154,6 @@ async def skill_stream_generator(
     Yields:
         SSE event strings (thought, token, citation, done)
     """
-    zep = zep_client()
     executor = get_skill_executor()
 
     try:
@@ -234,17 +232,6 @@ async def skill_stream_generator(
             session.messages.append(assistant_message)
             save_session(session)
 
-            if zep.enabled:
-                zep_session_id = get_zep_session_id(str(user.id), session.session_id)
-                zep.add_messages(
-                    zep_session_id,
-                    [{
-                        "role_type": "assistant",
-                        "role": "Assistant",
-                        "content": full_output
-                    }]
-                )
-
     except Exception as e:
         yield format_sse_event("thought", {
             "type": "skill",
@@ -259,14 +246,11 @@ async def skill_stream_generator(
 
 def build_system_prompt(
     has_rag: bool,
-    retrieved_context: Optional[str] = None,
-    memory_context: Optional[str] = None
+    retrieved_context: Optional[str] = None
 ) -> str:
     """Build system prompt based on context."""
     base = "You are a helpful AI assistant."
     sections = [base]
-    if memory_context:
-        sections.append(f"User Memory:\n{memory_context}")
     if has_rag and retrieved_context:
         sections.append(
             "Answer the user's question based on the provided context. "
@@ -379,20 +363,9 @@ async def chat_stream_generator(
         })
 
 
-def get_zep_session_id(user_id: str, session_id: str) -> str:
-    """
-    Generate namespaced session ID for Zep operations.
-    
-    Format: {user_id}::{session_id}
-    This ensures session isolation between users in Zep.
-    """
-    return f"{user_id}::{session_id}"
-
-
 async def workflow_stream_generator(
     request: ChatRequest, session: SessionHistory, user: User
 ) -> AsyncGenerator[str, None]:
-    zep = zep_client()
     if not request.workflow_id:
         yield format_sse_event("error", {"message": "Workflow ID is required"})
         yield format_sse_event("done", {"status": "error", "message": "Workflow ID is required"})
@@ -458,16 +431,6 @@ async def workflow_stream_generator(
             )
             session.messages.append(assistant_message)
             save_session(session)
-            if zep.enabled:
-                zep_session_id = get_zep_session_id(str(user.id), session.session_id)
-                zep.add_messages(
-                    zep_session_id,
-                    [{
-                        "role_type": "assistant",
-                        "role": "Assistant",
-                        "content": str(final_output)
-                    }]
-                )
             yield format_sse_event("done", {
                 "status": "success",
                 "message": "Workflow completed"
@@ -504,8 +467,6 @@ async def chat_completions(
             detail="Message cannot be empty"
         )
 
-    zep = zep_client()
-    
     # Load or create session
     session = load_session(request.session_id)
     user_id_str = str(user.id)
@@ -538,19 +499,6 @@ async def chat_completions(
         timestamp=datetime.now(timezone.utc)
     )
     session.messages.append(user_message)
-
-    # Use namespaced session ID for Zep operations
-    zep_session_id = get_zep_session_id(user_id_str, request.session_id)
-    if zep.enabled:
-        zep.ensure_user_session(user_id_str, zep_session_id)
-        zep.add_messages(
-            zep_session_id,
-            [{
-                "role_type": "user",
-                "role": user_id_str,
-                "content": request.message
-            }]
-        )
     
     if request.workflow_id:
         return StreamingResponse(
@@ -593,13 +541,9 @@ async def chat_completions(
         except Exception:
             pass  # Continue without RAG context if retrieval fails
     
-    memory_context = ""
-    if zep.enabled:
-        memory_context = zep.get_memory_context(zep_session_id)
     system_prompt = build_system_prompt(
         bool(request.kb_id),
-        retrieved_context,
-        memory_context
+        retrieved_context
     )
     messages_for_llm.append({"role": "system", "content": system_prompt})
     
@@ -634,15 +578,6 @@ async def chat_completions(
             )
             session.messages.append(assistant_message)
             save_session(session)
-            if zep.enabled:
-                zep.add_messages(
-                    zep_session_id,
-                    [{
-                        "role_type": "assistant",
-                        "role": "Assistant",
-                        "content": assistant_content
-                    }]
-                )
     
     return StreamingResponse(
         stream_with_save(),

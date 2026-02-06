@@ -40,19 +40,6 @@ class Settings(BaseSettings):
         description="Embedding model name (SiliconFlow)"
     )
 
-    zep_api_key: str = Field(
-        default="",
-        description="Zep API key for session memory"
-    )
-    zep_api_url: str = Field(
-        default="https://api.getzep.com",
-        description="Base URL for Zep API"
-    )
-    zep_enabled: bool = Field(
-        default=False,
-        description="Enable Zep session memory integration"
-    )
-
     # Application Configuration
     log_level: str = Field(
         default="INFO",

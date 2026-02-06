@@ -57,9 +57,9 @@ Follow it strictly to avoid style drift and broken workflows.
 - Run all tests:
   - `uv run pytest -q`
 - Run single test file:
-  - `uv run pytest tests/test_zep_client.py -q`
+  - `uv run pytest tests/test_smoke.py -q`
 - Run single test in watch mode:
-  - `uv run pytest tests backend/tests/test_chat_zep.py -q --watch`
+  - `uv run pytest tests/test_chat_citation.py -q --watch`
 - Run manual test scripts:
   - `uv run python test_chat_api.py`
   - `uv run python test_deepseek.py`
@@ -83,13 +83,13 @@ npx vitest run --reporter=verbose MyComponent
 ```bash
 cd backend
 # Run specific test file
-uv run pytest tests/test_zep_client.py -q
+uv run pytest tests/test_smoke.py -q
 
 # Run with verbose output
-uv run pytest tests/test_chat_zep.py -v
+uv run pytest tests/test_chat_citation.py -v
 
 # Run matching pattern
-uv run pytest -k "zep" -q
+uv run pytest -k "citation" -q
 ```
 
 ## Code Style Guidelines

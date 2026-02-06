@@ -1,11 +1,10 @@
 """
-Tests for user-scoped chat sessions and Zep integration.
+Tests for user-scoped chat sessions.
 
 These tests verify that:
 1. Sessions are isolated by user (users can only access their own sessions)
 2. Admins can access all sessions
-3. Zep session IDs are properly namespaced by user
-4. Client-provided user_id is ignored (server-side user_id is used)
+3. Client-provided user_id is ignored (server-side user_id is used)
 """
 import pytest
 from datetime import datetime
@@ -81,22 +80,6 @@ class TestCheckSessionOwnership:
         )
         user = TestUser.regular(123)
         assert chat_api.check_session_ownership(session, user) is True
-
-
-class TestGetZepSessionId:
-    """Tests for get_zep_session_id function."""
-
-    def test_namespaced_session_id_format(self):
-        user_id = "user-123"
-        session_id = "session-abc"
-        result = chat_api.get_zep_session_id(user_id, session_id)
-        assert result == "user-123::session-abc"
-
-    def test_different_users_get_different_zep_sessions(self):
-        session_id = "session-abc"
-        zep_session_1 = chat_api.get_zep_session_id("user-123", session_id)
-        zep_session_2 = chat_api.get_zep_session_id("user-456", session_id)
-        assert zep_session_1 != zep_session_2
 
 
 class TestListSessions:
@@ -294,14 +277,8 @@ class TestChatCompletionsUserId:
     """Tests that chat_completions uses server-side user_id correctly."""
 
     @pytest.mark.asyncio
-    async def test_ignores_client_provided_user_id(self, cleanup_sessions, monkeypatch):
+    async def test_ignores_client_provided_user_id(self, cleanup_sessions):
         """Client-provided user_id should be ignored; server-side user_id should be used."""
-        # Mock zep to avoid external calls
-        class MockZep:
-            enabled = False
-
-        monkeypatch.setattr(chat_api, "zep_client", lambda: MockZep())
-
         request = ChatRequest(
             session_id="test-session-user-id",
             message="Hello",
@@ -315,7 +292,7 @@ class TestChatCompletionsUserId:
         cleanup_sessions.append("test-session-user-id")
 
     @pytest.mark.asyncio
-    async def test_session_ownership_checked_in_completions(self, cleanup_sessions, monkeypatch):
+    async def test_session_ownership_checked_in_completions(self, cleanup_sessions):
         """User should not be able to access another user's existing session."""
         # Create a session owned by another user
         existing_session = SessionHistory(
@@ -325,11 +302,6 @@ class TestChatCompletionsUserId:
         )
         chat_api.save_session(existing_session)
         cleanup_sessions.append("owned-session")
-
-        class MockZep:
-            enabled = False
-
-        monkeypatch.setattr(chat_api, "zep_client", lambda: MockZep())
 
         request = ChatRequest(
             session_id="owned-session",
@@ -341,31 +313,3 @@ class TestChatCompletionsUserId:
             await chat_api.chat_completions(request, attacker)
 
         assert exc.value.status_code == 403
-
-
-class TestZepNamespaceIntegration:
-    """Tests for Zep session ID namespacing."""
-
-    def test_zep_session_id_includes_user_id(self):
-        """Verify that Zep session IDs are properly namespaced."""
-        user_id = "user-abc"
-        session_id = "session-xyz"
-
-        zep_session_id = chat_api.get_zep_session_id(user_id, session_id)
-
-        # Should be in format: user_id::session_id
-        assert "::" in zep_session_id
-        assert user_id in zep_session_id
-        assert session_id in zep_session_id
-        assert zep_session_id == f"{user_id}::{session_id}"
-
-    def test_different_users_same_session_id_different_zep_id(self):
-        """Different users with the same session ID should get different Zep session IDs."""
-        session_id = "shared-session-name"
-
-        zep_session_1 = chat_api.get_zep_session_id("user-1", session_id)
-        zep_session_2 = chat_api.get_zep_session_id("user-2", session_id)
-
-        assert zep_session_1 != zep_session_2
-        assert zep_session_1.startswith("user-1::")
-        assert zep_session_2.startswith("user-2::")

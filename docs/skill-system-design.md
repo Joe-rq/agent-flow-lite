@@ -807,7 +807,7 @@ it('运行测试')
 
 ## 11. 与用户管理系统集成
 
-> 参考：`.sisyphus/plans/user-management-email-zep.md`
+
 
 ### 11.1 并行开发策略
 
