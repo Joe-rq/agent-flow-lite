@@ -86,19 +86,26 @@ describe('Auth Store', () => {
     expect(localStorage.getItem('auth_token')).toBeNull()
   })
 
-  it('should init from localStorage', () => {
+  it('should init from localStorage and revalidate user', async () => {
     localStorage.setItem('auth_token', 'stored-token')
     const authStore = useAuthStore()
 
-    const result = authStore.init()
+    // Mock /me to return user data
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
+    })
+
+    const result = await authStore.init()
 
     expect(result).toBe(true)
     expect(authStore.token).toBe('stored-token')
+    expect(authStore.user).not.toBeNull()
+    expect(authStore.isAuthenticated).toBe(true)
   })
 
-  it('should return false from init when no token in localStorage', () => {
+  it('should return false from init when no token in localStorage', async () => {
     const authStore = useAuthStore()
-    const result = authStore.init()
+    const result = await authStore.init()
 
     expect(result).toBe(false)
     expect(authStore.token).toBeNull()
@@ -115,6 +122,134 @@ describe('Auth Store', () => {
     expect(authStore.token).toBeNull()
     expect(authStore.user).toBeNull()
     expect(localStorage.getItem('auth_token')).toBeNull()
+  })
+})
+
+describe('Refresh-Logout Bug (RED PHASE)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('init with cached token should restore both token and user for isAuthenticated=true', async () => {
+    // Setup: Simulate previous login state with token in localStorage
+    // The user was logged in, then refreshed the page
+    localStorage.setItem('auth_token', 'cached-token')
+
+    const authStore = useAuthStore()
+
+    // Mock /api/v1/auth/me to return user data
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
+    })
+
+    // Expected behavior: init() should restore BOTH token and user
+    await authStore.init()
+
+    // User should be restored from /me endpoint
+    expect(authStore.token).toBe('cached-token')
+    expect(authStore.user).not.toBeNull()
+    expect(authStore.isAuthenticated).toBe(true)
+  })
+
+  it('refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me', async () => {
+    // Setup: Token exists in localStorage (user refreshed page)
+    localStorage.setItem('auth_token', 'valid-token')
+
+    const authStore = useAuthStore()
+
+    // Mock /api/v1/auth/me to return user data
+    const mockMeResponse = {
+      data: { id: '1', email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' },
+    }
+    vi.mocked(axios.get).mockResolvedValueOnce(mockMeResponse)
+
+    // Call init which should trigger revalidation when user is missing
+    const result = await authStore.init()
+
+    expect(result).toBe(true)
+    expect(authStore.token).toBe('valid-token')
+
+    // Should call /api/v1/auth/me to fetch user
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
+
+    // User should be restored after revalidation
+    expect(authStore.user).not.toBeNull()
+    expect(authStore.isAuthenticated).toBe(true)
+  })
+
+  it('401 from /me should clear auth state and redirect to /login', async () => {
+    // Setup: Token exists in localStorage
+    localStorage.setItem('auth_token', 'expired-token')
+
+    const authStore = useAuthStore()
+
+    // Mock /api/v1/auth/me to return 401 (token invalid/expired)
+    const mock401Error = {
+      response: { status: 401 },
+    }
+    vi.mocked(axios.get).mockRejectedValueOnce(mock401Error)
+
+    // Call init which should handle 401 from /me
+    await authStore.init()
+
+    // Should clear auth state on 401
+    expect(authStore.token).toBeNull()
+    expect(authStore.user).toBeNull()
+    expect(localStorage.getItem('auth_token')).toBeNull()
+  })
+
+  it('network failure during /me should gracefully handle without breaking', async () => {
+    // Setup: Token exists in localStorage
+    localStorage.setItem('auth_token', 'valid-token')
+
+    const authStore = useAuthStore()
+
+    // Mock /api/v1/auth/me to fail with network error
+    vi.mocked(axios.get).mockRejectedValueOnce(new Error('Network Error'))
+
+    // Expected behavior: init() should call /me and handle network failures gracefully
+    await authStore.init()
+
+    // Should not throw - network failures should be handled gracefully
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
+  })
+
+  it('isAuthenticated should be false when token exists but user is null', () => {
+    // This test documents the core bug: isAuthenticated requires BOTH token AND user
+    // If only token is restored (current init behavior), user stays null → not authenticated
+
+    localStorage.setItem('auth_token', 'some-token')
+    const authStore = useAuthStore()
+
+    // Call init which only restores token
+    authStore.init()
+
+    // Current buggy state: token is restored, user is still null
+    expect(authStore.token).not.toBeNull()
+    expect(authStore.user).toBeNull()
+
+    // This is the root cause of refresh-logout
+    expect(authStore.isAuthenticated).toBe(false)
+  })
+
+  it('should call /api/v1/auth/me to restore user after init', async () => {
+    // This test verifies that init() calls /me to restore user
+
+    // Setup: Token exists in localStorage
+    localStorage.setItem('auth_token', 'cached-token')
+
+    // Mock /me to return user data
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
+    })
+
+    const authStore = useAuthStore()
+    await authStore.init()
+
+    // init() should call /me to fetch user
+    expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
   })
 })
 

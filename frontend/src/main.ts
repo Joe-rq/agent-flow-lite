@@ -14,10 +14,15 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
 
 const authStore = useAuthStore()
-authStore.init()
 setupAxiosInterceptors()
+await authStore.init()
+
+app.use(router)
+
+if (router.currentRoute.value.meta.public && authStore.isAuthenticated) {
+  await router.replace('/')
+}
 
 app.mount('#app')

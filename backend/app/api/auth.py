@@ -3,6 +3,8 @@ Authentication API endpoints.
 
 Provides login, logout, and user info endpoints.
 """
+import re
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +63,8 @@ async def login(
     Returns auth token and user info.
     """
     # Validate email
-    if not request.email or "@" not in request.email:
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not request.email or not re.match(email_pattern, request.email.strip()):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Valid email address required"

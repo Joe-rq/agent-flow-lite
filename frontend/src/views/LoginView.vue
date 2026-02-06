@@ -68,16 +68,7 @@ async function handleLogin() {
           :disabled="isLoading"
           @click="handleLogin"
         >
-          {{ isLoading ? '登录中...' : '登录' }}
-        </Button>
-
-        <Button
-          variant="secondary"
-          size="lg"
-          :disabled="isLoading"
-          @click="handleLogin"
-        >
-          {{ isLoading ? '注册中...' : '注册' }}
+          {{ isLoading ? '登录中...' : '登录 / 注册' }}
         </Button>
       </div>
 

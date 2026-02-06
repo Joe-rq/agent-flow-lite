@@ -5,11 +5,11 @@ import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 
 const sidebarCollapsed = ref(false)
-const { meta } = useRoute()
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const showChrome = computed(() => !meta.hideChrome && authStore.isAuthenticated)
+const showChrome = computed(() => !route.meta.hideChrome && authStore.isAuthenticated)
 
 onMounted(() => {
   const saved = localStorage.getItem('sidebar-collapsed')

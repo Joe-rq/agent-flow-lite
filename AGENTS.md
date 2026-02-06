@@ -171,3 +171,59 @@ uv run pytest -k "zep" -q
 - Match existing patterns in backend/app/api and backend/app/core
 - Prefer explicit, readable code over clever shortcuts
 - Update this file if you add new workflows or commands
+
+---
+
+## Auth & Bootstrap Lessons (2026-02-06)
+
+**Incident**: Refresh causes logout → Three cascading bugs.
+
+### Root Causes & Fixes
+
+| # | Bug | Symptom | Fix |
+|---|-----|---------|-----|
+| 1 | Axios interceptor registered AFTER auth init | `/api/v1/auth/me` returns 401 (no Authorization header) | Register interceptors BEFORE `authStore.init()` |
+| 2 | Router initialized BEFORE auth hydration | Route guard redirects to `/login` before `isAuthenticated` restored | Initialize router AFTER `authStore.init()`, add public→home校正 |
+| 3 | `const { meta } = useRoute()` destructuring | Non-reactive meta causes UI tearing (sidebar shows + login page) | Use `route.meta` directly, NOT destructured |
+
+### Correct Bootstrap Order
+
+```typescript
+// main.ts
+app.use(pinia)
+
+const authStore = useAuthStore()
+setupAxiosInterceptors()        // 1. 拦截器先注册
+await authStore.init()          // 2. 再水合 auth（token 恢复 + /me 校验）
+
+app.use(router)                 // 3. 路由最后挂载
+
+// 4. 防止首屏落在 public 路由
+if (router.currentRoute.value.meta.public && authStore.isAuthenticated) {
+  await router.replace('/')
+}
+
+app.mount('#app')
+```
+
+### Vue Router Anti-Patterns
+
+**WRONG** (non-reactive):
+```typescript
+const { meta } = useRoute()
+if (meta.hideChrome) { ... }  // ❌ stale, doesn't update
+```
+
+**RIGHT** (reactive):
+```typescript
+const route = useRoute()
+if (route.meta.hideChrome) { ... }  // ✅ updates on navigation
+```
+
+### Debugging Checklist
+
+When "refresh logs out" or "401 on auth endpoints":
+- [ ] Check Network: Does `/api/v1/auth/me` have `Authorization` header?
+- [ ] Check Timing: Is axios interceptor registered before init()?
+- [ ] Check Navigation: Does router guard fire BEFORE or AFTER auth hydration?
+- [ ] Check Reactivity: Are route meta accessed reactively?

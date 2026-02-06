@@ -13,6 +13,7 @@ export interface User {
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(null)
   const user = ref<User | null>(null)
+  const isHydrating = ref(false)
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
@@ -38,13 +39,34 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
   }
 
-  function init(): boolean {
+  async function init(): Promise<boolean> {
     const storedToken = localStorage.getItem('auth_token')
-    if (storedToken) {
-      token.value = storedToken
+    if (!storedToken) {
+      return false
+    }
+
+    token.value = storedToken
+
+    if (user.value) {
       return true
     }
-    return false
+
+    isHydrating.value = true
+    try {
+      const response = await axios.get('/api/v1/auth/me')
+      user.value = response.data
+      isHydrating.value = false
+      return true
+    } catch (error) {
+      isHydrating.value = false
+      const axiosError = error as { response?: { status?: number } }
+      if (axiosError.response?.status === 401) {
+        clearAuth()
+        return false
+      }
+      console.error('Failed to fetch user profile:', error)
+      return false
+    }
   }
 
   function setUser(userData: User): void {
@@ -60,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     token,
     user,
+    isHydrating,
     isAuthenticated,
     isAdmin,
     login,
