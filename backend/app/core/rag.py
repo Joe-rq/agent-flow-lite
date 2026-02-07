@@ -6,7 +6,11 @@ LlamaIndex for text chunking, and ChromaDB for vector storage.
 """
 from functools import lru_cache
 from pathlib import Path
+import re
 
+from chromadb.errors import InvalidDimensionException
+from chromadb.api.types import Embedding
+import numpy as np
 from openai import OpenAI
 from llama_index.core import Document as LlamaDocument
 from llama_index.core.node_parser import SentenceSplitter
@@ -19,6 +23,26 @@ CHUNK_SIZE = 512
 CHUNK_OVERLAP = 50
 TOP_K = 5
 DEFAULT_EMBEDDING_MODEL = "BAAI/bge-m3"
+
+
+class EmbeddingDimensionMismatchError(RuntimeError):
+    """Raised when embedding dimensions do not match collection dimensions."""
+
+
+def _parse_dimension_mismatch(message: str) -> tuple[int | None, int | None]:
+    """Extract embedding and collection dimensions from Chroma error text."""
+    patterns = [
+        r"Embedding dimension\s+(\d+)\s+does not match collection dimensionality\s+(\d+)",
+        r"Dimensionality of\s*\((\d+)\)\s*does not match index dimensionality\s*\((\d+)\)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, message)
+        if match:
+            incoming, existing = match.groups()
+            return int(incoming), int(existing)
+
+    return None, None
 
 
 class SiliconFlowEmbedding:
@@ -116,8 +140,8 @@ class RAGPipeline:
             # Step 4: Embed and store chunks
             texts = [chunk["text"] for chunk in chunks]
             raw_embeddings = self.embed_model.get_text_embedding_batch(texts)
-            embeddings: list[list[float]] = [
-                [float(value) for value in embedding]
+            embeddings: list[Embedding] = [
+                np.asarray(embedding, dtype=np.float32)
                 for embedding in raw_embeddings
             ]
 
@@ -138,6 +162,20 @@ class RAGPipeline:
                 "doc_id": doc_id,
                 "chunk_count": len(chunks),
                 "message": f"Successfully processed document into {len(chunks)} chunks"
+            }
+
+        except InvalidDimensionException as exc:
+            incoming_dim, existing_dim = _parse_dimension_mismatch(str(exc))
+            mismatch_detail = (
+                f"Embedding dimension mismatch for knowledge base '{kb_id}'"
+                f" (incoming={incoming_dim}, existing={existing_dim}). "
+                "Rebuild the knowledge base index after changing embedding model."
+            )
+            return {
+                "status": "error",
+                "doc_id": doc_id,
+                "chunk_count": 0,
+                "message": mismatch_detail
             }
 
         except Exception as e:
@@ -163,13 +201,22 @@ class RAGPipeline:
 
         # Embed query
         query_embedding = self.embed_model.get_text_embedding(query)
+        query_vector: Embedding = np.asarray(query_embedding, dtype=np.float32)
 
         # Query ChromaDB
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            include=["documents", "metadatas", "distances"]
-        )
+        try:
+            results = collection.query(
+                query_embeddings=[query_vector],
+                n_results=top_k,
+                include=["documents", "metadatas", "distances"]
+            )
+        except InvalidDimensionException as exc:
+            incoming_dim, existing_dim = _parse_dimension_mismatch(str(exc))
+            raise EmbeddingDimensionMismatchError(
+                f"Embedding dimension mismatch for knowledge base '{kb_id}'"
+                f" (incoming={incoming_dim}, existing={existing_dim}). "
+                "Rebuild the knowledge base index after changing embedding model."
+            ) from exc
 
         # Format results
         formatted_results = []
@@ -193,4 +240,4 @@ class RAGPipeline:
 @lru_cache(maxsize=1)
 def get_rag_pipeline() -> RAGPipeline:
     """Get the global RAG pipeline instance."""
-    return RAGPipeline()
+    return RAGPipeline(embedding_model=settings().embedding_model)

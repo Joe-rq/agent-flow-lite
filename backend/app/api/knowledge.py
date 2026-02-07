@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from filelock import FileLock
 
 from app.core.chroma_client import get_chroma_client
-from app.core.rag import get_rag_pipeline
+from app.core.rag import EmbeddingDimensionMismatchError, get_rag_pipeline
 from app.models.document import (
     DocumentResponse,
     DocumentStatus,
@@ -440,6 +440,14 @@ async def search_documents(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
+        )
+    except EmbeddingDimensionMismatchError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Knowledge base index is incompatible with current embedding model. "
+                "Rebuild the knowledge base index and re-upload documents."
+            )
         )
     except Exception as e:
         raise HTTPException(
