@@ -1,0 +1,152 @@
+
+ RUN  v3.2.4 /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend
+
+ ❯ src/__tests__/auth/login.spec.ts (28 tests | 6 failed) 49ms
+   ✓ Auth Store > should initialize with null token and user 1ms
+   ✓ Auth Store > should set isAuthenticated to true when both token and user exist 0ms
+   ✓ Auth Store > should login successfully and store token 1ms
+   ✓ Auth Store > should logout successfully and clear state 0ms
+   ✓ Auth Store > should init from localStorage 0ms
+   ✓ Auth Store > should return false from init when no token in localStorage 0ms
+   ✓ Auth Store > should clear auth state 0ms
+   × Refresh-Logout Bug (RED PHASE) > init with cached token should restore both token and user for isAuthenticated=true 2ms
+     → expected null not to be null
+   × Refresh-Logout Bug (RED PHASE) > refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me 1ms
+     → expected "spy" to be called with arguments: [ '/api/v1/auth/me' ][90m
+
+Number of calls: [1m0[22m
+[39m
+   × Refresh-Logout Bug (RED PHASE) > 401 from /me should clear auth state and redirect to /login 0ms
+     → expected 'expired-token' to be null
+   × Refresh-Logout Bug (RED PHASE) > network failure during /me should gracefully handle without breaking 0ms
+     → expected "spy" to be called with arguments: [ '/api/v1/auth/me' ][90m
+
+Number of calls: [1m0[22m
+[39m
+   ✓ Refresh-Logout Bug (RED PHASE) > isAuthenticated should be false when token exists but user is null 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > should restore user from localStorage if cached during init 0ms
+   ✓ LoginView > should mount component successfully 12ms
+   ✓ LoginView > should display login title 2ms
+   ✓ LoginView > should display email input 3ms
+   ✓ LoginView > should display login button 1ms
+   ✓ LoginView > should show error for empty email 3ms
+   ✓ LoginView > should show error for invalid email format 3ms
+   ✓ LoginView > should call login API with valid email 2ms
+   ✓ LoginView > should redirect to home after successful login 2ms
+   ✓ LoginView > should show error message on login failure 3ms
+   ✓ LoginView > should display register CTA button 1ms
+   ✓ LoginView > should call login API when register CTA is clicked with valid email 1ms
+   ✓ App Chrome Hiding on Login > should hide header on /login route 2ms
+   ✓ App Chrome Hiding on Login > should hide sidebar on /login route 1ms
+   × App Chrome Hiding on Login > should show header on non-login routes 3ms
+     → expected false to be true // Object.is equality
+   × App Chrome Hiding on Login > should show sidebar on non-login routes 1ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > Refresh-Logout Bug (RED PHASE) > init with cached token should restore both token and user for isAuthenticated=true
+AssertionError: expected null not to be null
+ ❯ src/__tests__/auth/login.spec.ts:143:32
+    141|     // because init() doesn't restore user from anywhere
+    142|     expect(authStore.token).toBe('cached-token')
+    143|     expect(authStore.user).not.toBeNull()
+       |                                ^
+    144|     expect(authStore.isAuthenticated).toBe(true)
+    145|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > Refresh-Logout Bug (RED PHASE) > refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me
+AssertionError: expected "spy" to be called with arguments: [ '/api/v1/auth/me' ][90m
+
+Number of calls: [1m0[22m
+[39m
+ ❯ src/__tests__/auth/login.spec.ts:167:23
+    165|     // Current buggy behavior: init() never calls /me endpoint
+    166|     // Expected behavior: should call /api/v1/auth/me to fetch user
+    167|     expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
+       |                       ^
+    168| 
+    169|     // User should be restored after revalidation
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > Refresh-Logout Bug (RED PHASE) > 401 from /me should clear auth state and redirect to /login
+AssertionError: expected 'expired-token' to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+"expired-token"
+
+ ❯ src/__tests__/auth/login.spec.ts:194:29
+    192|     // Current buggy behavior: init() doesn't handle /me errors
+    193|     // Expected behavior: should clear auth state and redirect to /log…
+    194|     expect(authStore.token).toBeNull()
+       |                             ^
+    195|     expect(authStore.user).toBeNull()
+    196|     expect(localStorage.getItem('auth_token')).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > Refresh-Logout Bug (RED PHASE) > network failure during /me should gracefully handle without breaking
+AssertionError: expected "spy" to be called with arguments: [ '/api/v1/auth/me' ][90m
+
+Number of calls: [1m0[22m
+[39m
+ ❯ src/__tests__/auth/login.spec.ts:217:23
+    215| 
+    216|     // The app should not crash, but currently it never even tries to …
+    217|     expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
+       |                       ^
+    218|   })
+    219| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > App Chrome Hiding on Login > should show header on non-login routes
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/__tests__/auth/login.spec.ts:503:29
+    501| 
+    502|     const header = wrapper.find('.app-header')
+    503|     expect(header.exists()).toBe(true)
+       |                             ^
+    504|   })
+    505| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > App Chrome Hiding on Login > should show sidebar on non-login routes
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/__tests__/auth/login.spec.ts:517:30
+    515| 
+    516|     const sidebar = wrapper.find('.app-sidebar')
+    517|     expect(sidebar.exists()).toBe(true)
+       |                              ^
+    518|   })
+    519| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 22 passed (28)
+   Start at  20:19:34
+   Duration  598ms (transform 81ms, setup 0ms, collect 131ms, tests 49ms, environment 242ms, prepare 51ms)
+

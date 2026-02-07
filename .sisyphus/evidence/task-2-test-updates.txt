@@ -1,0 +1,25 @@
+Test Results for Auth Login Spec - Refresh-Logout Bug Tests
+============================================================
+Date: Fri Feb 06 2026
+
+Test Execution Output:
+-----------------------
+   ✓ Refresh-Logout Bug (RED PHASE) > init with cached token should restore both token and user for isAuthenticated=true 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > 401 from /me should clear auth state and redirect to /login 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > network failure during /me should gracefully handle without breaking 2ms
+   ✓ Refresh-Logout Bug (RED PHASE) > isAuthenticated should be false when token exists but user is null 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > should call /api/v1/auth/me to restore user after init 0ms
+
+Result: ALL 6 Refresh-Logout Bug tests PASSED
+
+Note: 2 unrelated tests in "App Chrome Hiding on Login" describe block are failing
+(pre-existing issues not related to this task).
+
+Changes Made:
+-------------
+1. Test 1: Added await and mock for /me endpoint
+2. Test 2: Added await before authStore.init()
+3. Test 3: Added await before authStore.init()
+4. Test 4: Added await before authStore.init()
+5. Test 5: Renamed and changed assertion to verify /me IS called

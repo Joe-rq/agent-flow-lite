@@ -1,8 +1,6 @@
 {
-  "active_plan": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/.sisyphus/plans/login-page-cleanup.md",
-  "started_at": "2026-02-05T15:31:56.759Z",
-  "session_ids": ["ses_3d1918b4dffegZoIE6x5KElYQX", "ses_3d18e42b3ffeQ1odGyIemToLGM"],
-  "plan_name": "login-page-cleanup",
-  "completed_tasks": [1, 2],
-  "completed_at": "2026-02-05T15:40:00.000Z"
+  "active_plan": null,
+  "started_at": null,
+  "session_ids": [],
+  "plan_name": null
 }
