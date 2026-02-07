@@ -201,9 +201,12 @@ const detectedVariables = computed(() => {
   const regex = /\{\{(\w+)\}\}/g
   const matches = new Set<string>()
   let match
-  while ((match = regex.exec(skillPrompt.value)) !== null) {
-    matches.add(match[1])
-  }
+while ((match = regex.exec(skillPrompt.value)) !== null) {
+    const variable = match[1]
+    if (variable) {
+      matches.add(variable)
+    }
+}
   return Array.from(matches)
 })
 
