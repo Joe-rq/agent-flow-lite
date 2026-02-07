@@ -53,10 +53,18 @@ htmlcov/
 # Node
 node_modules/
 
-# Runtime data
+# Runtime data (generated at runtime, do not commit)
 backend/data/**/*.lock
+backend/data/chromadb/
 backend/data/sessions/
 backend/data/metadata/
+backend/data/uploads/
+backend/data/app.db
+backend/data/*.json
+
+# Keep only example/test data if needed
+# !backend/data/test_docs/
+# !backend/data/skills/  # Uncomment if skills should be version controlled
 
 # Misc
 EOF
