@@ -1,0 +1,33 @@
+........................................................................ [ 45%]
+........................................................................ [ 90%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+app/core/config.py:13
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/core/config.py:13: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/api/admin.py:16
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/api/admin.py:16: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UserListItem(BaseModel):
+
+app/api/auth.py:30
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/api/auth.py:30: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UserResponse(BaseModel):
+
+app/models/workflow.py:34
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/models/workflow.py:34: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Workflow(WorkflowBase):
+
+app/models/document.py:33
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/models/document.py:33: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Document(DocumentBase):
+
+app/models/document.py:46
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/models/document.py:46: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DocumentResponse(BaseModel):
+
+app/models/document.py:66
+  /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/backend/app/models/document.py:66: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class KnowledgeBase(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
