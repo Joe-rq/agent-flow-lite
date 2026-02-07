@@ -19,6 +19,9 @@ docs/
 │   ├── node-config-test-report.md  # 节点配置测试报告
 │   └── demo_script.md              # 演示脚本
 │
+├── skill-system-design.md          # Skill 系统技术设计
+├── vibe-coding-guide.html          # Vibe Coding 指南
+│
 └── archive/         # 归档文档
     ├── CODE_REVIEW_REPORT.md       # 代码审查报告
     ├── OPTIMIZATION_PLAN.md        # 优化计划

@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe Coding 提升指南 - 基于 29 次 Session 的深度复盘</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a2e;
+    --border: #2a2a3e;
+    --text: #e0e0e8;
+    --text-muted: #8888a0;
+    --accent: #6c63ff;
+    --accent-light: #8b83ff;
+    --red: #ff6b6b;
+    --red-bg: rgba(255,107,107,0.08);
+    --green: #51cf66;
+    --green-bg: rgba(81,207,102,0.08);
+    --yellow: #ffd43b;
+    --yellow-bg: rgba(255,212,59,0.08);
+    --blue: #4dabf7;
+    --blue-bg: rgba(77,171,247,0.08);
+    --orange: #ff922b;
+    --orange-bg: rgba(255,146,43,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(108,99,255,0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(255,107,107,0.08) 0%, transparent 50%);
+    animation: drift 20s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-3%, 2%); }
+  }
+  .hero > * { position: relative; z-index: 1; }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #fff 0%, var(--accent-light) 50%, var(--red) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero .subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin-bottom: 2rem;
+  }
+  .stats-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    min-width: 140px;
+  }
+  .stat-card .number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-card .label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+  .stat-card.bad .number { color: var(--red); }
+  .stat-card.ok .number { color: var(--yellow); }
+  .stat-card.good .number { color: var(--green); }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* Section layout */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  section {
+    padding: 6rem 0;
+  }
+  .section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  .section-header .tag {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .tag-red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+  .tag-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(81,207,102,0.2); }
+  .tag-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(77,171,247,0.2); }
+  .tag-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(255,212,59,0.2); }
+  .tag-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(255,146,43,0.2); }
+
+  .section-header h2 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .section-header p {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  /* Divider */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* Flow diagram */
+  .flow-diagram {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 3rem 0;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+  .flow-step {
+    flex: 1;
+    min-width: 180px;
+    text-align: center;
+    position: relative;
+    padding: 0 0.5rem;
+  }
+  .flow-step .icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.6rem;
+    border: 2px solid;
+    position: relative;
+    z-index: 2;
+  }
+  .flow-step::after {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: calc(50% + 40px);
+    width: calc(100% - 80px);
+    height: 2px;
+    background: var(--border);
+    z-index: 1;
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-step h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .flow-step p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Problem cards */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .problem-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .problem-card .severity {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.4rem 1rem;
+    border-radius: 0 16px 0 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .severity-high { background: var(--red-bg); color: var(--red); }
+  .severity-mid { background: var(--yellow-bg); color: var(--yellow); }
+  .problem-card .icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .problem-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .problem-card .desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .problem-card .metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  /* Comparison (before/after) */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 768px) {
+    .comparison { grid-template-columns: 1fr; }
+  }
+  .compare-panel {
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .compare-panel .panel-header {
+    padding: 1rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .compare-panel.bad .panel-header { background: var(--red-bg); color: var(--red); }
+  .compare-panel.good .panel-header { background: var(--green-bg); color: var(--green); }
+  .compare-panel .panel-body {
+    padding: 1.5rem;
+  }
+
+  /* Code blocks */
+  pre {
+    background: #0d0d14;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: #c0c0d0;
+    margin: 1rem 0;
+  }
+  pre .comment { color: #5c5c7a; }
+  pre .keyword { color: var(--accent-light); }
+  pre .string { color: var(--green); }
+  pre .highlight { color: var(--yellow); background: rgba(255,212,59,0.08); padding: 0 0.2rem; border-radius: 3px; }
+
+  /* Checklist */
+  .checklist {
+    list-style: none;
+    margin: 1.5rem 0;
+  }
+  .checklist li {
+    padding: 0.75rem 0;
+    padding-left: 2.2rem;
+    position: relative;
+    border-bottom: 1px solid rgba(42,42,62,0.5);
+    font-size: 0.95rem;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.85rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+  }
+  .checklist li.done::before {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .checklist li.done::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.92rem;
+    width: 10px;
+    height: 5px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg);
+  }
+
+  /* Pipeline visualization */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .pipeline-stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+  }
+  .pipeline-stage:first-child { border-radius: 16px 0 0 16px; }
+  .pipeline-stage:last-child { border-radius: 0 16px 16px 0; }
+  .pipeline-stage .stage-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 0 auto 0.75rem;
+  }
+  .pipeline-stage h4 {
+    font-size: 0.95rem;
+    margin-bottom: 0.4rem;
+  }
+  .pipeline-stage p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .pipeline-stage .gate {
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+  }
+  .gate-check { background: var(--green); color: #fff; }
+  .gate-block { background: var(--red); color: #fff; }
+
+  /* Tips box */
+  .tip-box {
+    background: var(--surface2);
+    border-left: 4px solid;
+    border-radius: 0 12px 12px 0;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+  .tip-box.info { border-color: var(--blue); }
+  .tip-box.warn { border-color: var(--yellow); }
+  .tip-box.danger { border-color: var(--red); }
+  .tip-box .tip-title {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .tip-box.info .tip-title { color: var(--blue); }
+  .tip-box.warn .tip-title { color: var(--yellow); }
+  .tip-box.danger .tip-title { color: var(--red); }
+
+  /* Big number highlight */
+  .big-insight {
+    text-align: center;
+    padding: 3rem 2rem;
+    margin: 2rem 0;
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .big-insight .number {
+    font-size: 5rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .big-insight .unit {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+  }
+  .big-insight .explanation {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    margin: 2rem 0;
+    padding-left: 2rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    padding: 1.5rem;
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2.55rem;
+    top: 1.8rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid;
+  }
+  .timeline-item.step1::before { border-color: var(--blue); background: var(--blue); }
+  .timeline-item.step2::before { border-color: var(--accent); background: var(--accent); }
+  .timeline-item.step3::before { border-color: var(--yellow); background: var(--yellow); }
+  .timeline-item.step4::before { border-color: var(--green); background: var(--green); }
+  .timeline-item.step5::before { border-color: var(--orange); background: var(--orange); }
+  .timeline-item h4 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .timeline-item p {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+
+  /* Prompt template cards */
+  .prompt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+  .prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .prompt-card .prompt-header {
+    padding: 1rem 1.5rem;
+    background: var(--surface2);
+    font-weight: 700;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .prompt-card .prompt-body {
+    padding: 1.5rem;
+  }
+  .prompt-card .scenario {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Guardrail diagram */
+  .guardrail-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .guardrail-layer {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s;
+  }
+  .guardrail-layer:hover { transform: translateX(4px); }
+  .guardrail-layer .layer-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .guardrail-layer .layer-content { flex: 1; }
+  .guardrail-layer h4 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+  .guardrail-layer p { font-size: 0.85rem; color: var(--text-muted); }
+  .guardrail-layer .trigger {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+  .data-table th {
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table th:first-child { border-radius: 8px 0 0 0; }
+  .data-table th:last-child { border-radius: 0 8px 0 0; }
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(42,42,62,0.3);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Nav dots */
+  .nav-dots {
+    position: fixed;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    z-index: 100;
+  }
+  .nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    border: none;
+  }
+  .nav-dot:hover, .nav-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+  }
+  .nav-dot[title]::after {
+    content: attr(title);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    background: var(--surface2);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .nav-dot:hover::after { opacity: 1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .flow-diagram { flex-direction: column; }
+    .flow-step::after { display: none; }
+    .pipeline { grid-template-columns: 1fr; }
+    .pipeline-stage { border-radius: 12px !important; }
+    .pipeline-stage .gate { display: none; }
+    .prompt-grid { grid-template-columns: 1fr; }
+    .nav-dots { display: none; }
+    .stats-row { gap: 1rem; }
+    .stat-card { min-width: 100px; padding: 1rem; }
+  }
+
+  /* Animations */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="top">
+  <h1>Vibe Coding 提升指南</h1>
+  <p class="subtitle">基于你 29 次 Claude Code Session 的深度复盘<br>从数据中提炼出的编码工作流改进方案</p>
+
+  <div class="stats-row">
+    <div class="stat-card bad">
+      <div class="number">16</div>
+      <div class="label">Buggy Code 事件</div>
+    </div>
+    <div class="stat-card bad">
+      <div class="number">15</div>
+      <div class="label">方向错误次数</div>
+    </div>
+    <div class="stat-card ok">
+      <div class="number">60%</div>
+      <div class="label">目标完成率</div>
+    </div>
+    <div class="stat-card good">
+      <div class="number">12</div>
+      <div class="label">成功提交</div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">&#8595; 向下滚动查看完整指南</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 1: 核心问题诊断 ===== -->
+<section id="diagnosis">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-red">问题诊断</span>
+      <h2>你的 Vibe Coding 卡在哪里？</h2>
+      <p>29 个 Session 的数据揭示了三个系统性瓶颈，它们互相放大，形成恶性循环</p>
+    </div>
+
+    <!-- Vicious cycle diagram -->
+    <div class="big-insight fade-in">
+      <div style="display:flex; justify-content:center; align-items:center; gap:2rem; flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">&#128483;</div>
+          <div style="font-weight:700; color:var(--red);">上下文不足</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Claude 靠猜</div>
+        </div>
+        <div style="font-size:2rem; color:var(--text-muted);">&#8594;</div>
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">&#128027;</div>
+          <div style="font-weight:700; color:var(--yellow);">方向错误 / Bug</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">代码不对</div>
+        </div>
+        <div style="font-size:2rem; color:var(--text-muted);">&#8594;</div>
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">&#128260;</div>
+          <div style="font-weight:700; color:var(--orange);">多轮调试</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">反复纠正</div>
+        </div>
+        <div style="font-size:2rem; color:var(--text-muted);">&#8594;</div>
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">&#128564;</div>
+          <div style="font-weight:700; color:var(--red);">耐心耗尽</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">中断 Session</div>
+        </div>
+      </div>
+      <div class="explanation" style="margin-top:2rem;">
+        &#8593; 这个循环在你 <strong>8 个 partially_achieved</strong> 的 session 中反复出现
+      </div>
+    </div>
+
+    <div class="problem-grid fade-in">
+      <div class="problem-card">
+        <span class="severity severity-high">高频</span>
+        <span class="icon">&#9888;&#65039;</span>
+        <h3>任务打包过大</h3>
+        <p class="desc">你习惯一个 Session 塞多个大功能。Claude 在第一个功能上就消耗大量上下文，第二个任务要么没开始，要么质量崩塌。</p>
+        <span class="metric" style="background:var(--red-bg); color:var(--red);">8 次 session 未完成第二个任务</span>
+      </div>
+
+      <div class="problem-card">
+        <span class="severity severity-high">高频</span>
+        <span class="icon">&#128270;</span>
+        <h3>零测试覆盖</h3>
+        <p class="desc">后端没有 pytest 测试文件，前端只有 smoke test。Claude 改完代码没有自动验证，bug 只能靠你肉眼发现，发现时往往已经扩散。</p>
+        <span class="metric" style="background:var(--red-bg); color:var(--red);">16 次 buggy code 事件</span>
+      </div>
+
+      <div class="problem-card">
+        <span class="severity severity-mid">中频</span>
+        <span class="icon">&#128196;</span>
+        <h3>Claude 逃避 Bug</h3>
+        <p class="desc">你报了 bug，Claude 转头写文档或优化。原因：你的 bug 报告和其他需求混在一起，Claude 自动挑了"更容易"的任务。</p>
+        <span class="metric" style="background:var(--yellow-bg); color:var(--yellow);">多个 session 核心 bug 未修复</span>
+      </div>
+
+      <div class="problem-card">
+        <span class="severity severity-mid">中频</span>
+        <span class="icon">&#127919;</span>
+        <h3>TypeScript 编译错误积累</h3>
+        <p class="desc">Claude 改完 .ts / .vue 文件不做类型检查，错误积累到后面变成连锁问题，需要多轮调试才能修好。</p>
+        <span class="metric" style="background:var(--yellow-bg); color:var(--yellow);">GLM 集成花了 4 轮修编译</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 2: 正确的 Vibe Coding 工作流 ===== -->
+<section id="workflow">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-blue">核心方法论</span>
+      <h2>正确的 Vibe Coding 编码循环</h2>
+      <p>用这个流程替换你现在的"给目标 &#8594; 边做边纠"模式</p>
+    </div>
+
+    <div class="flow-diagram fade-in">
+      <div class="flow-step">
+        <div class="icon-circle" style="border-color:var(--blue); background:var(--blue-bg); color:var(--blue);">&#9312;</div>
+        <h4>给上下文</h4>
+        <p>告诉 Claude 读哪些文件、改动范围、约束条件</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle" style="border-color:var(--accent); background:rgba(108,99,255,0.08); color:var(--accent);">&#9313;</div>
+        <h4>确认理解</h4>
+        <p>让 Claude 复述方案、列出要改的文件，你确认后才动手</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle" style="border-color:var(--yellow); background:var(--yellow-bg); color:var(--yellow);">&#9314;</div>
+        <h4>小步实现</h4>
+        <p>每次只改一个功能点，改完立即验证</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle" style="border-color:var(--green); background:var(--green-bg); color:var(--green);">&#9315;</div>
+        <h4>自动验证</h4>
+        <p>Hooks + 测试自动拦截 bug，不通过不进下一步</p>
+      </div>
+      <div class="flow-step">
+        <div class="icon-circle" style="border-color:var(--orange); background:var(--orange-bg); color:var(--orange);">&#9316;</div>
+        <h4>确认提交</h4>
+        <p>验证全部通过后才 commit，进入下一个任务</p>
+      </div>
+    </div>
+
+    <div class="tip-box info fade-in">
+      <div class="tip-title">关键区别</div>
+      你现在的流程是<strong>"给大目标 &#8594; Claude 自由发挥 &#8594; 出问题再纠"</strong>。
+      正确的流程是<strong>"给精确上下文 &#8594; 确认方案 &#8594; 小步改动 &#8594; 自动验证 &#8594; 再走下一步"</strong>。
+      看起来步骤多了，但你节省的是后面 3-5 轮的返工时间。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 3: 三道护栏 ===== -->
+<section id="guardrails">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-green">防线建设</span>
+      <h2>三道护栏：让 Bug 无处可藏</h2>
+      <p>你的编码效率瓶颈在于缺少自动化质量门禁</p>
+    </div>
+
+    <div class="guardrail-stack fade-in">
+      <div class="guardrail-layer">
+        <div class="layer-icon" style="background:var(--red-bg); color:var(--red);">&#128683;</div>
+        <div class="layer-content">
+          <h4>第一道：CLAUDE.md 行为约束</h4>
+          <p>写进项目的规则文件，Claude 每次启动都会读取。控制它的行为模式，防止跑偏写文档。</p>
+        </div>
+        <span class="trigger" style="background:var(--red-bg); color:var(--red);">每次 session 生效</span>
+      </div>
+
+      <div class="guardrail-layer">
+        <div class="layer-icon" style="background:var(--yellow-bg); color:var(--yellow);">&#9889;</div>
+        <div class="layer-content">
+          <h4>第二道：Hooks 自动检查</h4>
+          <p>Claude 每次编辑文件后自动触发类型检查和语法检查，编译错误当场暴露。</p>
+        </div>
+        <span class="trigger" style="background:var(--yellow-bg); color:var(--yellow);">每次编辑触发</span>
+      </div>
+
+      <div class="guardrail-layer">
+        <div class="layer-icon" style="background:var(--green-bg); color:var(--green);">&#9989;</div>
+        <div class="layer-content">
+          <h4>第三道：测试套件</h4>
+          <p>关键路径的自动化测试，改完代码跑一遍就知道有没有回归，不靠人肉验证。</p>
+        </div>
+        <span class="trigger" style="background:var(--green-bg); color:var(--green);">每次提交前运行</span>
+      </div>
+    </div>
+
+    <!-- 护栏 1: CLAUDE.md -->
+    <h3 style="margin-top:3rem; margin-bottom:1.5rem; font-size:1.3rem;" class="fade-in">护栏一：CLAUDE.md 行为规则</h3>
+    <p style="color:var(--text-muted); margin-bottom:1rem;" class="fade-in">在你的 CLAUDE.md 开头加入以下规则。这些不是"建议"，是 Claude 必须遵守的硬性约束：</p>
+
+    <pre class="fade-in"><span class="comment">## Working Rules</span>
+
+<span class="keyword">1.</span> <span class="highlight">修 bug 优先于一切。</span>用户报了 bug，在 bug 确认修复前不做任何其他事
+   （包括写文档、重构、优化、添加注释）。
+
+<span class="keyword">2.</span> <span class="highlight">改代码前先读代码。</span>不要基于猜测修改文件。先 Read 相关文件，
+   理解现有逻辑后再提出方案。
+
+<span class="keyword">3.</span> <span class="highlight">每次改动都要验证。</span>
+   - 后端：uv run pytest
+   - 前端：npx tsc --noEmit && npm run test
+   验证不通过不算完成。
+
+<span class="keyword">4.</span> <span class="highlight">单任务原则。</span>每轮只做一件事，做完确认后再接下一件。
+   不要在一轮里同时改 auth、chat、workflow。
+
+<span class="keyword">5.</span> <span class="highlight">大改动先列清单。</span>涉及 3 个以上文件的改动，
+   先列出要改哪些文件、每个文件改什么，确认后再动手。</pre>
+
+    <!-- 护栏 2: Hooks -->
+    <h3 style="margin-top:3rem; margin-bottom:1.5rem; font-size:1.3rem;" class="fade-in">护栏二：Hooks 配置</h3>
+    <p style="color:var(--text-muted); margin-bottom:1rem;" class="fade-in">在 <code>.claude/settings.json</code> 中添加，Claude 每次编辑文件都会自动触发检查：</p>
+
+    <pre class="fade-in"><span class="comment">// .claude/settings.json</span>
+{
+  <span class="string">"hooks"</span>: {
+    <span class="string">"postToolUse"</span>: [
+      {
+        <span class="string">"matcher"</span>: <span class="string">"Edit|Write"</span>,
+        <span class="string">"hooks"</span>: [
+          {
+            <span class="string">"type"</span>: <span class="string">"command"</span>,
+            <span class="string">"command"</span>: <span class="string">"filepath=\"$CLAUDE_FILE_PATH\"; \
+if echo \"$filepath\" | grep -qE '\\.ts$|\\.vue$'; then \
+  cd frontend && npx tsc --noEmit 2>&1 | head -30; \
+elif echo \"$filepath\" | grep -qE '\\.py$'; then \
+  cd backend && uv run python -m py_compile \"$filepath\" 2>&1; \
+fi"</span>
+          }
+        ]
+      }
+    ]
+  }
+}</pre>
+
+    <div class="comparison fade-in">
+      <div class="compare-panel bad">
+        <div class="panel-header">&#10060; 没有 Hooks 的情况</div>
+        <div class="panel-body">
+          <ol style="font-size:0.9rem; padding-left:1.2rem; color:var(--text-muted);">
+            <li>Claude 改了 3 个 .ts 文件</li>
+            <li>你运行页面，白屏</li>
+            <li>打开控制台发现 TypeError</li>
+            <li>告诉 Claude 有编译错误</li>
+            <li>Claude 修了，又引入新错误</li>
+            <li>继续来回 3 轮...</li>
+          </ol>
+          <div style="margin-top:1rem; padding:0.5rem; background:var(--red-bg); border-radius:8px; text-align:center; font-size:0.85rem; color:var(--red);">
+            结果：浪费 5-6 轮对话
+          </div>
+        </div>
+      </div>
+      <div class="compare-panel good">
+        <div class="panel-header">&#9989; 有 Hooks 的情况</div>
+        <div class="panel-body">
+          <ol style="font-size:0.9rem; padding-left:1.2rem; color:var(--text-muted);">
+            <li>Claude 改了第 1 个 .ts 文件</li>
+            <li>Hook 自动运行 tsc，报错</li>
+            <li>Claude 立即看到错误，当场修复</li>
+            <li>Hook 再次运行，通过</li>
+            <li>继续改下一个文件...</li>
+          </ol>
+          <div style="margin-top:1rem; padding:0.5rem; background:var(--green-bg); border-radius:8px; text-align:center; font-size:0.85rem; color:var(--green);">
+            结果：每个错误都在产生的瞬间修复
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 护栏 3: 测试 -->
+    <h3 style="margin-top:3rem; margin-bottom:1.5rem; font-size:1.3rem;" class="fade-in">护栏三：测试套件</h3>
+    <p style="color:var(--text-muted); margin-bottom:1rem;" class="fade-in">你的后端 pyproject.toml 已经配好了 pytest，但 <code>tests/</code> 目录是空的。从这三个优先级开始：</p>
+
+    <div class="pipeline fade-in">
+      <div class="pipeline-stage">
+        <div class="stage-num">P0</div>
+        <h4>Auth API</h4>
+        <p>登录、登出、token 验证、权限隔离</p>
+        <span class="gate gate-check">&#10003;</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-num">P0</div>
+        <h4>Session 持久化</h4>
+        <p>创建、保存、加载、权限、删除</p>
+        <span class="gate gate-check">&#10003;</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-num">P1</div>
+        <h4>Skill 解析</h4>
+        <p>@skill 解析、加载、输入映射</p>
+        <span class="gate gate-check">&#10003;</span>
+      </div>
+      <div class="pipeline-stage">
+        <div class="stage-num">P2</div>
+        <h4>Workflow 引擎</h4>
+        <p>节点遍历、变量替换、条件分支</p>
+      </div>
+    </div>
+
+    <div class="tip-box warn fade-in">
+      <div class="tip-title">关于测试的误区</div>
+      你可能觉得"写测试浪费时间"。看数据：你 16 次 buggy code 事件，每次平均 3-4 轮调试。
+      <strong>写一次测试 = 永久拦截同类 bug</strong>。手动调试才是真正的时间黑洞。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 4: Prompt 模板 ===== -->
+<section id="prompts">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-yellow">实战模板</span>
+      <h2>场景化 Prompt 模板</h2>
+      <p>直接复制使用，替换方括号内容</p>
+    </div>
+
+    <div class="prompt-grid fade-in">
+      <!-- 报 Bug -->
+      <div class="prompt-card">
+        <div class="prompt-header" style="color:var(--red);">&#128027; 报 Bug</div>
+        <div class="prompt-body">
+          <div class="scenario">当你发现一个 bug 需要修复时</div>
+          <pre style="font-size:0.8rem;">bug: <span class="highlight">[一句话描述现象]</span>
+
+复现步骤：
+1. <span class="highlight">[步骤 1]</span>
+2. <span class="highlight">[步骤 2]</span>
+3. <span class="highlight">[步骤 3]</span>
+预期行为：<span class="highlight">[应该怎样]</span>
+实际行为：<span class="highlight">[实际怎样]</span>
+
+相关文件：
+- <span class="highlight">[文件路径 1]</span>
+- <span class="highlight">[文件路径 2]</span>
+
+要求：
+1. 先写失败测试复现 bug
+2. 修复代码
+3. 跑全部测试确认通过
+<span class="keyword">4. bug 没修好之前不做任何其他事</span></pre>
+        </div>
+      </div>
+
+      <!-- 加功能 -->
+      <div class="prompt-card">
+        <div class="prompt-header" style="color:var(--green);">&#10024; 加功能</div>
+        <div class="prompt-body">
+          <div class="scenario">当你要添加一个新功能时</div>
+          <pre style="font-size:0.8rem;">需求：<span class="highlight">[一句话描述功能]</span>
+
+范围（只改这些）：
+- <span class="highlight">[文件 1：改什么]</span>
+- <span class="highlight">[文件 2：改什么]</span>
+
+约束：
+- <span class="keyword">不要改需求范围外的代码</span>
+- <span class="keyword">不要添加注释、文档、类型标注</span>
+- 改完跑 tsc --noEmit 和 npm test
+
+完成后告诉我改了哪些行。</pre>
+        </div>
+      </div>
+
+      <!-- 重构 -->
+      <div class="prompt-card">
+        <div class="prompt-header" style="color:var(--accent);">&#128736;&#65039; 重构</div>
+        <div class="prompt-body">
+          <div class="scenario">当你要重构现有代码时</div>
+          <pre style="font-size:0.8rem;">重构：<span class="highlight">[文件路径]</span> 中的
+<span class="highlight">[具体函数/模块]</span>
+
+原因：<span class="highlight">[为什么要重构]</span>
+
+<span class="keyword">先列出你的重构方案：</span>
+- 要改哪些函数
+- 怎么拆分/合并
+- 我确认后再动手
+
+约束：
+- <span class="keyword">不改任何功能行为</span>
+- 改完跑测试确认无回归</pre>
+        </div>
+      </div>
+
+      <!-- 大功能 -->
+      <div class="prompt-card">
+        <div class="prompt-header" style="color:var(--orange);">&#128640; 大功能（分阶段）</div>
+        <div class="prompt-body">
+          <div class="scenario">当功能涉及多个模块时</div>
+          <pre style="font-size:0.8rem;"><span class="keyword">分阶段实现：</span><span class="highlight">[功能描述]</span>
+
+<span class="keyword">Phase 1（只做这个）：</span>
+<span class="highlight">[最小可验证的第一步]</span>
+
+Phase 2（Phase 1 确认后）：
+<span class="highlight">[第二步]</span>
+
+Phase 3（Phase 2 确认后）：
+<span class="highlight">[第三步]</span>
+
+<span class="keyword">现在只做 Phase 1。</span>
+做完我确认后再做 Phase 2。
+<span class="keyword">不要提前做后续 Phase 的代码。</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 打断 Claude -->
+    <h3 style="margin-top:3rem; margin-bottom:1.5rem; font-size:1.3rem;" class="fade-in">紧急打断话术</h3>
+    <p style="color:var(--text-muted); margin-bottom:1rem;" class="fade-in">当 Claude 跑偏时（写文档、做你没要求的事），不要温柔地引导，直接打断：</p>
+
+    <div class="comparison fade-in">
+      <div class="compare-panel bad">
+        <div class="panel-header">&#10060; 无效的纠正</div>
+        <div class="panel-body">
+          <pre style="font-size:0.85rem; border:none; padding:0; background:transparent; color:var(--text-muted);">"嗯，这个文档看起来不错，
+但是我其实更想先把那个
+bug 修了，你觉得呢？"
+
+<span class="comment">// Claude: "好的，我先完善一下
+// 这个文档再来看 bug..."</span></pre>
+        </div>
+      </div>
+      <div class="compare-panel good">
+        <div class="panel-header">&#9989; 有效的打断</div>
+        <div class="panel-body">
+          <pre style="font-size:0.85rem; border:none; padding:0; background:transparent; color:var(--text-muted);">"停。你在写文档，我没有要求这个。
+回到 backend/app/api/chat.py
+修复 session 持久化 bug。
+现在就修，不要做其他事情。"
+
+<span class="comment">// Claude: *立即开始修 bug*</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 5: Before/After ===== -->
+<section id="before-after">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-orange">对比</span>
+      <h2>改进前 vs 改进后</h2>
+      <p>同样的需求，两种完全不同的 Session 体验</p>
+    </div>
+
+    <h3 style="margin-bottom:1.5rem;" class="fade-in">场景：给 ChatTerminal 添加"清空会话"功能</h3>
+
+    <div class="comparison fade-in">
+      <div class="compare-panel bad">
+        <div class="panel-header">&#10060; 你现在的方式</div>
+        <div class="panel-body">
+          <div class="timeline">
+            <div class="timeline-item step1">
+              <h4>你：</h4>
+              <p>"给聊天页面加个清空会话的功能，另外侧边栏也要优化一下"</p>
+            </div>
+            <div class="timeline-item step2">
+              <h4>Claude：</h4>
+              <p>改了 5 个文件，清空功能和侧边栏重构混在一起</p>
+            </div>
+            <div class="timeline-item step3">
+              <h4>你：</h4>
+              <p>"清空按钮点了没反应"</p>
+            </div>
+            <div class="timeline-item step4">
+              <h4>Claude：</h4>
+              <p>开始写一篇"优化计划文档"...</p>
+            </div>
+            <div class="timeline-item step5">
+              <h4>结果：</h4>
+              <p style="color:var(--red);">两个功能都半成品，中断 session</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="compare-panel good">
+        <div class="panel-header">&#9989; 改进后的方式</div>
+        <div class="panel-body">
+          <div class="timeline">
+            <div class="timeline-item step1">
+              <h4>你：</h4>
+              <p>"给 ChatTerminal.vue 加清空按钮，调用 DELETE API。只改这一个文件，改完跑 tsc 和 test"</p>
+            </div>
+            <div class="timeline-item step2">
+              <h4>Claude：</h4>
+              <p>"方案：在侧边栏加按钮，点击弹确认框，确认后调 API 并清空本地状态。只改 ChatTerminal.vue。确认？"</p>
+            </div>
+            <div class="timeline-item step3">
+              <h4>你：</h4>
+              <p>"确认，动手"</p>
+            </div>
+            <div class="timeline-item step4">
+              <h4>Claude：</h4>
+              <p>改完 &rarr; Hook 自动跑 tsc &rarr; 通过 &rarr; 跑 test &rarr; 通过</p>
+            </div>
+            <div class="timeline-item step5">
+              <h4>结果：</h4>
+              <p style="color:var(--green);">功能完成，测试通过，准备 commit。然后再开始侧边栏优化</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 6: 代码里已知的问题 ===== -->
+<section id="known-issues">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-red">现有 Bug</span>
+      <h2>你代码里现在就有的问题</h2>
+      <p>这些都是缺少测试的直接后果</p>
+    </div>
+
+    <div class="tip-box danger fade-in">
+      <div class="tip-title">Bug #1：chat.py 重复代码（严重）</div>
+      <code>backend/app/api/chat.py</code> 第 385-543 行，<code>workflow_stream_generator</code> 函数的整个函数体<strong>写了两遍</strong>。第一遍在 468 行 return 后，下面又重新获取 workflow 并遍历了一遍。更危险的是：第二遍的 Zep 调用逻辑和第一遍不一致（530 行用 <code>request.user_id</code> 而不是 <code>get_zep_session_id</code>）。这是代码合并时引入的 bug。
+    </div>
+
+    <div class="tip-box danger fade-in">
+      <div class="tip-title">Bug #2：Zep session ID 不一致</div>
+      <code>chat.py</code> 第 664 行，<code>zep.get_memory_context</code> 用的是 <code>request.session_id</code>（原始 ID），而其他地方都用 <code>get_zep_session_id</code>（命名空间化后的 <code>user_id::session_id</code>）。这意味着 Zep 记忆检索可能找不到正确的会话。
+    </div>
+
+    <div class="tip-box warn fade-in">
+      <div class="tip-title">问题 #3：前端测试全是 Smoke Test</div>
+      13 个测试文件全部是"能挂载吗""文本存在吗"级别的断言。没有任何交互测试、异步行为测试、或状态管理测试。这些测试<strong>不会帮你拦住真正的 bug</strong>。
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 7: 执行清单 ===== -->
+<section id="checklist">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-green">行动计划</span>
+      <h2>你接下来该做的事</h2>
+      <p>按优先级排序，从上到下依次执行</p>
+    </div>
+
+    <div class="fade-in" style="background:var(--surface); border-radius:16px; padding:2rem; border:1px solid var(--border);">
+      <h3 style="margin-bottom:0.5rem;">立即执行（今天就做）</h3>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">这些改动直接影响每一次 session 的质量</p>
+      <ul class="checklist">
+        <li>在 CLAUDE.md 开头加入 Working Rules（5 条行为约束）</li>
+        <li>创建 <code>.claude/settings.json</code> 配置 Hooks（TypeScript/Python 自动检查）</li>
+        <li>修复 <code>chat.py</code> 中的重复代码 bug（删除 470-543 行的重复函数体）</li>
+      </ul>
+
+      <h3 style="margin-top:2rem; margin-bottom:0.5rem;">本周完成</h3>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">建立最低限度的测试防线</p>
+      <ul class="checklist">
+        <li>创建 <code>backend/tests/conftest.py</code>（内存数据库、TestClient、auth fixtures）</li>
+        <li>写 <code>test_auth.py</code>：覆盖登录、登出、token 验证、权限（6-8 个用例）</li>
+        <li>写 <code>test_chat_session.py</code>：覆盖 session CRUD、权限隔离（5-6 个用例）</li>
+        <li>加强前端 auth store 测试：login/logout/init/401 处理</li>
+      </ul>
+
+      <h3 style="margin-top:2rem; margin-bottom:0.5rem;">持续养成的习惯</h3>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">融入日常编码工作流</p>
+      <ul class="checklist">
+        <li>每次让 Claude 加新功能时，先要求写测试</li>
+        <li>每次 session 只聚焦一个任务</li>
+        <li>涉及 3+ 文件的改动先让 Claude 列清单</li>
+        <li>发现跑偏立刻打断，不要等</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ===== SECTION 8: 心智模型 ===== -->
+<section id="mindset">
+  <div class="container">
+    <div class="section-header fade-in">
+      <span class="tag tag-accent" style="background:rgba(108,99,255,0.08); color:var(--accent); border:1px solid rgba(108,99,255,0.2);">心智模型</span>
+      <h2>Vibe Coding 的正确心态</h2>
+    </div>
+
+    <div class="problem-grid fade-in">
+      <div class="problem-card" style="border-top:3px solid var(--red);">
+        <h3>&#10060; 错误心态</h3>
+        <p class="desc" style="margin-top:1rem;">
+          "Claude 很聪明，我给个大方向它应该能搞定。"
+          <br><br>
+          "写测试太慢了，先把功能做出来再说。"
+          <br><br>
+          "它写的文档也挺好的，虽然我要的是修 bug..."
+        </p>
+      </div>
+
+      <div class="problem-card" style="border-top:3px solid var(--green);">
+        <h3>&#9989; 正确心态</h3>
+        <p class="desc" style="margin-top:1rem;">
+          "Claude 是一个能力很强但需要精确指令的执行者。<strong>我负责方向，它负责实现。</strong>"
+          <br><br>
+          "测试是给 Claude 的自动反馈机制。<strong>没有测试 = 我自己当人肉测试。</strong>"
+          <br><br>
+          "发现跑偏就打断。<strong>我的时间比 Claude 的 token 贵。</strong>"
+        </p>
+      </div>
+    </div>
+
+    <div class="big-insight fade-in" style="margin-top:3rem;">
+      <div class="number" style="background:linear-gradient(135deg, var(--green), var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">
+        &#8734;
+      </div>
+      <div class="unit">Vibe Coding 的核心不是"让 AI 自由发挥"</div>
+      <div class="explanation">
+        而是<strong>用最少的人类干预获得最高的代码质量</strong>。<br>
+        这需要的不是更少的约束，而是<strong>更聪明的约束</strong>——<br>
+        把你的经验固化成规则、测试和自动化检查，<br>
+        让 Claude 在一个安全的框架里高效产出。
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>基于 29 次 Claude Code Session 数据生成 &middot; Agent Flow Lite 项目</p>
+  <p style="margin-top:0.5rem; font-size:0.8rem;">把你踩过的坑变成护栏，让下一次 Session 更顺利</p>
+</footer>
+
+<script>
+  // Fade-in on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

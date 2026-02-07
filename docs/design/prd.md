@@ -9,7 +9,9 @@
 - **全栈化 (Full-Stack):** 完整的前后端流式交互与数据闭环。
 
 ## 2. 用户角色 (User Roles)
-- **Agent 编排者 (Builder):** 创建工作流，上传知识库，配置节点逻辑。
+
+- **管理员 (Admin):** 用户管理、系统配置、所有资源的完全访问权限。
+- **Agent 编排者 (Builder):** 创建工作流、上传知识库、配置节点逻辑、创建 Skill。
 - **Agent 用户 (End-User):** 在对话终端与 Agent 进行交互，获取答案。
 
 ## 3. 核心功能模块 (Functional Concepts)
@@ -26,6 +28,7 @@
   - **Start/End 节点:** 流程的开始与结束。
   - **LLM 节点:** 配置模型参数（Temperature, System Prompt），输入 Prompt 模板。
   - **Knowledge 节点:** 关联已上传的知识库，进行检索配置。
+  - **Skill 节点:** 调用预定义的 Skill 技能，支持变量输入。
   - **Condition 节点 (If/Else):** 简单的 JS 表达式判断分支。
 - **数据流转:**
   - 节点间通过“变量引用”传递数据（例如 `{{step1.output}}`）。
@@ -50,13 +53,44 @@
 **功能点：**
 - **会话管理:**
   - 自动创建 Session ID。
-  - 历史记录回显（存储于后端数据库）。
-  - **长期记忆:** 跨会话记忆持久化。
+  - 历史记录回显（存储于后端 JSON 文件）。
+  - 用户隔离：每个用户只能访问自己的会话。
 - **交互体验:**
   - **流式响应 (Streaming):** 打字机效果显示 AI 回复，降低等待焦虑。
-  - **思维链展示 (Chain of Thought):** (可选) 展示工作流当前的执行节点（如："正在检索知识库..."、"正在思考...”）。
+  - **思维链展示 (Chain of Thought):** (可选) 展示工作流当前的执行节点（如："正在检索知识库..."、"正在思考..."）。
   - **引用溯源:** 点击角标可高亮显示引用的知识库段落。
   - **引用详情面板:** 点击「引用」按钮显示来源信息、相似度分数和文本摘录。
+  - **@Skill 调用:** 在对话中通过 `@skill-name` 语法直接调用 Skill 技能。
+
+### 3.4 Skill 技能系统 (Skill System)
+*这是系统的"技能库"，提供可复用的 AI 能力。*
+
+**功能点：**
+- **Skill 定义:**
+  - 基于 YAML frontmatter + Markdown 格式。
+  - 支持定义输入变量（名称、类型、是否必需）。
+  - 支持关联知识库。
+  - 可配置模型参数（temperature, max_tokens）。
+- **Skill 管理:**
+  - 创建、编辑、删除 Skill。
+  - Skill 列表展示和搜索。
+  - 独立测试运行 Skill。
+- **Skill 使用:**
+  - 在工作流中作为节点使用。
+  - 在对话中通过 `@skill-name` 语法调用。
+
+### 3.5 用户管理 (User Management)
+*系统的"权限中心"。*
+
+**功能点：**
+- **认证授权:**
+  - 基于邮箱的 Token 认证。
+  - 首次登录自动创建用户。
+  - 管理员角色区分。
+- **管理员功能:**
+  - 查看所有用户列表。
+  - 启用/禁用用户账号。
+  - 删除用户账号。
 
 ## 4. 技术架构 (Technical Architecture)
 
@@ -69,13 +103,15 @@
 
 ### 4.2 后端 (Backend)
 - **框架:** **Python (FastAPI)**。
-  - *决策调整:* 为了追求 AI 原生能力与 RAG 效果，放弃 Node.js，采用 AI 领域标准的 Python 栈。
-- **数据库:**
-  - **PostgreSQL:** 存储 Workflow 元数据, Chat History。
-  - **pgvector:** 存储向量数据 (Embedding)。
+  - *决策:* AI 领域标准栈，异步高性能。
+- **存储:**
+  - **SQLite:** 用户、会话等关系数据 (aiosqlite + SQLAlchemy)。
+  - **ChromaDB:** 向量数据本地持久化存储。
+  - **文件系统:** Skill 定义、上传文档、工作流配置。
 - **AI 集成:**
-  - **LangChain / LangGraph:** 处理工作流编排与 RAG 检索。
-  - **Unstructured:** 强大的非结构化文档解析。
+  - **LlamaIndex:** RAG 检索框架。
+  - **DeepSeek API:** LLM 大语言模型。
+  - **SiliconFlow API:** Embedding 向量模型 (BGE-M3)。
 
 ### 4.3 接口规范 (API Design)
 - 遵循 RESTful 规范，使用 Python `Pydantic` 定义数据模型，自动生成 Swagger 文档。
