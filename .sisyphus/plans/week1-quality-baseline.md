@@ -376,7 +376,7 @@ Critical Path: Task 1 -> Task 2 -> Task 5 -> Task 8
   - [ ] `git diff --name-only` 文件集 lint error = 0
   - [ ] 仓库历史 lint error <=40
 
-- [ ] 8. 输出 Week1 验收报告与 Week2 承接清单
+- [x] 8. 输出 Week1 验收报告与 Week2 承接清单
 
   **What to do**:
   - 汇总 Day0 vs Day7 指标变化
