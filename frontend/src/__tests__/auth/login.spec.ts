@@ -521,6 +521,11 @@ describe('App Chrome Hiding on Login', () => {
   })
 
   it('should show header on non-login routes', async () => {
+    // Set up authenticated state
+    const authStore = useAuthStore()
+    authStore.token = 'test-token'
+    authStore.setUser({ id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' })
+
     await router.push('/')
     await router.isReady()
 
@@ -535,6 +540,11 @@ describe('App Chrome Hiding on Login', () => {
   })
 
   it('should show sidebar on non-login routes', async () => {
+    // Set up authenticated state
+    const authStore = useAuthStore()
+    authStore.token = 'test-token'
+    authStore.setUser({ id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' })
+
     await router.push('/')
     await router.isReady()
 
