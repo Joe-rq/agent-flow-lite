@@ -27,7 +27,8 @@ npm run build            # Type-check + production build
 npm run type-check       # TypeScript check only
 npm run lint             # ESLint + OXLint
 npm run format           # Prettier format
-npm run test             # Run all tests
+npm run test             # Run all tests (one-shot mode)
+npm run test:watch       # Run tests in watch mode (dev only)
 npx vitest run src/components/__tests__/MyComponent.spec.ts  # Single test file
 npx vitest src/components/__tests__/MyComponent.spec.ts      # Single test (watch)
 ```
@@ -111,6 +112,50 @@ uv run pytest tests/test_chat_citation.py -q --watch  # Watch mode
 - RAG pipeline: LlamaIndex + ChromaDB (`backend/app/core/rag.py`)
 - DeepSeek API client: `backend/app/core/llm.py`
 - Runtime data stored under `backend/data/` - do not depend on existing data for logic
+
+## Test Resource Constraints
+
+### Frontend (Vitest)
+
+**CRITICAL**: Vitest 默认配置会启动多个 worker 进程，每个进程可能占用 2-3GB 内存。
+在自动化流程中必须限制并发数，避免 OOM。
+
+**Required Configuration** (`frontend/vitest.config.ts`):
+```typescript
+test: {
+  pool: 'forks',              // Use process isolation (not threads)
+  poolOptions: {
+    forks: {
+      maxForks: 2,            // Limit to 2 worker processes
+      minForks: 1,
+    }
+  },
+  maxConcurrency: 5,          // Max 5 tests running simultaneously
+  isolate: false,             // Reduce isolation overhead
+}
+```
+
+**Forbidden Patterns**:
+- ❌ `npm run test` in parallel with other memory-heavy tasks (build, lint)
+- ❌ `vitest` (watch mode) in automated scripts - use `vitest run` instead
+- ❌ Removing `maxForks` limit "to speed up tests"
+
+**Verification**:
+```bash
+# After running tests, check process count
+pgrep -c vitest 2>/dev/null || ps aux | grep "[v]itest" | wc -l  # Should be ≤ 3 (main + 2 workers)
+```
+
+### Backend (Pytest)
+
+**Note**: Currently no pytest configured. If adding pytest with `pytest-xdist`:
+```bash
+# ✅ Correct - limit workers explicitly
+uv run pytest -n 2 -q
+
+# ❌ Wrong - uses all CPU cores
+uv run pytest -n auto
+```
 
 ## Cursor / Copilot Rules
 
