@@ -149,6 +149,14 @@ interface Skill {
   updatedAt: string
 }
 
+interface SkillApiItem {
+  name: string
+  description?: string
+  inputs?: SkillInput[]
+  updated_at?: string
+  updatedAt?: string
+}
+
 // 状态
 const router = useRouter()
 const skills = ref<Skill[]>([])
@@ -180,11 +188,15 @@ function formatDate(dateStr: string): string {
 async function loadSkills() {
   try {
     const response = await axios.get(`${API_BASE}/skills`)
-    skills.value = (response.data.skills || []).map((skill: any) => ({
+    const rawSkills: SkillApiItem[] = Array.isArray(response?.data)
+      ? response.data
+      : response?.data?.skills || response?.data?.items || []
+
+    skills.value = rawSkills.map(skill => ({
       name: skill.name,
       description: skill.description,
       inputs: skill.inputs || [],
-      updatedAt: skill.updated_at || skill.updatedAt,
+      updatedAt: skill.updated_at || skill.updatedAt || '',
     }))
   } catch (error) {
     console.error('加载技能列表失败:', error)
