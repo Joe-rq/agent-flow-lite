@@ -28,6 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 10. **不要在修 bug 时写文档或优化计划。** 这是最常见的跑偏模式。
 11. **不要一次改太多文件。** 除非用户明确要求，否则每次改动控制在 1-3 个文件内。
 12. **不要吞掉错误。** 遇到测试失败或编译错误时，报告给用户而不是绕过。
+13. **捕获第三方异常前必须用真实环境验证异常类型。** 不要凭类名猜测——ChromaDB 维度不匹配抛的是 `InvalidArgumentError` 而非 `InvalidDimensionException`。写 `except` 前先用真实调用确认 `type(e).__name__`。
+14. **正则匹配第三方错误消息前必须拿真实消息验证。** 不要凭文档或猜测写 pattern。先触发真实错误，拿到实际消息字符串，再写正则。
+15. **只改数据不改代码不算修 bug。** 重建数据（如 ChromaDB 重索引）能临时恢复功能，但如果根因在代码层（异常类型错误、缺少防御），必须同时修代码。数据修复 ≠ 代码修复。
 
 ---
 
