@@ -563,8 +563,10 @@ onUnmounted(() => {
 <style scoped>
 .knowledge-view {
   padding: 24px;
+  height: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  overflow-y: auto;
 }
 
 .page-header {
@@ -885,13 +887,14 @@ onUnmounted(() => {
 .docs-table {
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .docs-header,
 .docs-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 100px;
+  min-width: 680px;
   gap: 16px;
   padding: 12px 16px;
   align-items: center;
