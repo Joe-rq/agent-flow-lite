@@ -14,7 +14,6 @@ Agent Flow Lite 的 FastAPI 后端服务，提供工作流编排、知识库管�
 - **ChromaDB** - 向量数据库（本地持久化）
 - **DeepSeek API** - LLM 对话服务
 - **SiliconFlow API** - 文本向量化服务
-- **Zep Cloud** - 长期记忆存储（可选）
 
 ### 项目结构
 
@@ -30,14 +29,11 @@ backend/
 │   │   ├── llm.py            # LLM 客户端封装
 │   │   ├── rag.py            # RAG 管道实现
 │   │   ├── workflow_engine.py # 工作流执行引擎
-│   │   └── zep.py           # Zep 记忆客户端
 │   ├── models/           # Pydantic 数据模型
 │   └── main.py           # 应用入口
 │
 ├── tests/                 # 测试套件
 │   ├── test_smoke.py          # 健康检查
-│   ├── test_zep_client.py     # Zep 客户端测试
-│   ├── test_chat_zep.py       # 聊天集成测试
 │   └── test_chat_citation.py  # 引用功能测试
 │
 ├── data/                  # 运行时数据（不提交）
@@ -96,10 +92,6 @@ EMBEDDING_MODEL=BAAI/bge-m3
 
 **可选配置：**
 ```env
-# Zep Cloud（长期记忆）
-ZEP_API_KEY=sk-xxxxx
-ZEP_URL=https://api.getzep.com
-
 # 服务器配置
 HOST=0.0.0.0
 PORT=8000
@@ -137,13 +129,12 @@ uv run pytest -q
 ### 运行单个测试文件
 
 ```bash
-uv run pytest tests/test_zep_client.py -q
-```
+uv run pytest tests/test_chat_citation.py -q
 
 ### Watch 模式（自动重新运行）
 
 ```bash
-uv run pytest tests/test_chat_zep.py -q --watch
+uv run pytest tests/test_chat_citation.py -q --watch
 ```
 
 ### 测试覆盖率
@@ -221,16 +212,6 @@ uv run pytest --cov=app --cov-report=html
 - Condition - 条件分支
 - End - 工作流出口
 
-### Zep 记忆客户端 (`app/core/zep.py`)
-
-集成 Zep Cloud 实现长期记忆。
-
-**功能：**
-- 用户会话管理
-- 消息同步到 Zep
-- 语义检索相关记忆
-- 跨会话记忆持久化
-
 ## 🐛 常见问题
 
 <details>
@@ -257,15 +238,6 @@ rm -rf backend/data/chromadb/
 4. 重启后端服务
 </details>
 
-<details>
-<summary>Zep 连接失败</summary>
-
-**错误**: Zep API 相关连接错误
-
-**解决**:
-1. 检查 `ZEP_API_KEY` 和 `ZEP_URL` 配置
-2. 确认网络连接正常
-3. Zep 服务可选，不影响核心功能
 </details>
 
 ## 📚 相关资源
@@ -276,4 +248,3 @@ rm -rf backend/data/chromadb/
 - [Pydantic 文档](https://docs.pydantic.dev/)
 - [DeepSeek API](https://platform.deepseek.com/docs)
 - [SiliconFlow API](https://docs.siliconflow.cn/)
-- [Zep Cloud 文档](https://docs.getzep.com/)

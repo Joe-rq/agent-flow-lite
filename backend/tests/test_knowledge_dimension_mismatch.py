@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from chromadb.errors import InvalidDimensionException
+from chromadb.errors import InvalidArgumentError
 from fastapi import HTTPException
 
 from app.api.knowledge import search_documents
@@ -18,8 +18,8 @@ def test_rag_search_raises_domain_error_on_dimension_mismatch() -> None:
     collection = MagicMock()
     pipeline.chroma_client.get_or_create_collection.return_value = collection
     pipeline.embed_model.get_text_embedding.return_value = [0.1, 0.2, 0.3]
-    collection.query.side_effect = InvalidDimensionException(
-        "Embedding dimension 1024 does not match collection dimensionality 512"
+    collection.query.side_effect = InvalidArgumentError(
+        "Collection expecting embedding with dimension of 512, got 1024"
     )
 
     with pytest.raises(EmbeddingDimensionMismatchError) as exc_info:

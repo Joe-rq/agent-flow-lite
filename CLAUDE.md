@@ -41,7 +41,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **AI Services**:
   - DeepSeek API (LLM)
   - SiliconFlow API (embeddings)
-  - Zep Cloud (optional session memory)
 - **Vector DB**: ChromaDB (persistent storage)
 
 **Key Features:**
@@ -50,8 +49,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. SSE streaming chat with skill execution (@skill syntax)
 4. User authentication with role-based access control (admin/user)
 5. Skill system compatible with Agent Skills specification
-6. Session memory with Zep Cloud integration
-7. File-based storage for workflows, sessions, and skills
+6. File-based storage for workflows, sessions, and skills
 
 ---
 
@@ -145,8 +143,7 @@ agent-flow-lite/
 │   │   │   ├── workflow_nodes.py    # Node executors
 │   │   │   ├── workflow_context.py  # Variable resolution
 │   │   │   ├── skill_loader.py  # SKILL.md parsing/validation
-│   │   │   ├── skill_executor.py # Skill execution
-│   │   │   └── zep.py        # Session memory client
+│   │   │   └── skill_executor.py # Skill execution
 │   │   └── models/           # Pydantic/SQLAlchemy models
 │   │       ├── chat.py       # ChatMessage, ChatRequest
 │   │       ├── workflow.py   # Workflow, GraphData
@@ -399,23 +396,6 @@ Markdown prompt template with {{variable}} placeholders...
 - Max file size: 50KB soft limit
 - Path traversal protection via `.resolve().relative_to()`
 
-### 7. Session Memory (Zep Integration)
-
-**Location**: `backend/app/core/zep.py`
-
-**Optional integration** (enabled via `ZEP_ENABLED=true` env var):
-- Stores conversation history across sessions
-- Provides memory context for LLM
-- Session isolation: `{user_id}::{session_id}`
-
-**Key Methods:**
-```python
-class ZepClient:
-    def ensure_user_session(self, user_id: str, session_id: str) -> bool: ...
-    def add_messages(self, session_id: str) -> bool: ...
-    def get_memory_context(self, session_id: str) -> str: ...
-```
-
 ---
 
 ## Frontend Architecture Patterns
@@ -532,11 +512,6 @@ SILICONFLOW_API_KEY=your_siliconflow_api_key
 SILICONFLOW_API_BASE=https://api.siliconflow.cn/v1
 EMBEDDING_MODEL=BAAI/bge-m3
 
-# Zep Cloud (optional for session memory)
-ZEP_API_KEY=your_zep_api_key
-ZEP_API_URL=https://api.getzep.com
-ZEP_ENABLED=false
-
 # Admin Configuration
 ADMIN_EMAIL=admin@mail.com  # Auto-assign admin role
 
@@ -560,7 +535,6 @@ CORS_ORIGINS=http://localhost:5173
 - OpenAI (for SiliconFlow compatibility)
 - python-dotenv
 - filelock
-- zep-cloud (optional)
 
 ### Frontend Configuration
 

@@ -5,225 +5,162 @@ Follow it strictly to avoid style drift and broken workflows.
 
 ## Repository Overview
 
-- frontend/ : Vue 3 + Vite app
-- backend/  : FastAPI service (RAG + chat + workflow APIs)
-- backend/data/ : runtime data (uploads, metadata, sessions, chromadb)
+- **frontend/**: Vue 3 + Vite + TypeScript app
+- **backend/**: FastAPI + Pydantic service (RAG + chat + workflow APIs)
+- **backend/data/**: Runtime state (uploads, metadata, sessions, chromadb) - do not commit
 
 ## Environment Requirements
 
-- Node: ^20.19.0 or >=22.12.0 (see frontend/package.json)
-- Python: >=3.11 (see backend/pyproject.toml)
-- Backend uses uv for execution (not pip as primary workflow)
+- **Node**: ^20.19.0 or >=22.12.0 (see frontend/package.json)
+- **Python**: >=3.11 (see backend/pyproject.toml)
+- **Backend uses `uv`** for dependency management (not pip)
 
 ## Build / Lint / Test Commands
 
-### Frontend (frontend/)
+### Frontend
 
-- Install deps:
-  - `cd frontend && npm install`
-- Dev server:
-  - `npm run dev`
-- Production build (type-check + build):
-  - `npm run build`
-- Build only:
-  - `npm run build-only`
-- Preview build:
-  - `npm run preview`
-- Type-check:
-  - `npm run type-check`
-- Lint (all):
-  - `npm run lint`
-- Lint (oxlint only):
-  - `npm run lint:oxlint`
-- Lint (eslint only):
-  - `npm run lint:eslint`
-- Format (prettier):
-  - `npm run format`
-- Run all tests:
-  - `npm run test`
-- Run tests with UI:
-  - `npm run test:ui`
-- Run single test file:
-  - `npx vitest run src/components/__tests__/MyComponent.spec.ts`
-- Run single test in watch mode:
-  - `npx vitest src/components/__tests__/MyComponent.spec.ts`
-
-### Backend (backend/)
-
-- Install deps (uv):
-  - `cd backend && uv pip install -e .`
-- Run dev server:
-  - `uv run uvicorn main:app --reload`
-- Run all tests:
-  - `uv run pytest -q`
-- Run single test file:
-  - `uv run pytest tests/test_smoke.py -q`
-- Run single test in watch mode:
-  - `uv run pytest tests/test_chat_citation.py -q --watch`
-- Run manual test scripts:
-  - `uv run python test_chat_api.py`
-  - `uv run python test_deepseek.py`
-
-### Single Test Execution
-
-**Frontend (Vitest):**
 ```bash
 cd frontend
-# Run specific test file
-npx vitest run src/__tests__/views/ChatTerminal.spec.ts
-
-# Run specific test in watch mode
-npx vitest src/__tests__/views/ChatTerminal.spec.ts
-
-# Run tests matching pattern
-npx vitest run --reporter=verbose MyComponent
+npm install              # Install dependencies
+npm run dev              # Dev server
+npm run build            # Type-check + production build
+npm run type-check       # TypeScript check only
+npm run lint             # ESLint + OXLint
+npm run format           # Prettier format
+npm run test             # Run all tests
+npx vitest run src/components/__tests__/MyComponent.spec.ts  # Single test file
+npx vitest src/components/__tests__/MyComponent.spec.ts      # Single test (watch)
 ```
 
-**Backend (pytest):**
+### Backend
+
 ```bash
 cd backend
-# Run specific test file
-uv run pytest tests/test_smoke.py -q
-
-# Run with verbose output
-uv run pytest tests/test_chat_citation.py -v
-
-# Run matching pattern
-uv run pytest -k "citation" -q
+uv pip install -e .                    # Install dependencies
+uv run uvicorn main:app --reload       # Dev server
+uv run pytest -q                       # Run all tests
+uv run pytest tests/test_smoke.py -q   # Single test file
+uv run pytest -k "citation" -q         # Run tests matching pattern
+uv run pytest tests/test_chat_citation.py -q --watch  # Watch mode
 ```
 
 ## Code Style Guidelines
 
-### General (all files)
+### General (All Files)
 
-- Indent: 2 spaces
-- Line endings: LF
-- Max line length: 100
-- Trim trailing whitespace
-- Always add final newline
-- See frontend/.editorconfig for source of truth
+- **Indent**: 2 spaces
+- **Line endings**: LF
+- **Max line length**: 100
+- **Trim trailing whitespace**
+- **Always add final newline**
+- See `frontend/.editorconfig` for source of truth
 
 ### Frontend (Vue 3 + TypeScript)
 
-- Formatting uses Prettier:
-  - No semicolons
-  - Single quotes
-  - Print width 100
-  - Source: frontend/.prettierrc.json
-- Linting uses ESLint + OXLint (essential + recommended configs)
-  - Source: frontend/eslint.config.ts and frontend/.oxlintrc.json
-- Prefer `<script setup lang="ts">` in .vue files
-- Keep Vue SFC order: `<template>`, `<script setup>`, `<style scoped>`
-- Use @/ alias for src imports (see frontend/tsconfig.app.json)
-- Keep components small and cohesive; avoid large monolithic views
-- Avoid adding new UI libraries without explicit requirement
-- Prefer scoped styles in SFCs unless global styling is intentional
-- Use Composition API patterns (ref/computed/watch) consistently
+**Formatting (Prettier)**:
+- No semicolons
+- Single quotes
+- Print width: 100
+- Source: `frontend/.prettierrc.json`
+
+**Linting**: ESLint + OXLint (essential + recommended configs)
+- Source: `frontend/eslint.config.ts`, `frontend/.oxlintrc.json`
+
+**Vue Conventions**:
+- Prefer `<script setup lang="ts">`
+- SFC order: `<template>` → `<script setup>` → `<style scoped>`
+- Use `@/` alias for src imports
+- Keep components small and cohesive
+- Prefer scoped styles unless global is intentional
+- Use Composition API (ref/computed/watch) consistently
 
 ### Backend (FastAPI + Pydantic)
 
+**Python Style**:
 - Use docstrings for modules and public functions
-- Use type hints everywhere (see existing code)
-- Keep imports ordered: stdlib → third-party → local
-- Use APIRouter with versioned prefix (/api/v1/...) and tags
-- Prefer Path from pathlib for filesystem paths
-- Use Pydantic models in app/models for request/response schemas
-- Use settings from app/core/config.py (do not hardcode secrets)
-- Use HTTPException with proper status codes for API errors
-- When returning custom JSON, use JSONResponse
-- Keep API routers thin; put logic in app/core helpers when possible
-- Store runtime state under backend/data (uploads/metadata/sessions)
+- Use type hints everywhere
+- Import order: stdlib → third-party → local
+- Use `Path` from pathlib for filesystem paths
+
+**API Conventions**:
+- Use `APIRouter` with versioned prefix (`/api/v1/...`) and tags
+- Use Pydantic models in `app/models` for request/response schemas
+- Use settings from `app/core/config.py` (never hardcode secrets)
+- Raise `HTTPException` with proper status codes for API errors
+- Keep API routers thin; put logic in `app/core` helpers
 - Preserve existing API prefixes and tags for new routes
 
 ### Error Handling
 
-- Raise HTTPException for client errors (400/404)
+- Raise `HTTPException` for client errors (400/404/409)
 - Catch narrow exceptions; do not swallow errors silently
-- For background tasks, update status metadata on failure
 - Include human-readable error messages in API responses
+- For background tasks, update status metadata on failure
 
 ### Naming Conventions
 
-- Python: snake_case for functions/variables, PascalCase for classes
-- TS/JS: camelCase for variables/functions, PascalCase for components
-- Files: lowercase with underscores for Python, kebab/camel for TS as used
-
-## Data and Runtime Files
-
-- backend/data/ is runtime state (uploads, metadata, sessions, chromadb)
-- Do not depend on existing data for logic
-- Avoid committing large or sensitive files in backend/data/
-
-## Cursor / Copilot Rules
-
-- No Cursor rules found (.cursor/rules/ or .cursorrules)
-- No GitHub Copilot instructions found (.github/copilot-instructions.md)
+| Language | Functions/Variables | Classes | Files |
+|----------|-------------------|---------|-------|
+| Python | `snake_case` | `PascalCase` | `lowercase_with_underscores.py` |
+| TypeScript | `camelCase` | `PascalCase` | `kebab-case.ts` or `PascalCase.ts` |
 
 ## Repository-Specific Notes
 
-- Backend entrypoint is main.py (FastAPI app instance: app)
-- Chat streaming endpoint uses SSE (see backend/app/api/chat.py)
-- RAG pipeline uses LlamaIndex + ChromaDB (backend/app/core/rag.py)
-- DeepSeek API client wrapper is in backend/app/core/llm.py
+- Backend entrypoint: `main.py` (FastAPI app instance: `app`)
+- Chat streaming uses SSE (see `backend/app/api/chat.py`)
+- RAG pipeline: LlamaIndex + ChromaDB (`backend/app/core/rag.py`)
+- DeepSeek API client: `backend/app/core/llm.py`
+- Runtime data stored under `backend/data/` - do not depend on existing data for logic
+
+## Cursor / Copilot Rules
+
+- No Cursor rules found (`.cursor/rules/` or `.cursorrules`)
+- No GitHub Copilot instructions found (`.github/copilot-instructions.md`)
+
+## Critical Implementation Notes
+
+### Auth Bootstrap Order (Avoid Refresh Logout Bug)
+
+```typescript
+// main.ts - REQUIRED ORDER:
+app.use(pinia)
+const authStore = useAuthStore()
+setupAxiosInterceptors()        // 1. Register interceptors FIRST
+await authStore.init()          // 2. THEN hydrate auth
+app.use(router)                 // 3. Router LAST
+
+// Prevent landing on public route when authenticated
+if (router.currentRoute.value.meta.public && authStore.isAuthenticated) {
+  await router.replace('/')
+}
+app.mount('#app')
+```
+
+**Anti-pattern**: Never destructure `useRoute()` - it's non-reactive:
+```typescript
+// WRONG
+const { meta } = useRoute()  // Stale, doesn't update
+
+// RIGHT
+const route = useRoute()     // Reactive
+if (route.meta.hideChrome) { ... }
+```
+
+### Embedding Model Change Protocol
+
+When changing `EMBEDDING_MODEL` in `.env`:
+1. **Dimension mismatch will occur** for existing knowledge bases
+2. **Search will return 409 Conflict** with new error handling
+3. **Fix**: Delete `backend/data/chromadb/` and re-upload documents
+4. Future improvement: Add per-KB model tracking in metadata
 
 ## When in Doubt
 
-- Match existing patterns in backend/app/api and backend/app/core
+- Match existing patterns in `backend/app/api` and `backend/app/core`
+- Match existing patterns in `frontend/src/views` and `frontend/src/components`
 - Prefer explicit, readable code over clever shortcuts
 - Update this file if you add new workflows or commands
 
 ---
 
-## Auth & Bootstrap Lessons (2026-02-06)
-
-**Incident**: Refresh causes logout → Three cascading bugs.
-
-### Root Causes & Fixes
-
-| # | Bug | Symptom | Fix |
-|---|-----|---------|-----|
-| 1 | Axios interceptor registered AFTER auth init | `/api/v1/auth/me` returns 401 (no Authorization header) | Register interceptors BEFORE `authStore.init()` |
-| 2 | Router initialized BEFORE auth hydration | Route guard redirects to `/login` before `isAuthenticated` restored | Initialize router AFTER `authStore.init()`, add public→home校正 |
-| 3 | `const { meta } = useRoute()` destructuring | Non-reactive meta causes UI tearing (sidebar shows + login page) | Use `route.meta` directly, NOT destructured |
-
-### Correct Bootstrap Order
-
-```typescript
-// main.ts
-app.use(pinia)
-
-const authStore = useAuthStore()
-setupAxiosInterceptors()        // 1. 拦截器先注册
-await authStore.init()          // 2. 再水合 auth（token 恢复 + /me 校验）
-
-app.use(router)                 // 3. 路由最后挂载
-
-// 4. 防止首屏落在 public 路由
-if (router.currentRoute.value.meta.public && authStore.isAuthenticated) {
-  await router.replace('/')
-}
-
-app.mount('#app')
-```
-
-### Vue Router Anti-Patterns
-
-**WRONG** (non-reactive):
-```typescript
-const { meta } = useRoute()
-if (meta.hideChrome) { ... }  // ❌ stale, doesn't update
-```
-
-**RIGHT** (reactive):
-```typescript
-const route = useRoute()
-if (route.meta.hideChrome) { ... }  // ✅ updates on navigation
-```
-
-### Debugging Checklist
-
-When "refresh logs out" or "401 on auth endpoints":
-- [ ] Check Network: Does `/api/v1/auth/me` have `Authorization` header?
-- [ ] Check Timing: Is axios interceptor registered before init()?
-- [ ] Check Navigation: Does router guard fire BEFORE or AFTER auth hydration?
-- [ ] Check Reactivity: Are route meta accessed reactively?
+*Last updated: 2026-02-07*

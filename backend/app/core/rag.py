@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 import re
 
-from chromadb.errors import InvalidDimensionException
+from chromadb.errors import InvalidArgumentError
 from chromadb.api.types import Embedding
 import numpy as np
 from openai import OpenAI
@@ -30,17 +30,23 @@ class EmbeddingDimensionMismatchError(RuntimeError):
 
 
 def _parse_dimension_mismatch(message: str) -> tuple[int | None, int | None]:
-    """Extract embedding and collection dimensions from Chroma error text."""
-    patterns = [
-        r"Embedding dimension\s+(\d+)\s+does not match collection dimensionality\s+(\d+)",
-        r"Dimensionality of\s*\((\d+)\)\s*does not match index dimensionality\s*\((\d+)\)",
+    """Extract (incoming, existing) dimensions from Chroma error text.
+
+    Returns:
+        (incoming_dim, existing_collection_dim) or (None, None).
+    """
+    # Each entry: (pattern, swap) — swap=True when group order is (existing, incoming)
+    patterns: list[tuple[str, bool]] = [
+        (r"expecting embedding with dimension of\s+(\d+),\s+got\s+(\d+)", True),
+        (r"Embedding dimension\s+(\d+)\s+does not match collection dimensionality\s+(\d+)", False),
+        (r"Dimensionality of\s*\((\d+)\)\s*does not match index dimensionality\s*\((\d+)\)", False),
     ]
 
-    for pattern in patterns:
+    for pattern, swap in patterns:
         match = re.search(pattern, message)
         if match:
-            incoming, existing = match.groups()
-            return int(incoming), int(existing)
+            first, second = int(match.group(1)), int(match.group(2))
+            return (second, first) if swap else (first, second)
 
     return None, None
 
@@ -164,7 +170,7 @@ class RAGPipeline:
                 "message": f"Successfully processed document into {len(chunks)} chunks"
             }
 
-        except InvalidDimensionException as exc:
+        except InvalidArgumentError as exc:
             incoming_dim, existing_dim = _parse_dimension_mismatch(str(exc))
             mismatch_detail = (
                 f"Embedding dimension mismatch for knowledge base '{kb_id}'"
@@ -210,7 +216,7 @@ class RAGPipeline:
                 n_results=top_k,
                 include=["documents", "metadatas", "distances"]
             )
-        except InvalidDimensionException as exc:
+        except InvalidArgumentError as exc:
             incoming_dim, existing_dim = _parse_dimension_mismatch(str(exc))
             raise EmbeddingDimensionMismatchError(
                 f"Embedding dimension mismatch for knowledge base '{kb_id}'"
