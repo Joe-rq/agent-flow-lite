@@ -55,10 +55,10 @@
 - P1 失败 issue 清单（owner + deadline）
 
 ### Definition of Done
-- [ ] D3 起 `main` 启用分支保护，required checks 生效
-- [ ] P0 前端测试与后端关键测试 100% 通过
-- [ ] 新改动文件 lint 0 error，历史存量 <=40
-- [ ] P1 失败全部有 issue，且 7 天内清零计划明确
+- [x] D3 起 `main` 启用分支保护，required checks 生效
+- [x] P0 前端测试与后端关键测试 100% 通过
+- [x] 新改动文件 lint 0 error，历史存量 <=40
+- [x] P1 失败全部有 issue，且 7 天内清零计划明确
 
 ### Must Have
 - 不允许“口头通过”，必须有命令输出和 CI 记录
@@ -431,8 +431,8 @@ cd frontend && npm run lint
 > 注：Day0 基线采集使用容错执行并记录退出码；DoD 验收使用严格执行（失败即失败）。
 
 ### Final Checklist
-- [ ] D3 起 main 分支 required checks 生效
-- [ ] P0/critical 全绿
-- [ ] P1 失败全部 issue 化并 7 天清零承诺
-- [ ] Lint 预算达标（历史<=40，改动=0）
-- [ ] Day0/Day7 基线报告可复核
+- [x] D3 起 main 分支 required checks 生效
+- [x] P0/critical 全绿
+- [x] P1 失败全部 issue 化并 7 天清零承诺
+- [x] Lint 预算达标（历史<=40，改动=0）
+- [x] Day0/Day7 基线报告可复核
