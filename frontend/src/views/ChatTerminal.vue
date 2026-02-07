@@ -1131,4 +1131,45 @@ watch(selectedWorkflowId, (value) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+@media (min-width: 1200px) {
+  .config-bar {
+    padding: 15px 25px;
+    gap: 20px;
+  }
+
+  .config-item {
+    gap: 10px;
+  }
+
+  .config-item label {
+    font-size: 14px;
+  }
+
+  .config-item select {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 190px;
+  }
+
+  .input-area {
+    padding: 20px 25px;
+  }
+
+  .input-wrapper {
+    gap: 15px;
+    max-width: 1000px;
+  }
+
+  .input-wrapper input {
+    padding: 15px 20px;
+    font-size: 16px;
+  }
+
+  .send-btn.btn.btn--md {
+    height: 3rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 1rem;
+  }
+}
 </style>
