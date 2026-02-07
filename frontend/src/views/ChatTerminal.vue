@@ -93,27 +93,23 @@
         </div>
       </div>
 
-      <!-- 现代聊天输入区（模仿图二风格） -->
-      <div class="composer-container">
-        <!-- 顶部配置栏 -->
-        <div class="composer-header">
-          <div class="config-chips">
-            <div class="config-chip">
-              <span class="chip-label">工作流</span>
-              <select v-model="selectedWorkflowId" :disabled="isStreaming" class="chip-select">
+      <!-- 优化后的聊天输入区 -->
+      <div class="chat-input-wrapper">
+        <!-- 配置栏：单行紧凑 -->
+        <div class="input-config-bar">
+          <div class="config-selects">
+            <div class="config-select-item">
+              <label>工作流</label>
+              <select v-model="selectedWorkflowId" :disabled="isStreaming">
                 <option value="">无</option>
                 <option v-for="wf in workflows" :key="wf.id" :value="wf.id">
                   {{ wf.name }}
                 </option>
               </select>
             </div>
-            <div class="config-chip">
-              <span class="chip-label">知识库</span>
-              <select
-                v-model="selectedKbId"
-                :disabled="isStreaming || !!selectedWorkflowId"
-                class="chip-select"
-              >
+            <div class="config-select-item">
+              <label>知识库</label>
+              <select v-model="selectedKbId" :disabled="isStreaming || !!selectedWorkflowId">
                 <option value="">无</option>
                 <option v-for="kb in knowledgeBases" :key="kb.id" :value="kb.id">
                   {{ kb.name }}
@@ -123,22 +119,22 @@
           </div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="composer-body">
+        <!-- 输入框：紧凑单行 -->
+        <div class="input-box-container">
           <div class="input-with-suggestions">
-            <textarea
+            <input
               ref="inputRef"
               v-model="inputMessage"
-              placeholder="尽管问，带图也行..."
+              type="text"
+              placeholder="输入消息..."
               :disabled="isStreaming"
-              @keydown.enter.prevent="handleEnter"
+              @keydown.enter="sendMessage"
               @input="onInputChange"
               @keydown.down.prevent="onSuggestionDown"
               @keydown.up.prevent="onSuggestionUp"
               @keydown.esc="closeSuggestions"
-              rows="1"
-              class="composer-textarea"
-            ></textarea>
+              class="chat-input"
+            />
             <div v-if="showSuggestions" class="suggestions-dropdown">
               <div
                 v-for="(skill, index) in filteredSkills"
@@ -152,27 +148,15 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- 底部工具栏 -->
-        <div class="composer-footer">
-          <button class="upload-btn" title="上传文件" @click="handleUpload">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-          </button>
-          <div class="footer-actions">
-            <Button
-              class="send-btn"
-              variant="primary"
-              :disabled="!inputMessage.trim() || isStreaming"
-              @click="sendMessage"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="send-icon">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-              </svg>
-            </Button>
-          </div>
+          <Button
+            class="send-btn-compact"
+            variant="primary"
+            size="sm"
+            :disabled="!inputMessage.trim() || isStreaming"
+            @click="sendMessage"
+          >
+            发送
+          </Button>
         </div>
       </div>
     </main>
@@ -311,42 +295,6 @@ function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    }
-  })
-}
-
-// 处理 Enter 键（Shift+Enter 换行，Enter 发送）
-function handleEnter(event: KeyboardEvent) {
-  if (!event.shiftKey) {
-    event.preventDefault()
-    sendMessage()
-  }
-}
-
-// 处理上传按钮点击
-function handleUpload() {
-  // 触发文件选择
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.txt,.md,.pdf,.doc,.docx'
-  input.onchange = (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (file) {
-      console.log('选择的文件:', file.name)
-      // TODO: 实现文件上传逻辑
-      alert('文件上传功能开发中: ' + file.name)
-    }
-  }
-  input.click()
-}
-
-// textarea 自动高度
-function autoResizeTextarea() {
-  nextTick(() => {
-    const textarea = inputRef.value
-    if (textarea) {
-      textarea.style.height = 'auto'
-      textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
     }
   })
 }
@@ -520,9 +468,6 @@ async function loadSkills() {
 }
 
 function onInputChange() {
-  // 自动调整 textarea 高度
-  autoResizeTextarea()
-
   const text = inputMessage.value
   const atIndex = text.lastIndexOf('@')
 
@@ -1058,151 +1003,96 @@ watch(selectedWorkflowId, (value) => {
   border-radius: 4px;
 }
 
-/* 现代聊天输入区（模仿图二风格） */
-.composer-container {
-  margin: 0 20px 20px;
+/* 优化后的聊天输入区 - 紧凑扁平设计 */
+.chat-input-wrapper {
+  padding: 8px 16px 12px;
   background-color: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  border-top: 1px solid var(--border-primary);
 }
 
-/* 顶部配置栏 */
-.composer-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-primary);
-  background-color: var(--bg-tertiary);
+/* 配置栏：单行紧凑 */
+.input-config-bar {
+  margin-bottom: 8px;
 }
 
-.config-chips {
+.config-selects {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
 }
 
-.config-chip {
+.config-select-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background-color: var(--surface-primary);
+}
+
+.config-select-item label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.config-select-item select {
+  padding: 4px 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 100px;
+}
+
+.config-select-item select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 输入框容器：单行布局 */
+.input-box-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background-color: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
   border-radius: 20px;
-  font-size: 13px;
+  padding: 4px 4px 4px 12px;
 }
 
-.chip-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.chip-select {
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
-  padding: 0;
-  min-width: 80px;
-}
-
-.chip-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 输入区域 */
-.composer-body {
-  padding: 16px 20px;
-  position: relative;
-}
-
-.composer-textarea {
-  width: 100%;
-  min-height: 24px;
-  max-height: 200px;
-  border: none;
-  outline: none;
-  resize: none;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--text-primary);
-  background: transparent;
-  font-family: inherit;
-}
-
-.composer-textarea::placeholder {
-  color: var(--text-secondary);
-}
-
-.composer-textarea:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 底部工具栏 */
-.composer-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border-primary);
-  background-color: var(--bg-tertiary);
-}
-
-.upload-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border-primary);
-  border-radius: 50%;
-  background-color: var(--surface-primary);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.upload-btn:hover {
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-
-.upload-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.send-icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* Skill 自动补全下拉框 */
 .input-with-suggestions {
   position: relative;
   flex: 1;
 }
 
+.chat-input {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.chat-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.chat-input:disabled {
+  opacity: 0.5;
+}
+
+/* 发送按钮 - 紧凑 */
+.send-btn-compact {
+  border-radius: 16px;
+  padding: 6px 16px;
+  font-size: 13px;
+  height: auto;
+  min-height: 32px;
+}
+
+/* Skill 自动补全下拉框 */
 .suggestions-dropdown {
   position: absolute;
   bottom: 100%;
@@ -1256,11 +1146,17 @@ watch(selectedWorkflowId, (value) => {
 
 /* 桌面端优化 */
 @media (min-width: 1200px) {
-  .composer-container {
-    margin: 0 40px 24px;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
+  .chat-input-wrapper {
+    padding: 10px 24px 16px;
+  }
+
+  .config-select-item select {
+    min-width: 120px;
+  }
+
+  .input-box-container {
+    max-width: 800px;
+    margin: 0 auto;
   }
 }
 </style>

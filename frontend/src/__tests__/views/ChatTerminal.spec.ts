@@ -68,8 +68,8 @@ describe('ChatTerminal Smoke Tests', () => {
         plugins: [router, pinia]
       }
     })
-    const textarea = wrapper.find('textarea.composer-textarea')
-    expect(textarea.attributes('placeholder')).toBe('尽管问，带图也行...')
+    const input = wrapper.find('input.chat-input')
+    expect(input.attributes('placeholder')).toBe('输入消息...')
   })
 
   it('should build chat payload without user_id', () => {
