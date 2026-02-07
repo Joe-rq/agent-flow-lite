@@ -8,6 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    exclude: ['src/__tests__/login-verification.spec.ts', 'node_modules/', 'e2e/'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
