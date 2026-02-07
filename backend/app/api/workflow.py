@@ -27,6 +27,13 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 WORKFLOW_FILE = DATA_DIR / "workflows.json"
 
 
+def ensure_utc_datetime(value: datetime) -> datetime:
+    """Normalize datetime to UTC-aware for safe comparisons and responses."""
+    if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def ensure_data_dir() -> None:
     """Ensure data directory exists"""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -60,14 +67,17 @@ def workflow_to_model(workflow_id: str, data: dict) -> Workflow:
     graph_data = data.get("graph_data", {})
     if isinstance(graph_data, str):
         graph_data = json.loads(graph_data)
+
+    created_at = ensure_utc_datetime(datetime.fromisoformat(data["created_at"]))
+    updated_at = ensure_utc_datetime(datetime.fromisoformat(data["updated_at"]))
     
     return Workflow(
         id=workflow_id,
         name=data["name"],
         description=data.get("description"),
         graph_data=GraphData(**graph_data) if graph_data else GraphData(),
-        created_at=datetime.fromisoformat(data["created_at"]),
-        updated_at=datetime.fromisoformat(data["updated_at"]),
+        created_at=created_at,
+        updated_at=updated_at,
     )
 
 
