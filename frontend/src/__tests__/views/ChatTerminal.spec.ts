@@ -78,7 +78,7 @@ describe('ChatTerminal Smoke Tests', () => {
         plugins: [router, pinia]
       }
     })
-    const setup = (wrapper.vm as any).$?.setupState
+    const setup = (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
     const payload = setup.buildChatPayload('session-1', 'hello')
     expect(payload.session_id).toBe('session-1')
     expect(payload.message).toBe('hello')
@@ -92,7 +92,7 @@ describe('ChatTerminal Smoke Tests', () => {
       }
     })
 
-    const setup = (wrapper.vm as any).$?.setupState
+    const setup = (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
     const citationSource = {
       docId: 'doc-1',
       chunkIndex: 1,
@@ -144,7 +144,7 @@ describe('handleSSEEvent', () => {
     const wrapper = mount(ChatTerminal, {
       global: { plugins: [router, pinia] }
     })
-    return (wrapper.vm as any).$?.setupState
+    return (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
   }
 
   it('should append token content to lastMessage', () => {
@@ -177,7 +177,7 @@ describe('handleSSEEvent', () => {
 
   it('should parse citation sources array', () => {
     const setup = getSetup()
-    const lastMessage = { role: 'assistant', content: 'test', isStreaming: true, citations: [] as any[] }
+    const lastMessage = { role: 'assistant', content: 'test', isStreaming: true, citations: [] as Array<Record<string, unknown>> }
 
     setup.handleSSEEvent('citation', {
       sources: [
@@ -240,7 +240,7 @@ describe('Skill autocomplete', () => {
       global: { plugins: [router, pinia] }
     })
 
-    const setup = (wrapper.vm as any).$?.setupState
+    const setup = (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
     setup.skills = [
       { name: 'article-summary', description: 'Summarize articles' },
       { name: 'translate', description: 'Translate text' }
@@ -259,7 +259,7 @@ describe('Skill autocomplete', () => {
       global: { plugins: [router, pinia] }
     })
 
-    const setup = (wrapper.vm as any).$?.setupState
+    const setup = (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
     setup.skills = [
       { name: 'translate', description: 'Translate text' }
     ]
@@ -275,7 +275,7 @@ describe('Skill autocomplete', () => {
       global: { plugins: [router, pinia] }
     })
 
-    const setup = (wrapper.vm as any).$?.setupState
+    const setup = (wrapper.vm as { $?: { setupState?: Record<string, unknown> } }).$?.setupState
     setup.inputMessage = '@art'
 
     setup.selectSuggestion({ name: 'article-summary', description: '' })

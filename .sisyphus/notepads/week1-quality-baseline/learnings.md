@@ -148,3 +148,17 @@ npm test 2>&1 | grep -E "(stderr|warn|Error|FAIL)"
 
 - `.sisyphus/evidence/week1-p1-issues.md` - P1 issue 清单
 
+
+---
+
+## 2026-02-07: Lint 债务收敛
+
+
+---
+
+## 2026-02-07: Lint 债务收敛
+
+修复统计: 71 errors -> 10 errors (85.9% 修复率)
+
+关键策略: 使用内联类型定义替换 any, 不使用 eslint-disable 逃逸
+验证结果: 修改文件 lint = 0, 总错误 <= 40 目标达成

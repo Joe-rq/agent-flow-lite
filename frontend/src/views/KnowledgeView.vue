@@ -324,7 +324,7 @@ function showError(message: string) {
 async function loadKnowledgeBases() {
   try {
     const response = await axios.get(`${API_BASE}/knowledge`)
-    knowledgeBases.value = (response.data.items || []).map((kb: any) => ({
+    knowledgeBases.value = (response.data.items || []).map((kb: { id: string; name: string; document_count?: number; created_at: string }) => ({
       id: kb.id,
       name: kb.name,
       documentCount: kb.document_count || 0,
@@ -347,7 +347,7 @@ async function selectKnowledgeBase(kb: KnowledgeBase) {
 async function loadDocuments(kbId: string) {
   try {
     const response = await axios.get(`${API_BASE}/knowledge/${kbId}/documents`)
-    documents.value = (response.data.documents || []).map((doc: any) => ({
+    documents.value = (response.data.documents || []).map((doc: { id: string; filename: string; status: string; file_size: number; created_at: string }) => ({
       id: doc.id,
       fileName: doc.filename,
       status: doc.status,
@@ -442,7 +442,7 @@ async function uploadFile(task: UploadTask) {
   formData.append('file', task.file)
 
   try {
-    const response = await axios.post(
+    await axios.post(
       `${API_BASE}/knowledge/${selectedKB.value.id}/upload`,
       formData,
       {
@@ -469,10 +469,11 @@ async function uploadFile(task: UploadTask) {
     setTimeout(() => {
       task.status = 'completed'
     }, 2000)
-  } catch (error: any) {
+  } catch (error) {
     console.error('上传失败:', error)
     task.status = 'error'
-    showError(error.response?.data?.detail || '上传失败')
+    const err = error as { response?: { data?: { detail?: string } } }
+    showError(err.response?.data?.detail || '上传失败')
   }
 }
 
@@ -525,9 +526,10 @@ async function performSearch() {
       }
     )
     searchResults.value = response.data.results || []
-  } catch (error: any) {
+  } catch (error) {
     console.error('检索失败:', error)
-    searchError.value = error.response?.data?.detail || '检索失败，请重试'
+    const err = error as { response?: { data?: { detail?: string } } }
+    searchError.value = err.response?.data?.detail || '检索失败，请重试'
   } finally {
     isSearching.value = false
   }

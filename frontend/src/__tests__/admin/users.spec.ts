@@ -14,7 +14,15 @@ const mockedAxios = axios as unknown as {
   delete: ReturnType<typeof vi.fn>
 }
 
-function mockApiCalls(users: any[], currentUser: any) {
+interface User {
+  id: number
+  email: string
+  role: string
+  is_active: boolean
+  created_at: string
+}
+
+function mockApiCalls(users: User[], currentUser: User) {
   mockedAxios.get.mockImplementation((url: string) => {
     if (url === '/api/v1/auth/me') {
       return Promise.resolve({ data: currentUser })

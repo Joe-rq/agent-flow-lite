@@ -128,9 +128,9 @@ describe('Auth Store', () => {
     localStorage.setItem('auth_token', 'stored-token')
     const authStore = useAuthStore()
 
-    let resolveMe: (value: any) => void
+    let resolveMe: (value: unknown) => void
     const mePromise = new Promise((resolve) => { resolveMe = resolve })
-    vi.mocked(axios.get).mockReturnValueOnce(mePromise as any)
+    vi.mocked(axios.get).mockReturnValueOnce(mePromise as Promise<unknown>)
 
     const initPromise = authStore.init()
 

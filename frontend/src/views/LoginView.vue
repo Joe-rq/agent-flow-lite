@@ -29,8 +29,9 @@ async function handleLogin() {
   try {
     await authStore.login(email.value.trim())
     router.push('/')
-  } catch (err: any) {
-    error.value = err.response?.data?.detail || '登录失败，请重试'
+  } catch (err) {
+    const errorObj = err as { response?: { data?: { detail?: string } } }
+    error.value = errorObj.response?.data?.detail || '登录失败，请重试'
   } finally {
     isLoading.value = false
   }

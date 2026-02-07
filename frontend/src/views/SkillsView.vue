@@ -221,9 +221,10 @@ async function deleteSkill(name: string) {
   try {
     await axios.delete(`${API_BASE}/skills/${name}`)
     skills.value = skills.value.filter(s => s.name !== name)
-  } catch (error: any) {
+  } catch (error) {
     console.error('删除技能失败:', error)
-    alert(error.response?.data?.detail || '删除技能失败')
+    const err = error as { response?: { data?: { detail?: string } } }
+    alert(err.response?.data?.detail || '删除技能失败')
   }
 }
 
@@ -328,15 +329,16 @@ async function runSkill() {
           try {
             const data = JSON.parse(dataStr)
             handleSSEEvent(currentEvent, data)
-          } catch (e) {
+          } catch {
             // 忽略解析错误
           }
         }
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('运行技能失败:', error)
-    runOutput.value += '\n[错误: ' + (error.message || '运行失败') + ']'
+    const err = error as { message?: string }
+    runOutput.value += '\n[错误: ' + (err.message || '运行失败') + ']'
   } finally {
     isRunning.value = false
     currentThought.value = ''
@@ -344,19 +346,19 @@ async function runSkill() {
 }
 
 // 处理 SSE 事件
-function handleSSEEvent(eventType: string, data: any) {
+function handleSSEEvent(eventType: string, data: Record<string, unknown>) {
   switch (eventType) {
     case 'thought':
-      currentThought.value = data.message || data.status || ''
+      currentThought.value = (data.message as string) || (data.status as string) || ''
       scrollOutputToBottom()
       break
     case 'token':
-      runOutput.value += data.content || ''
+      runOutput.value += (data.content as string) || ''
       scrollOutputToBottom()
       break
     case 'citation':
       // 引用信息，可以显示在输出中
-      if (data.sources && data.sources.length > 0) {
+      if (data.sources && Array.isArray(data.sources) && data.sources.length > 0) {
         runOutput.value += '\n[引用 ' + data.sources.length + ' 个来源]'
         scrollOutputToBottom()
       }

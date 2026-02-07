@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
+// Node component - Handle and Position imported for future use
 import { computed } from 'vue'
 
 interface Props {

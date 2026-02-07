@@ -10,8 +10,8 @@ const mockFetch = vi.fn()
 
 vi.mock('axios', () => ({
   default: {
-    get: (...args: any[]) => mockGet(...args),
-    delete: (...args: any[]) => mockDelete(...args),
+    get: (...args: unknown[]) => mockGet(...args),
+    delete: (...args: unknown[]) => mockDelete(...args),
   }
 }))
 

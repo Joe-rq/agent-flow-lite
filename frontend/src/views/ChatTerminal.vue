@@ -338,16 +338,17 @@ async function sendMessage() {
   // 使用 SSE 连接
   try {
     await connectSSE(session.id, message)
-  } catch (error: any) {
+  } catch (error) {
     console.error('SSE connection error:', error)
+    const err = error as { message?: string }
     const lastMessage = session.messages[session.messages.length - 1]
     if (lastMessage && lastMessage.role === 'assistant') {
-      lastMessage.content = '连接错误: ' + (error.message || '请重试')
+      lastMessage.content = '连接错误: ' + (err.message || '请重试')
       lastMessage.isStreaming = false
     }
     isStreaming.value = false
     currentThought.value = ''
-    alert('发送消息失败: ' + (error.message || '请检查网络连接'))
+    alert('发送消息失败: ' + (err.message || '请检查网络连接'))
   }
 
   session.updatedAt = Date.now()
@@ -404,7 +405,7 @@ async function connectSSE(sessionId: string, message: string) {
         try {
           const data = JSON.parse(dataStr)
           handleSSEEvent(currentEvent, data, lastMessage)
-        } catch (e) {
+        } catch {
           // 忽略解析错误
         }
       }
@@ -431,7 +432,7 @@ function buildChatPayload(sessionId: string, message: string) {
 async function loadWorkflows() {
   try {
     const response = await axios.get('/api/v1/workflows')
-    workflows.value = (response.data.items || []).map((wf: any) => ({
+    workflows.value = (response.data.items || []).map((wf: { id: string; name: string }) => ({
       id: wf.id,
       name: wf.name
     }))
@@ -444,7 +445,7 @@ async function loadKnowledgeBases() {
   try {
     const response = await axios.get('/api/v1/knowledge')
     const items = response.data.items || response.data || []
-    knowledgeBases.value = items.map((kb: any) => ({
+    knowledgeBases.value = items.map((kb: { id?: string; kb_id?: string; name?: string; kb_name?: string }) => ({
       id: kb.id || kb.kb_id,
       name: kb.name || kb.kb_name || '未命名知识库'
     }))
@@ -457,7 +458,7 @@ async function loadSkills() {
   try {
     const response = await axios.get('/api/v1/skills')
     const items = response.data.skills || []
-    skills.value = items.map((s: any) => ({
+    skills.value = items.map((s: { name: string; description?: string }) => ({
       name: s.name,
       description: s.description || ''
     }))
@@ -526,7 +527,7 @@ async function loadSessions() {
   try {
     const response = await axios.get('/api/v1/chat/sessions')
     const items = response.data.sessions || []
-    sessions.value = items.map((s: any) => ({
+    sessions.value = items.map((s: { session_id: string; title?: string; created_at: string; updated_at: string }) => ({
       id: s.session_id,
       title: s.title || '新会话',
       createdAt: new Date(s.created_at).getTime(),
@@ -542,7 +543,7 @@ async function loadSessions() {
   }
 }
 
-function handleSSEEvent(eventType: string, data: any, lastMessage: Message | undefined) {
+function handleSSEEvent(eventType: string, data: Record<string, unknown>, lastMessage: Message | undefined) {
   if (!lastMessage || lastMessage.role !== 'assistant') return
 
   switch (eventType) {
@@ -556,12 +557,13 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
         if (data.status === 'start') {
           const labels: Record<string, string> = {
             start: '开始',
-            llm: 'LLM',
+            llm: '大语言模型',
             knowledge: '知识库',
             condition: '条件',
             end: '结束'
           }
-          currentThought.value = `执行节点: ${labels[data.node_type] || data.node_type || ''}`
+          const nodeType = data.node_type as string || ''
+          currentThought.value = `执行节点: ${labels[nodeType] || nodeType || ''}`
         } else if (data.status === 'complete') {
           currentThought.value = `节点完成: ${data.node_id || ''}`
         }
@@ -585,7 +587,7 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
           currentThought.value = '检索出错: ' + (data.error || '未知错误')
         }
       } else {
-        currentThought.value = data.content || ''
+        currentThought.value = (data.content as string) || ''
       }
       break
     case 'token':
@@ -596,7 +598,7 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
     case 'citation':
       // 引用来源 - 处理 sources 数组
       if (data.sources && Array.isArray(data.sources)) {
-        lastMessage.citations = data.sources.map((s: any) => ({
+        lastMessage.citations = data.sources.map((s: { doc_id?: string; chunk_index?: number; score?: number; text?: string }) => ({
           docId: s.doc_id || '',
           chunkIndex: s.chunk_index || 0,
           score: s.score || 0,
@@ -608,7 +610,7 @@ function handleSSEEvent(eventType: string, data: any, lastMessage: Message | und
             docId: '',
             chunkIndex: 0,
             score: 0,
-            text: data.content
+            text: data.content as string
           }
         ]
       }
@@ -645,7 +647,7 @@ async function loadSessionHistory(sessionId: string) {
     if (data && data.messages) {
       const session = currentSession.value
       if (session) {
-        session.messages = data.messages.map((msg: any) => ({
+        session.messages = data.messages.map((msg: { role: string; content: string }) => ({
           role: msg.role,
           content: msg.content,
           isStreaming: false

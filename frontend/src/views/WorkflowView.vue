@@ -96,7 +96,7 @@ import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
 // Vue Flow 实例
-const { addNodes, updateNode, getNodes, getEdges } = useVueFlow()
+const { updateNode, getNodes, getEdges } = useVueFlow()
 
 // 画布元素
 const elements = ref<(Node | Edge)[]>([
@@ -180,7 +180,13 @@ const addKnowledgeNode = () => {
 }
 
 // 节点点击事件
-const onNodeClick = (event: any) => {
+interface NodeClickEvent {
+  node: {
+    id: string
+  }
+}
+
+const onNodeClick = (event: NodeClickEvent) => {
   selectedNodeId.value = event.node.id
   configPanelVisible.value = true
 }
@@ -192,7 +198,7 @@ const closeConfigPanel = () => {
 }
 
 // 保存节点配置
-const saveNodeConfig = (nodeId: string, data: Record<string, any>) => {
+const saveNodeConfig = (nodeId: string, data: Record<string, unknown>) => {
   const nodeIndex = elements.value.findIndex(
     (el): el is Node => 'position' in el && el.id === nodeId
   )

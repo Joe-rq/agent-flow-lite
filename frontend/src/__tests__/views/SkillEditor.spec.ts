@@ -10,9 +10,9 @@ const mockPut = vi.fn()
 
 vi.mock('axios', () => ({
   default: {
-    get: (...args: any[]) => mockGet(...args),
-    post: (...args: any[]) => mockPost(...args),
-    put: (...args: any[]) => mockPut(...args),
+    get: (...args: unknown[]) => mockGet(...args),
+    post: (...args: unknown[]) => mockPost(...args),
+    put: (...args: unknown[]) => mockPut(...args),
   }
 }))
 
@@ -619,7 +619,7 @@ describe('SkillEditor Save', () => {
   })
 
   it('should disable save button while saving', async () => {
-    let resolveSave: (value: any) => void
+    let resolveSave: (value: unknown) => void
     mockPost.mockImplementationOnce(() => new Promise((resolve) => {
       resolveSave = resolve
     }))

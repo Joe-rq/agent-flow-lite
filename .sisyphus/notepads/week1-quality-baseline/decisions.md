@@ -80,3 +80,54 @@ concurrency:
 - Week 2 考虑将 e2e-tests 设为 required
 - 添加测试覆盖率报告
 - 添加性能基准测试
+
+---
+
+## 2025-02-07: 分支保护与 Required Checks 配置
+
+### 决策背景
+将 Week 1 完成的 CI workflow 中的 critical jobs 绑定到 `main` 分支保护规则，确保 PR 必须通过所有 critical checks 才能合并。
+
+### 核心决策
+
+#### 不在 Week 1 自动启用保护
+- **原因**: 团队需要适应新的 CI 流程，避免因配置问题阻断正常开发
+- **方案**: 创建配置文档，由管理员在 D3 后手动启用
+- **风险**: Week 1 期间代码可直推 main，需依赖团队自律
+
+#### 4 个 Required Checks
+与 CI workflow 中的 critical layer 一致：
+1. `frontend-type-check` - TypeScript 类型检查
+2. `frontend-build` - 前端构建验证
+3. `frontend-critical-tests` - 前端 P0 测试
+4. `backend-critical-tests` - 后端 P0 测试
+
+#### 分支保护规则
+```yaml
+enforce_admins: true          # 管理员也需遵守
+strict: true                   # 必须同步最新 base 才可合并
+required_approving_review_count: 1  # 至少 1 个批准
+bypass: disabled              # 不允许任何人绕过
+```
+
+### 紧急例外流程
+仅限生产严重故障、安全漏洞、紧急热修复场景：
+1. 在应急渠道发布紧急例外请求
+2. 至少 1 名维护者审批
+3. 创建 Issue 记录例外详情（模板已提供）
+4. 24 小时内补充遗漏测试
+5. 周会复盘
+
+### 配置方式
+- **推荐**: GitHub CLI 命令
+- **备选**: GitHub Web UI 手动配置
+- **IaC**: Terraform 配置（可选）
+
+### 验证清单
+- [ ] PR 未通过检查时合并按钮禁用
+- [ ] PR 缺少批准时无法合并
+- [ ] PR 未同步最新 base 时提示
+
+### 相关文档
+- 证据文档: `.sisyphus/evidence/week1-branch-protection-setup.md`
+- CI 配置: `.github/workflows/quality-gate.yml`

@@ -224,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { VueFlow, useVueFlow, Handle, Position, type Connection } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -243,7 +243,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 
-const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, getEdges, updateNode, removeNodes, removeEdges, fitView } = useVueFlow()
+const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, updateNode, removeNodes, removeEdges, fitView } = useVueFlow()
 const authStore = useAuthStore()
 
 const API_BASE = '/api/v1'
@@ -273,7 +273,7 @@ const selectedNodeId = ref<string | null>(null)
 const selectedNodeType = computed(() => {
   if (!selectedNodeId.value) return null
   const nodes = getNodes.value
-  const node = nodes.find((n: any) => n.id === selectedNodeId.value)
+  const node = nodes.find((n: { id: string; type?: string }) => n.id === selectedNodeId.value)
   return node?.type || null
 })
 
@@ -281,7 +281,7 @@ const selectedNodeType = computed(() => {
 const selectedNodeData = computed(() => {
   if (!selectedNodeId.value) return {}
   const nodes = getNodes.value
-  const node = nodes.find((n: any) => n.id === selectedNodeId.value)
+  const node = nodes.find((n: { id: string; data?: Record<string, unknown> }) => n.id === selectedNodeId.value)
   return node?.data || {}
 })
 
@@ -330,14 +330,14 @@ async function saveWorkflow() {
   try {
     const flowData = toObject()
     const graphData = {
-      nodes: flowData.nodes.map((n: any) => ({
+      nodes: flowData.nodes.map((n) => ({
         id: n.id,
         type: n.type,
         position: n.position,
         label: n.label,
         data: n.data || {}
       })),
-      edges: flowData.edges.map((e: any) => ({
+      edges: flowData.edges.map((e) => ({
         id: e.id,
         source: e.source,
         target: e.target,
@@ -420,7 +420,7 @@ async function loadWorkflow(workflowId: string) {
     const graphData = workflow.graph_data
 
     if (graphData && graphData.nodes) {
-      setNodes(graphData.nodes.map((n: any) => ({
+      setNodes(graphData.nodes.map((n: { id: string; type: string; position: { x: number; y: number }; label?: string; data?: Record<string, unknown> }) => ({
         id: n.id,
         type: n.type,
         position: n.position,
@@ -430,7 +430,7 @@ async function loadWorkflow(workflowId: string) {
     }
 
     if (graphData && graphData.edges) {
-      setEdges(graphData.edges.map((e: any) => ({
+      setEdges(graphData.edges.map((e: { id: string; source: string; target: string; sourceHandle?: string; targetHandle?: string }) => ({
         id: e.id,
         source: e.source,
         target: e.target,
@@ -647,14 +647,22 @@ function addNodeFromPanel(type: string) {
   addNodes([newNode])
 }
 
+interface NodeClickEvent {
+  node: { id: string }
+}
+
+interface EdgeClickEvent {
+  edge: { id: string }
+}
+
 // 节点点击事件
-function onNodeClick(event: any) {
+function onNodeClick(event: NodeClickEvent) {
   selectedNodeId.value = event.node.id
   configPanelVisible.value = true
 }
 
 // 边点击事件 - 删除边
-function onEdgeClick(event: any) {
+function onEdgeClick(event: EdgeClickEvent) {
   const edgeId = event.edge.id
   if (confirm('确定要删除这条连线吗？')) {
     removeEdges([edgeId])
@@ -676,10 +684,10 @@ function closeConfigPanel() {
 }
 
 // 保存节点配置
-function saveNodeConfig(nodeId: string, data: Record<string, any>) {
+function saveNodeConfig(nodeId: string, data: Record<string, unknown>) {
   console.log('saveNodeConfig 被调用', nodeId, data)
   const nodes = getNodes.value
-  const node = nodes.find((n: any) => n.id === nodeId)
+  const node = nodes.find((n: { id: string }) => n.id === nodeId)
   if (node) {
     console.log('找到节点，更新数据', node)
     // 使用 updateNode 方法更新节点数据，触发响应式更新
@@ -706,7 +714,7 @@ function autoLayout() {
   const typeIndices: Record<string, number> = {}
 
   // 创建新的节点数组，更新位置
-  const updatedNodes = nodes.map((node: any) => {
+  const updatedNodes = nodes.map((node: { type?: string; position: { x: number; y: number } }) => {
     const type = node.type || 'default'
     if (!typeIndices[type]) typeIndices[type] = 0
 
@@ -721,7 +729,7 @@ function autoLayout() {
   })
 
   // 使用 setNodes 批量更新
-  setNodes(updatedNodes)
+  setNodes(updatedNodes as any)
 
   // 适应视图
   setTimeout(() => {

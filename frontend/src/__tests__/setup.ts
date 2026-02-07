@@ -29,7 +29,7 @@ export function createTestRouter() {
 }
 
 // Helper to mount component with required plugins
-export function mountWithPlugins(component: any, options = {}) {
+export function mountWithPlugins(component: unknown, options: Record<string, unknown> = {}) {
   const router = createTestRouter()
   const pinia = createPinia()
 
