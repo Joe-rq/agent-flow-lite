@@ -1,0 +1,38 @@
+
+> frontend@0.0.0 build
+> run-p type-check "build-only {@}" --
+
+
+> frontend@0.0.0 type-check
+> vue-tsc --build
+
+
+> frontend@0.0.0 build-only
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 149 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/router/index.ts is dynamically imported by /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/utils/axios.ts but also statically imported by /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/main.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                            0.43 kB │ gzip:  0.29 kB
+dist/assets/LoginView-SpVQxavQ.css         2.11 kB │ gzip:  0.69 kB
+dist/assets/AdminUsersView-BFpej4eQ.css    3.91 kB │ gzip:  1.08 kB
+dist/assets/SkillEditor-BbFKyqdq.css       5.58 kB │ gzip:  1.37 kB
+dist/assets/SkillsView-DfWsSsgw.css        5.68 kB │ gzip:  1.49 kB
+dist/assets/ChatTerminal-DLbP1Wqg.css      7.39 kB │ gzip:  1.73 kB
+dist/assets/KnowledgeView-DEUSxqst.css     8.33 kB │ gzip:  1.89 kB
+dist/assets/index-BKwviy_F.css            15.15 kB │ gzip:  3.32 kB
+dist/assets/WorkflowEditor-C9FGEkb6.css   18.19 kB │ gzip:  3.55 kB
+dist/assets/LoginView-DfZK7Zyz.js          1.50 kB │ gzip:  0.92 kB
+dist/assets/AdminUsersView-DrU8kCCx.js     4.99 kB │ gzip:  2.11 kB
+dist/assets/SkillsView-CsqgmOKh.js         6.00 kB │ gzip:  2.65 kB
+dist/assets/SkillEditor-WEXLGWJ4.js        6.35 kB │ gzip:  2.73 kB
+dist/assets/KnowledgeView-DrHmj0nL.js      9.26 kB │ gzip:  3.71 kB
+dist/assets/ChatTerminal-Dc7jOas5.js      10.68 kB │ gzip:  4.35 kB
+dist/assets/index-D14-tD69.js            144.13 kB │ gzip: 55.83 kB
+dist/assets/WorkflowEditor-BYQfN9dk.js   186.32 kB │ gzip: 60.16 kB
+✓ built in 817ms

@@ -1,0 +1,82 @@
+
+> frontend@0.0.0 lint
+> run-s lint:*
+
+
+> frontend@0.0.0 lint:oxlint
+> oxlint . --fix
+
+Found 0 warnings and 0 errors.
+Finished in 4ms on 41 files with 98 rules using 10 threads.
+
+> frontend@0.0.0 lint:eslint
+> eslint . --fix --cache
+
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/__tests__/views/ChatTerminal.spec.ts
+  147:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/__tests__/views/SkillEditor.spec.ts
+  622:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/components/NodeConfigPanel.vue
+  198:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  204:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  241:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/components/ui/Button.vue
+  1:1  error  Component name "Button" should always be multi-word  vue/multi-word-component-names
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/components/ui/Card.vue
+  1:1  error  Component name "Card" should always be multi-word  vue/multi-word-component-names
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/AdminUsersView.vue
+  182:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  219:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  243:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/ChatTerminal.vue
+  341:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  434:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  447:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  460:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  529:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  545:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  599:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  648:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/KnowledgeView.vue
+  327:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  350:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  472:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  528:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/SkillEditor.vue
+  274:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  329:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/SkillsView.vue
+  224:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  347:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/WorkflowEditor.vue
+  276:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  284:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  333:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  340:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  423:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  433:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  651:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  657:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  679:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  682:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  709:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/src/views/WorkflowView.vue
+  183:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 40 problems (40 errors, 0 warnings)
+
+ERROR: "lint:eslint" exited with 1.

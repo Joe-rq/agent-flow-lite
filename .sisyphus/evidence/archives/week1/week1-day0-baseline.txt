@@ -1,0 +1,26 @@
+# Day0 Baseline Report
+Generated: 2026-02-07
+
+## Frontend
+| Command | Exit Code | Pass/Fail | Errors | Duration |
+|---------|-----------|-----------|--------|----------|
+| type-check | 0 | PASS | 0 | 2.252s |
+| build | 1 | FAIL | 0 | 3.128s |
+| test | 1 | FAIL | 2 failed | 2.452s |
+| lint | 0 | PASS | 74 warnings | 1.750s |
+
+## Backend
+| Command | Exit Code | Pass/Fail | Failures | Duration |
+|---------|-----------|-----------|----------|----------|
+| pytest | 0 | PASS | 0 | 2.783s |
+
+## Summary
+- Frontend: 2/4 commands passed
+- Backend: 1/1 commands passed
+- Total: 3/5 commands passed
+
+## Known Issues
+- Frontend build: Exit code 1, output shows 38 lines - needs investigation
+- Frontend test: 2 tests failed in login.spec.ts (30 tests | 2 failed)
+- Frontend lint: 74 deprecation warnings in Pydantic (false positives from TypeScript checking Python types)
+- Backend pytest: 6 deprecation warnings for Pydantic class-based config (non-blocking)

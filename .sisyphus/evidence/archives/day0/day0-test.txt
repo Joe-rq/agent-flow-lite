@@ -1,0 +1,190 @@
+
+> frontend@0.0.0 test
+> vitest --run
+
+
+ RUN  v3.2.4 /Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend
+
+stderr | src/__tests__/auth/login.spec.ts > Auth Store > should set isHydrating to false even when /me fails
+Failed to fetch user profile: Error: Network Error
+    at [90m/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/[39msrc/__tests__/auth/login.spec.ts:153:48
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+stderr | src/__tests__/auth/login.spec.ts > Refresh-Logout Bug (RED PHASE) > network failure during /me should gracefully handle without breaking
+Failed to fetch user profile: Error: Network Error
+    at [90m/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/[39msrc/__tests__/auth/login.spec.ts:243:48
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+
+ ✓ src/__tests__/views/HomeView.spec.ts (5 tests) 39ms
+stderr | src/__tests__/views/SkillsView.spec.ts > SkillsView Skill List > should handle API error when loading skills
+加载技能列表失败: Error: Network error
+    at [90m/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/[39msrc/__tests__/views/SkillsView.spec.ts:193:35
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+stderr | src/__tests__/App.spec.ts > App Chrome and Navigation > should render header when user is authenticated
+[Vue Router warn]: No match found for location with path "/workflow"
+[Vue Router warn]: No match found for location with path "/knowledge"
+[Vue Router warn]: No match found for location with path "/chat"
+[Vue Router warn]: No match found for location with path "/skills"
+
+stderr | src/__tests__/App.spec.ts > App Chrome and Navigation > should render sidebar when user is authenticated
+[Vue Router warn]: No match found for location with path "/workflow"
+[Vue Router warn]: No match found for location with path "/knowledge"
+[Vue Router warn]: No match found for location with path "/chat"
+[Vue Router warn]: No match found for location with path "/skills"
+
+stderr | src/__tests__/App.spec.ts > App Chrome and Navigation > should redirect to /login immediately after clicking logout
+[Vue Router warn]: No match found for location with path "/workflow"
+[Vue Router warn]: No match found for location with path "/knowledge"
+[Vue Router warn]: No match found for location with path "/chat"
+[Vue Router warn]: No match found for location with path "/skills"
+
+stderr | src/__tests__/views/SkillsView.spec.ts > SkillsView Delete > should show error when delete fails
+删除技能失败: { response: { data: { detail: [32m'Delete failed'[39m } } }
+
+ ✓ src/__tests__/views/WorkflowView.spec.ts (6 tests) 42ms
+ ✓ src/__tests__/App.spec.ts (5 tests) 100ms
+stderr | src/__tests__/views/WorkflowEditor.spec.ts > WorkflowEditor Smoke Tests > should mount component successfully
+[Vue Router warn]: No match found for location with path "/"
+
+ ✓ src/__tests__/views/WorkflowEditor.spec.ts (4 tests) 101ms
+stderr | src/__tests__/views/SkillEditor.spec.ts > SkillEditor Save > should show error when save fails
+保存技能失败: { response: { data: { detail: [32m'Skill already exists'[39m } } }
+
+stderr | src/__tests__/views/SkillsView.spec.ts > SkillsView SSE Run > should handle fetch error
+运行技能失败: Error: Network error
+    at [90m/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/[39msrc/__tests__/views/SkillsView.spec.ts:733:37
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+ ❯ src/__tests__/auth/login.spec.ts (30 tests | 2 failed) 224ms
+   ✓ Auth Store > should initialize with null token and user 10ms
+   ✓ Auth Store > should set isAuthenticated to true when both token and user exist 1ms
+   ✓ Auth Store > should login successfully and store token 1ms
+   ✓ Auth Store > should logout successfully and clear state 2ms
+   ✓ Auth Store > should init from localStorage and revalidate user 1ms
+   ✓ Auth Store > should return false from init when no token in localStorage 0ms
+   ✓ Auth Store > should clear auth state 0ms
+   ✓ Auth Store > should set isHydrating to true during init /me call 0ms
+   ✓ Auth Store > should set isHydrating to false even when /me fails 4ms
+   ✓ Refresh-Logout Bug (RED PHASE) > init with cached token should restore both token and user for isAuthenticated=true 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me 1ms
+   ✓ Refresh-Logout Bug (RED PHASE) > 401 from /me should clear auth state and redirect to /login 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > network failure during /me should gracefully handle without breaking 1ms
+   ✓ Refresh-Logout Bug (RED PHASE) > isAuthenticated should be false when token exists but user is null 0ms
+   ✓ Refresh-Logout Bug (RED PHASE) > should call /api/v1/auth/me to restore user after init 0ms
+   ✓ LoginView > should mount component successfully 35ms
+   ✓ LoginView > should display login title 4ms
+   ✓ LoginView > should display email input 12ms
+   ✓ LoginView > should display login button 2ms
+   ✓ LoginView > should show error for empty email 5ms
+   ✓ LoginView > should show error for invalid email format 2ms
+   ✓ LoginView > should call login API with valid email 2ms
+   ✓ LoginView > should redirect to home after successful login 11ms
+   ✓ LoginView > should show error message on login failure 31ms
+   ✓ LoginView > should display login/register button 4ms
+   ✓ LoginView > should call login API when button is clicked with valid email 3ms
+   ✓ App Chrome Hiding on Login > should hide header on /login route 6ms
+   ✓ App Chrome Hiding on Login > should hide sidebar on /login route 3ms
+   × App Chrome Hiding on Login > should show header on non-login routes 50ms
+     → expected false to be true // Object.is equality
+   × App Chrome Hiding on Login > should show sidebar on non-login routes 17ms
+     → expected false to be true // Object.is equality
+ ✓ src/__tests__/views/SkillsView.spec.ts (24 tests) 272ms
+stderr | src/__tests__/views/SkillEditor.spec.ts > SkillEditor Load > should redirect to skills list when load fails
+加载技能失败: Error: Not found
+    at [90m/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/frontend/[39msrc/__tests__/views/SkillEditor.spec.ts:895:35
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///Users/qrq/Documents/code/05-web-projects/%20agent-flow-lite/frontend/[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+ ✓ src/__tests__/views/ChatTerminal.spec.ts (17 tests) 297ms
+ ✓ src/__tests__/views/SkillEditor.spec.ts (39 tests) 335ms
+ ✓ src/__tests__/admin/users.spec.ts (16 tests) 346ms
+ ✓ src/__tests__/setup.spec.ts (2 tests) 1ms
+ ✓ src/__tests__/skills/sse-handler.spec.ts (12 tests) 3ms
+ ✓ src/__tests__/views/KnowledgeView.spec.ts (4 tests) 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > App Chrome Hiding on Login > should show header on non-login routes
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/__tests__/auth/login.spec.ts:534:29
+    532| 
+    533|     const header = wrapper.find('.app-header')
+    534|     expect(header.exists()).toBe(true)
+       |                             ^
+    535|   })
+    536| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/__tests__/auth/login.spec.ts > App Chrome Hiding on Login > should show sidebar on non-login routes
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/__tests__/auth/login.spec.ts:548:30
+    546| 
+    547|     const sidebar = wrapper.find('.app-sidebar')
+    548|     expect(sidebar.exists()).toBe(true)
+       |                              ^
+    549|   })
+    550| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 11 passed (12)
+      Tests  2 failed | 162 passed (164)
+   Start at  22:38:52
+   Duration  2.01s (transform 1.89s, setup 0ms, collect 4.83s, tests 1.78s, environment 5.99s, prepare 1.11s)
+
