@@ -261,6 +261,8 @@ agent-flow-lite/
 ├── docs/                  # 项目文档
 │   ├── skill-system-design.md
 │   └── ...
+├── scripts/               # CI 检查与质量门验证脚本
+├── .github/workflows/     # GitHub Actions 工作流
 ├── AGENTS.md             # 开发规范与指南
 ├── CLAUDE.md             # Claude Code 指南
 └── install.sh            # 一键安装脚本
@@ -311,12 +313,13 @@ agent-flow-lite/
 cd frontend
 
 npm run dev          # 开发服务器
-npm run test         # 运行测试
+npm run test         # 一次性测试（CI 推荐）
 npm run test:ui      # 测试 UI
 npm run type-check   # 类型检查
 npm run lint         # 代码检查
 npm run format       # 代码格式化
 npm run build        # 生产构建
+npx vitest run src/__tests__/App.spec.ts  # 运行单个测试文件
 ```
 
 ### 后端开发
@@ -330,6 +333,26 @@ uv run pytest -q                       # 运行所有测试
 uv run pytest tests/test_smoke.py -q   # 运行单个测试文件
 uv run pytest -k "citation" -q         # 运行匹配模式的测试
 ```
+
+### CI 与质量门（最近更新）
+
+```bash
+# 本地预检（推送前）
+bash scripts/verify-quality-gate.sh
+
+# 推送后查看最新质量门状态
+bash scripts/check-ci-status.sh
+
+# 或直接使用 gh 检查
+gh run list --workflow="Quality Gate" --limit 3
+gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+```
+
+Quality Gate 的关键检查是 4 项：
+- `frontend-type-check`
+- `frontend-build`
+- `frontend-critical-tests`
+- `backend-critical-tests`
 
 ### 代码规范
 
@@ -470,6 +493,7 @@ rm -rf backend/data/chromadb/
 ### 项目文档
 - [CLAUDE.md](./CLAUDE.md) - Claude Code 使用指南
 - [AGENTS.md](./AGENTS.md) - 开发规范与指南
+- [docs/README.md](./docs/README.md) - 文档索引
 - [docs/skill-system-design.md](./docs/skill-system-design.md) - Skill 系统设计
 - [docs/vibe-coding-guide.html](./docs/vibe-coding-guide.html) - 开发指南
 

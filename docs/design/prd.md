@@ -96,7 +96,7 @@
 
 ### 4.1 前端 (Frontend)
 - **框架:** Vue 3 + Vite + TypeScript (强类型约束)。
-- **UI 库:** Vanilla CSS (Tailwind CSS 可选) + Element Plus (组件) + Vue Flow (画布)。
+- **UI 方案:** Vue Flow (工作流画布) + 项目内自定义组件与样式（当前未引入 Element Plus）。
 - **核心逻辑:**
   - 使用 Pinia 管理全局状态。
   - 使用 `EventSource` 处理 SSE 流式响应。

@@ -187,9 +187,9 @@ No automated console error monitoring was performed (Playwright MCP server unava
    - Verify values persist
 
 ### For Automated Testing
-1. Configure Playwright MCP server in opencode.json
-2. Ensure backend API is running (for knowledge base endpoint)
-3. Run the test script: `node test-node-config-save.js`
+1. Ensure frontend and backend are running locally
+2. Open browser and execute the manual checklist above (current repository has no dedicated `test-node-config-save.js` script)
+3. If you need browser automation, add a Playwright spec under `frontend/src/__tests__/` and run `npm run test:e2e`
 
 ### Future Enhancements
 1. Add validation for required fields
@@ -213,7 +213,6 @@ Automated browser testing could not be completed due to Playwright MCP server no
 
 ## Test Artifacts
 
-- Test Script: `test-node-config-save.js`
 - Component Files:
   - `frontend/src/components/NodeConfigPanel.vue`
   - `frontend/src/views/WorkflowEditor.vue`

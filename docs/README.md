@@ -21,6 +21,7 @@ docs/
 │
 ├── skill-system-design.md          # Skill 系统技术设计
 ├── vibe-coding-guide.html          # Vibe Coding 指南
+├── README.md                       # 文档总索引（当前文件）
 │
 └── archive/         # 归档文档
     ├── CODE_REVIEW_REPORT.md       # 代码审查报告
@@ -62,3 +63,17 @@ docs/
 - [返回项目主页](../README.md)
 - [开发规范](../AGENTS.md)
 - [Claude Code 指南](../CLAUDE.md)
+
+## ✅ CI 与质量门文档入口（2026-02 更新）
+
+最近提交新增了 CI 检查脚本和质量门流程，建议优先使用以下入口：
+
+- `../scripts/verify-quality-gate.sh`：本地一键预检（前端类型检查/构建/关键测试 + 后端关键测试）
+- `../scripts/check-ci-status.sh`：推送后查看最新 GitHub Actions 运行状态
+- `../.github/workflows/quality-gate.yml`：Quality Gate 工作流定义
+- `../.github/workflows/opencode.yml`：OpenCode 相关工作流定义
+
+如需查看质量门执行记录，可参考：
+
+- `../.sisyphus/evidence/README.md`
+- `../.sisyphus/evidence/post-gate-stability-quick-pass/`

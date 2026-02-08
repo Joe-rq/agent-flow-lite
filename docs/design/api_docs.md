@@ -3,7 +3,7 @@
 > 本文档描述了前后端交互的核心接口。
 > **Base URL:** `/api/v1`
 > **Docs:** `/docs` (Swagger UI)
-> **最后更新:** 2026-02-07
+> **最后更新:** 2026-02-08
 
 ## 1. 认证 (Auth)
 
@@ -52,16 +52,20 @@
 - **Response:**
   ```json
   {
-    "workflows": [
+    "items": [
       {
         "id": "workflow-uuid",
         "name": "我的工作流",
         "description": "描述",
-        "node_count": 5,
-        "edge_count": 4,
+        "graph_data": {
+          "nodes": [],
+          "edges": []
+        },
         "created_at": "2026-02-01T10:00:00Z"
+        "updated_at": "2026-02-01T10:00:00Z"
       }
-    ]
+    ],
+    "total": 1
   }
   ```
 
@@ -76,8 +80,10 @@
   {
     "name": "新工作流",
     "description": "可选描述",
-    "nodes": [...],
-    "edges": [...]
+    "graph_data": {
+      "nodes": [...],
+      "edges": [...]
+    }
   }
   ```
 
@@ -94,7 +100,7 @@
 - **Request Body:**
   ```json
   {
-    "inputs": { "query": "用户输入" }
+    "input": "用户输入"
   }
   ```
 - **Response:** SSE 流式响应
