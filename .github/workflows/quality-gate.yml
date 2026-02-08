@@ -130,7 +130,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: uv pip install -e ".[dev]"
+        run: uv sync --group dev
 
       - name: Run P0 critical tests
         working-directory: backend
@@ -210,7 +210,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: uv pip install -e ".[dev]"
+        run: uv sync --group dev
 
       - name: Run all tests
         working-directory: backend
@@ -258,7 +258,7 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          uv pip install -e ".[dev]"
+          uv sync --group dev
           cp .env.example .env
           # Use dummy API keys for E2E tests
           echo "DEEPSEEK_API_KEY=dummy" >> .env
