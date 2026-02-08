@@ -169,7 +169,7 @@ jobs:
 
       - name: Run all tests
         working-directory: frontend
-        run: npm run test -- --run
+        run: npm run test -- --run --isolate
 
       - name: Upload test results
         if: always()
@@ -271,9 +271,21 @@ jobs:
           DEEPSEEK_API_KEY: dummy
           SILICONFLOW_API_KEY: dummy
 
+      - name: Build and serve frontend
+        run: |
+          cd frontend
+          npm run build
+          npx vite preview --port 5173 &
+          echo $! > /tmp/vite-preview.pid
+          curl --retry 10 --retry-delay 2 --retry-all-errors http://localhost:5173 || exit 1
+
       - name: Run E2E tests
         working-directory: frontend
         run: npm run test:e2e
+
+      - name: Cleanup frontend server
+        if: always()
+        run: kill "$(cat /tmp/vite-preview.pid)" 2>/dev/null || true
 
       - name: Upload Playwright report
         if: always()
