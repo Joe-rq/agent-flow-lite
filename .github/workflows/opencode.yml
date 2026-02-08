@@ -5,10 +5,14 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
+  workflow_run:
+    workflows: ["Quality Gate"]
+    types: [completed]
 
 jobs:
   opencode:
     if: |
+      github.event_name == 'workflow_run' ||
       contains(github.event.comment.body, ' /oc') ||
       startsWith(github.event.comment.body, '/oc') ||
       contains(github.event.comment.body, ' /opencode') ||
@@ -17,17 +21,30 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
+      checks: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           persist-credentials: false
 
+      - name: Get CI status (if triggered by workflow_run)
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure'
+        id: ci-status
+        run: |
+          echo "workflow_status=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+          echo "workflow_name=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+          echo "head_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+
       - name: Run opencode
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          CI_STATUS: ${{ steps.ci-status.outputs.workflow_status || 'manual' }}
+          CI_WORKFLOW: ${{ steps.ci-status.outputs.workflow_name || 'manual' }}
+          CI_RUN_ID: ${{ steps.ci-status.outputs.run_id || 'manual' }}
         with:
           model: opencode/kimi-k2.5-free
