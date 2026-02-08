@@ -68,3 +68,12 @@ backend/data/*.json
 
 # Misc
 EOF
+
+# Sisyphus working directories
+.sisyphus/drafts/
+.sisyphus/*/working/
+.sisyphus/*/cache/
+
+# Frontend test results
+frontend/test-results/
+frontend/.sisyphus/
