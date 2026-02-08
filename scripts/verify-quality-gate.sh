@@ -110,6 +110,13 @@ echo "📊 Quality Gate 汇总"
 echo "===================="
 echo ""
 
+print_ci_commands() {
+    echo "可直接执行的 CI 检查命令："
+    echo "  gh run list --workflow=\"Quality Gate\" --limit 3"
+    echo "  gh run view <run-id> --json jobs --jq '.jobs[] | \"\\(.name): \\(.conclusion)\"'"
+    echo ""
+}
+
 if [ $BACKEND_PASSED -eq 1 ] && [ $FRONTEND_PASSED -eq 1 ]; then
     echo -e "${GREEN}✓ PASS - 所有关键检查通过${NC}"
     echo ""
@@ -118,6 +125,8 @@ if [ $BACKEND_PASSED -eq 1 ] && [ $FRONTEND_PASSED -eq 1 ]; then
     echo "下一步："
     echo "  git push origin main"
     echo "  然后访问: https://github.com/Joe-rq/agent-flow-lite/actions"
+    echo ""
+    print_ci_commands
     exit 0
 else
     echo -e "${RED}✗ FAIL - 部分关键检查失败${NC}"
@@ -127,5 +136,7 @@ else
     [ $FRONTEND_PASSED -eq 0 ] && echo "  - 前端关键测试"
     echo ""
     echo "❌ 请修复失败的测试后再推送"
+    echo ""
+    print_ci_commands
     exit 1
 fi

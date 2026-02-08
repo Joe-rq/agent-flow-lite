@@ -26,7 +26,8 @@ echo ""
 
 # 获取最新的工作流运行
 echo "📋 获取最新的工作流运行..."
-RUN_INFO=$(gh run list --workflow=quality-gate.yml --limit 1 --json status,conclusion,displayTitle,createdAt,databaseId)
+WORKFLOW_NAME="Quality Gate"
+RUN_INFO=$(gh run list --workflow="$WORKFLOW_NAME" --limit 1 --json status,conclusion,displayTitle,createdAt,databaseId)
 
 echo "$RUN_INFO" | jq -r '
   "Workflow: " + .[0].displayTitle,
@@ -52,7 +53,13 @@ echo "详细信息"
 echo "================================"
 echo ""
 
+REPO_URL=$(gh repo view --json url --jq '.url')
+
 echo "🔗 查看详情："
-echo "  https://github.com/Joe-rq/agent-flow-lite/actions/runs/$RUN_ID"
+echo "  $REPO_URL/actions/runs/$RUN_ID"
 echo ""
 
+echo "📎 常用后续命令："
+echo "  gh run list --workflow=\"$WORKFLOW_NAME\" --limit 3"
+echo "  gh run view $RUN_ID --json jobs --jq '.jobs[] | \"\\(.name): \\(.conclusion)\"'"
+echo ""
