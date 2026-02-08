@@ -95,7 +95,7 @@ jobs:
       - name: Run P0 critical tests
         working-directory: frontend
         run: |
-          npm run test -- --run \
+          npm run test -- --run --isolate \
             src/__tests__/App.spec.ts \
             src/__tests__/views/ChatTerminal.spec.ts \
             src/__tests__/auth/login.spec.ts

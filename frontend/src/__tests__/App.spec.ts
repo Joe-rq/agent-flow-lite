@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
@@ -11,6 +11,10 @@ describe('App Chrome and Navigation', () => {
   let pinia: ReturnType<typeof createPinia>
 
   beforeEach(async () => {
+    // Clear auth-related localStorage to avoid state pollution
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_user')
+
     router = createRouter({
       history: createWebHistory(),
       routes: [
@@ -78,6 +82,8 @@ describe('App Chrome and Navigation', () => {
       },
     })
 
+    await flushPromises()
+
     const header = wrapper.find('.app-header')
     expect(header.exists()).toBe(true)
   })
@@ -95,6 +101,8 @@ describe('App Chrome and Navigation', () => {
         plugins: [router, pinia],
       },
     })
+
+    await flushPromises()
 
     const sidebar = wrapper.find('.app-sidebar')
     expect(sidebar.exists()).toBe(true)
@@ -116,12 +124,13 @@ describe('App Chrome and Navigation', () => {
       },
     })
 
-    const logoutButton = wrapper.find('button')
-    if (logoutButton) {
-      await logoutButton.trigger('click')
-    }
+    await flushPromises()
 
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    const logoutButton = wrapper.find('[data-testid="logout-button"]')
+    await logoutButton.trigger('click')
+
+    await flushPromises()
+    await router.isReady()
 
     expect(router.currentRoute.value.path).toBe('/login')
   })

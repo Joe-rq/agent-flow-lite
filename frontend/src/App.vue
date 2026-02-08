@@ -37,6 +37,7 @@ async function handleLogout() {
         v-if="authStore.isAuthenticated"
         variant="secondary"
         size="sm"
+        data-testid="logout-button"
         @click="handleLogout"
       >
         退出登录
