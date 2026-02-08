@@ -32,6 +32,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 14. **正则匹配第三方错误消息前必须拿真实消息验证。** 不要凭文档或猜测写 pattern。先触发真实错误，拿到实际消息字符串，再写正则。
 15. **只改数据不改代码不算修 bug。** 重建数据（如 ChromaDB 重索引）能临时恢复功能，但如果根因在代码层（异常类型错误、缺少防御），必须同时修代码。数据修复 ≠ 代码修复。
 
+### CI 验证规则
+
+16. **推送后必须验证 CI。** 代码推送到远程后，用以下命令检查 Quality Gate 状态：
+    ```bash
+    gh run list --workflow="Quality Gate" --limit 3
+    gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+    ```
+17. **CI 验收标准。** Quality Gate 通过的条件是 Critical Layer 4/4 绿色：
+    - `frontend-type-check`: success
+    - `frontend-build`: success
+    - `frontend-critical-tests`: success（52 tests, 需 `--isolate`）
+    - `backend-critical-tests`: success（45 tests）
+18. **非阻塞 job 也要关注。** E2E Tests 和 Frontend Full Tests 是 informational，不阻塞合并，但失败时应记录原因并评估是否需要修复。
+19. **CI 失败时不继续下一个任务。** 先定位失败 job 的日志，分析根因，修复后再继续。
+
 ---
 
 ## Project Overview
