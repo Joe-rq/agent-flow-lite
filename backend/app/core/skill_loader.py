@@ -255,6 +255,34 @@ class SkillLoader:
         yaml_content = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True)
         return f"---\n{yaml_content}---\n\n{body}"
 
+    def _parse_inputs(self, raw_inputs: List[Dict[str, Any]]) -> Optional[List[SkillInput]]:
+        """
+        Parse raw inputs from frontmatter into SkillInput objects.
+
+        Args:
+            raw_inputs: List of raw input dictionaries from frontmatter
+
+        Returns:
+            List of SkillInput objects, or None if no valid inputs
+        """
+        if not raw_inputs:
+            return None
+
+        inputs = [
+            SkillInput(
+                name=inp.get("name", ""),
+                label=inp.get("label", ""),
+                type=inp.get("type", "text"),
+                required=inp.get("required", False),
+                default=inp.get("default"),
+                description=inp.get("description"),
+            )
+            for inp in raw_inputs
+            if isinstance(inp, dict) and inp.get("name")
+        ]
+
+        return inputs if inputs else None
+
     def _build_skill_detail(
         self,
         name: str,
@@ -277,20 +305,7 @@ class SkillLoader:
             SkillDetail model
         """
         # Parse inputs
-        inputs = None
-        if frontmatter.get("inputs"):
-            inputs = [
-                SkillInput(
-                    name=inp.get("name", ""),
-                    label=inp.get("label", ""),
-                    type=inp.get("type", "text"),
-                    required=inp.get("required", False),
-                    default=inp.get("default"),
-                    description=inp.get("description"),
-                )
-                for inp in frontmatter["inputs"]
-                if isinstance(inp, dict) and inp.get("name")
-            ]
+        inputs = self._parse_inputs(frontmatter.get("inputs"))
 
         # Parse model config (must be a dict, ignore string values)
         model = None
@@ -308,7 +323,7 @@ class SkillLoader:
 
         return SkillDetail(
             name=name,
-            description=frontmatter.get("description", ""),
+            description=frontmatter.get("description") or name,
             license=frontmatter.get("license"),
             metadata=frontmatter.get("metadata"),
             inputs=inputs if inputs else None,
@@ -448,20 +463,7 @@ class SkillLoader:
             )
 
         # Validate placeholders
-        inputs = None
-        if frontmatter.get("inputs"):
-            inputs = [
-                SkillInput(
-                    name=inp.get("name", ""),
-                    label=inp.get("label", ""),
-                    type=inp.get("type", "text"),
-                    required=inp.get("required", False),
-                    default=inp.get("default"),
-                    description=inp.get("description"),
-                )
-                for inp in frontmatter["inputs"]
-                if isinstance(inp, dict) and inp.get("name")
-            ]
+        inputs = self._parse_inputs(frontmatter.get("inputs"))
         self._validate_placeholders(body, inputs)
 
         # Inject user_id if provided
@@ -536,20 +538,7 @@ class SkillLoader:
             )
 
         # Validate placeholders
-        inputs = None
-        if frontmatter.get("inputs"):
-            inputs = [
-                SkillInput(
-                    name=inp.get("name", ""),
-                    label=inp.get("label", ""),
-                    type=inp.get("type", "text"),
-                    required=inp.get("required", False),
-                    default=inp.get("default"),
-                    description=inp.get("description"),
-                )
-                for inp in frontmatter["inputs"]
-                if isinstance(inp, dict) and inp.get("name")
-            ]
+        inputs = self._parse_inputs(frontmatter.get("inputs"))
         self._validate_placeholders(body, inputs)
 
         lock = FileLock(str(skill_file) + ".lock")

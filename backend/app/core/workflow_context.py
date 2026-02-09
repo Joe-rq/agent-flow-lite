@@ -58,9 +58,26 @@ def normalize_expression(expression: str) -> str:
 def safe_eval(expression: str) -> bool:
     expr = normalize_expression(expression)
     try:
-        from simpleeval import simple_eval
+        from simpleeval import simple_eval, InvalidExpression
 
-        return bool(simple_eval(expr))
-    except Exception:
+        # Explicit empty whitelists - no implicit imports or function calls
+        return bool(simple_eval(expr, names={}, functions={}))
+
+    except ImportError:
+        import logging
+        logging.warning(
+            f"simpleeval not available, falling back to string comparison for: {expr}"
+        )
         lowered = expr.lower()
+        # Fallback contract: only boolean literal values are True
         return lowered in ("true", "yes", "1")
+
+    except (TypeError, ValueError, NameError, InvalidExpression):
+        import logging
+        logging.warning(f"Expression evaluation error in {expr}")
+        return False
+
+    except Exception as e:
+        import logging
+        logging.error(f"Unexpected error in safe_eval({expr}): {e}")
+        raise

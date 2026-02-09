@@ -28,7 +28,9 @@ class ChatRequest(BaseModel):
     - user_id: DEPRECATED - User ID is now obtained from authentication token
     """
     session_id: str = Field(
-        ..., description="Unique session identifier for conversation continuity"
+        ...,
+        description="Unique session identifier for conversation continuity",
+        pattern=r"^[a-zA-Z0-9_-]{1,128}$"
     )
     message: str = Field(
         ..., description="User's input message", min_length=1

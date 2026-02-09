@@ -24,6 +24,7 @@ from app.core.skill_loader import SkillLoader, SkillValidationError
 from app.core.skill_executor import get_skill_executor
 from app.api.workflow import get_workflow
 from app.models.chat import ChatMessage, ChatRequest, SessionHistory
+from app.utils.sse import format_sse_event
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
@@ -36,13 +37,31 @@ MAX_HISTORY_MESSAGES = 10
 SESSIONS_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
-SKILLS_DIR = Path(__file__).parent.parent.parent.parent.parent / "skills"
+SKILLS_DIR = Path(__file__).parent.parent.parent / "data" / "skills"
 skill_loader = SkillLoader(SKILLS_DIR)
 
 
 def get_session_path(session_id: str) -> Path:
-    """Get the file path for a session."""
-    return SESSIONS_DIR / f"{session_id}.json"
+    """
+    Get the file path for a session.
+
+    Args:
+        session_id: Session identifier (must be validated by pattern constraint first)
+
+    Returns:
+        Path object for the session file
+
+    Raises:
+        ValueError: If session_id attempts path traversal
+    """
+    session_file = SESSIONS_DIR / f"{session_id}.json"
+    try:
+        # Containment check: ensure resolved path stays within SESSIONS_DIR
+        session_file.resolve().relative_to(SESSIONS_DIR.resolve())
+    except ValueError:
+        # Fail-closed behavior: reject any path traversal attempt
+        raise ValueError(f"Invalid session_id: {session_id}") from None
+    return session_file
 
 
 def check_session_ownership(session: SessionHistory, user: User) -> bool:
@@ -100,11 +119,6 @@ def save_session(session: SessionHistory) -> None:
     with lock:
         with open(session_path, "w", encoding="utf-8") as f:
             json.dump(session.model_dump(mode="json"), f, ensure_ascii=False, indent=2)
-
-
-def format_sse_event(event: str, data: dict) -> str:
-    """Format data as SSE event string."""
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 def build_excerpt(text: str, limit: int = EXCERPT_LIMIT) -> str:
@@ -643,11 +657,17 @@ async def get_session_history(
 ) -> dict:
     """
     Get chat history for a session.
-    
+
     - **session_id**: Session identifier
     - Users can only access their own sessions (admins can access any)
     """
-    session = load_session(session_id)
+    try:
+        session = load_session(session_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid session_id: {session_id}"
+        )
     if session is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -691,7 +711,13 @@ async def delete_session(
     - **session_id**: Session identifier to delete
     - Users can only delete their own sessions (admins can delete any)
     """
-    session = load_session(session_id)
+    try:
+        session = load_session(session_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid session_id: {session_id}"
+        )
     if session is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -705,7 +731,13 @@ async def delete_session(
             detail="You do not have permission to delete this session"
         )
 
-    session_path = get_session_path(session_id)
+    try:
+        session_path = get_session_path(session_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid session_id: {session_id}"
+        )
     try:
         session_path.unlink()
         return {

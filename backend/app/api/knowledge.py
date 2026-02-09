@@ -513,6 +513,13 @@ async def create_knowledge_base(data: KnowledgeBaseCreate, user: User = Depends(
 
 @router.delete("/{kb_id}", status_code=204)
 async def delete_knowledge_base(kb_id: str, user: User = Depends(get_current_user)) -> None:
+    # Validate kb_id format (fail-closed)
+    if not re.match(r"^[\w-]+$", kb_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid kb_id format: {kb_id}"
+        )
+
     metadata = load_kb_metadata()
     if kb_id not in metadata:
         raise HTTPException(
@@ -525,10 +532,21 @@ async def delete_knowledge_base(kb_id: str, user: User = Depends(get_current_use
 
     project_root = Path(__file__).parent.parent.parent
     upload_dir = project_root / "data" / "uploads" / kb_id
+    metadata_dir = project_root / "data" / "metadata" / kb_id
+
+    # Containment check: ensure paths are within project_root
+    try:
+        upload_dir.resolve().relative_to(project_root.resolve())
+        metadata_dir.resolve().relative_to(project_root.resolve())
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid kb_id: path outside allowed directory"
+        )
+
     if upload_dir.exists():
         shutil.rmtree(upload_dir)
 
-    metadata_dir = project_root / "data" / "metadata" / kb_id
     if metadata_dir.exists():
         shutil.rmtree(metadata_dir)
 

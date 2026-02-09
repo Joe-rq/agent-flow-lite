@@ -12,11 +12,8 @@ from typing import AsyncGenerator, Dict, List, Optional, Any
 
 from app.core.llm import chat_completion_stream
 from app.core.rag import get_rag_pipeline
-
-
-def format_sse_event(event: str, data: dict) -> str:
-    """Format data as SSE event string."""
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+from app.models.skill import SkillInput
+from app.utils.sse import format_sse_event
 
 
 class SkillExecutor:
@@ -33,22 +30,27 @@ class SkillExecutor:
 
     def validate_inputs(
         self,
-        skill_inputs: List[Dict[str, Any]],
+        skill_inputs: List[SkillInput],
         provided_inputs: Dict[str, str]
     ) -> None:
         """
         Validate that all required inputs are provided.
 
         Args:
-            skill_inputs: List of input definitions from skill
+            skill_inputs: List of input definitions from skill (Dict or SkillInput)
             provided_inputs: Dictionary of provided input values
 
         Raises:
             ValueError: If a required input is missing
         """
         for input_def in skill_inputs:
-            name = input_def.get("name")
-            required = input_def.get("required", False)
+            # Support both dict and SkillInput objects
+            if isinstance(input_def, dict):
+                name = input_def.get("name")
+                required = input_def.get("required", False)
+            else:
+                name = input_def.name
+                required = input_def.required
 
             if required and (name not in provided_inputs or not provided_inputs[name]):
                 raise ValueError(f"Missing required input: '{name}'")
@@ -56,7 +58,7 @@ class SkillExecutor:
     def substitute_variables(
         self,
         prompt: str,
-        skill_inputs: List[Dict[str, Any]],
+        skill_inputs: List[SkillInput],
         provided_inputs: Dict[str, str]
     ) -> str:
         """
@@ -64,7 +66,7 @@ class SkillExecutor:
 
         Args:
             prompt: The prompt template with {{variable}} placeholders
-            skill_inputs: List of input definitions with defaults
+            skill_inputs: List of input definitions with defaults (Dict or SkillInput)
             provided_inputs: Dictionary of provided input values
 
         Returns:
@@ -75,8 +77,13 @@ class SkillExecutor:
         variable_values: Dict[str, str] = {}
 
         for input_def in skill_inputs:
-            name = input_def.get("name")
-            default = input_def.get("default", "")
+            # Support both dict and SkillInput objects
+            if isinstance(input_def, dict):
+                name = input_def.get("name")
+                default = input_def.get("default", "")
+            else:
+                name = input_def.name
+                default = input_def.default
 
             if name in provided_inputs:
                 variable_values[name] = provided_inputs[name]
