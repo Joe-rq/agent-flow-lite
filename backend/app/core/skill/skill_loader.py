@@ -420,6 +420,13 @@ class SkillLoader:
 
         frontmatter, body = self.parse_skill_md(content)
 
+        # A valid skill must have frontmatter with at least a name or description
+        if not frontmatter:
+            raise SkillValidationError(
+                f"Skill '{name}' has no valid YAML frontmatter",
+                field="frontmatter",
+            )
+
         # Validate that frontmatter name matches folder name
         fm_name = frontmatter.get("name")
         if fm_name and fm_name != name:
@@ -575,15 +582,21 @@ class SkillLoader:
 
         lock = FileLock(str(skill_file) + ".lock")
         with lock:
-            try:
-                import shutil
+            pass  # Verify file is accessible
 
-                shutil.rmtree(skill_dir)
-            except OSError as exc:
-                raise SkillValidationError(
-                    f"Failed to delete skill directory: {exc}",
-                    field="name",
-                ) from exc
+        # Delete after lock is released to avoid Windows file-in-use errors
+        try:
+            import shutil
+
+            lock_path = Path(str(skill_file) + ".lock")
+            if lock_path.exists():
+                lock_path.unlink()
+            shutil.rmtree(skill_dir)
+        except OSError as exc:
+            raise SkillValidationError(
+                f"Failed to delete skill directory: {exc}",
+                field="name",
+            ) from exc
 
     def normalize_name(self, name: str) -> str:
         """
