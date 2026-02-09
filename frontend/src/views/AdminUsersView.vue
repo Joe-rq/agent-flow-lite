@@ -101,15 +101,9 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import Button from '@/components/ui/Button.vue'
-
-// 类型定义
-interface User {
-  id: number
-  email: string
-  role: 'admin' | 'user'
-  is_active: boolean
-  created_at: string
-}
+import { formatDate } from '@/utils/format'
+import { API_BASE } from '@/utils/constants'
+import type { User } from '@/types'
 
 // 状态
 const users = ref<User[]>([])
@@ -124,9 +118,6 @@ const confirmDialogMessage = ref('')
 const confirmDialogVariant = ref<'primary' | 'secondary' | 'danger'>('primary')
 const pendingAction = ref<(() => Promise<void>) | null>(null)
 
-// API 基础 URL
-const API_BASE = '/api/v1'
-
 // 过滤后的用户列表
 const filteredUsers = computed(() => {
   if (!searchQuery.value.trim()) {
@@ -135,18 +126,6 @@ const filteredUsers = computed(() => {
   const query = searchQuery.value.toLowerCase().trim()
   return users.value.filter(user => user.email.toLowerCase().includes(query))
 })
-
-// 格式化日期
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 // 获取角色文本
 function getRoleText(role: string): string {

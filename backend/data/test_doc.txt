@@ -1,0 +1,12 @@
+Agent Flow Lite 是一个轻量级智能体编排平台。
+
+主要功能包括：
+1. 可视化工作流编辑器 - 支持拖拽节点创建工作流
+2. RAG 知识库管理 - 支持文档上传和向量检索
+3. 智能对话终端 - 支持多轮对话和流式输出
+
+技术栈：
+- 前端：Vue 3 + TypeScript + Vue Flow
+- 后端：Python FastAPI + ChromaDB
+- LLM：DeepSeek API
+- Embedding：SiliconFlow BGE-M3

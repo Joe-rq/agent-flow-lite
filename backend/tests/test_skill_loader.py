@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from app.core.skill_loader import SkillLoader, SkillValidationError
+from app.core.skill.skill_loader import SkillLoader, SkillValidationError
 from app.models.skill import SkillInput, SkillModelConfig
 
 

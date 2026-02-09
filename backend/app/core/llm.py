@@ -3,6 +3,7 @@ DeepSeek LLM client wrapper.
 Provides chat completion with streaming support.
 """
 
+from functools import lru_cache
 from typing import AsyncGenerator
 
 from openai import AsyncOpenAI
@@ -11,6 +12,7 @@ from openai.types.chat import ChatCompletionChunk
 from .config import settings
 
 
+@lru_cache(maxsize=1)
 def get_client() -> AsyncOpenAI:
     """
     Get or create the DeepSeek client instance.
@@ -73,7 +75,7 @@ async def chat_completion(
         raise ValueError("Empty response from DeepSeek API")
     
     except Exception as e:
-        raise Exception(f"DeepSeek API call failed: {str(e)}")
+        raise RuntimeError(f"DeepSeek API call failed: {e}") from e
 
 
 async def chat_completion_stream(
@@ -119,4 +121,4 @@ async def chat_completion_stream(
                 yield chunk.choices[0].delta.content
     
     except Exception as e:
-        raise Exception(f"DeepSeek streaming failed: {str(e)}")
+        raise RuntimeError(f"DeepSeek streaming failed: {e}") from e

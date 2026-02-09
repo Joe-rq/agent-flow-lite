@@ -255,7 +255,7 @@ class SkillLoader:
         yaml_content = yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True)
         return f"---\n{yaml_content}---\n\n{body}"
 
-    def _parse_inputs(self, raw_inputs: List[Dict[str, Any]]) -> Optional[List[SkillInput]]:
+    def _parse_inputs(self, raw_inputs: Optional[List[Dict[str, Any]]]) -> Optional[List[SkillInput]]:
         """
         Parse raw inputs from frontmatter into SkillInput objects.
 

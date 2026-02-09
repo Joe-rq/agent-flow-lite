@@ -146,14 +146,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-
-// 类型定义
-interface SkillInput {
-  name: string
-  description?: string
-  required?: boolean
-  default?: string
-}
+import { API_BASE } from '@/utils/constants'
+import type { SkillInput } from '@/types'
 
 // 路由
 const route = useRoute()
@@ -170,8 +164,6 @@ const isSaving = ref(false)
 const showPreview = ref(true)
 const nameError = ref('')
 const promptError = ref('')
-
-const API_BASE = '/api/v1'
 
 // 计算属性：生成的 Markdown
 const generatedMarkdown = computed(() => {

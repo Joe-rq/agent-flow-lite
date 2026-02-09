@@ -238,6 +238,9 @@ import NodeConfigPanel from '../components/NodeConfigPanel.vue'
 import Button from '@/components/ui/Button.vue'
 import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
+import { createSSEParser } from '@/utils/sse-parser'
+import { formatDate } from '@/utils/format'
+import { API_BASE } from '@/utils/constants'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -246,7 +249,6 @@ import '@vue-flow/controls/dist/style.css'
 const { addNodes, addEdges, project, toObject, setNodes, setEdges, getNodes, updateNode, removeNodes, removeEdges, fitView } = useVueFlow()
 const authStore = useAuthStore()
 
-const API_BASE = '/api/v1'
 const isSaving = ref(false)
 const showLoadDialog = ref(false)
 interface WorkflowItem {
@@ -366,7 +368,6 @@ async function saveWorkflow() {
       currentWorkflowName.value = response.data.name
       showError('工作流保存成功！')
     }
-    console.log('Saved workflow:', response.data)
   } catch (error) {
     console.error('保存工作流失败:', error)
     showError('保存工作流失败')
@@ -462,16 +463,6 @@ function getDefaultLabel(type: string): string {
   return labels[type] || type
 }
 
-// 格式化日期
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
-
 function openRunDialog() {
   if (!currentWorkflowId.value) {
     showError('请先保存或加载工作流')
@@ -521,50 +512,38 @@ async function executeWorkflow() {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder('utf-8')
-    let currentEvent = ''
+    const sseParser = createSSEParser()
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
 
       const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
 
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          currentEvent = line.slice(7).trim()
-        } else if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6)
-          if (dataStr === '[DONE]') {
-            break
-          }
-          try {
-            const data = JSON.parse(dataStr)
-            if (currentEvent === 'token') {
-              runOutput.value += data.content || ''
-            } else if (currentEvent === 'workflow_start') {
-              appendRunLog(`开始工作流: ${data.workflow_name || ''}`)
-            } else if (currentEvent === 'node_start') {
-              appendRunLog(`执行节点: ${data.node_type || ''}`)
-            } else if (currentEvent === 'node_complete') {
-              appendRunLog(`节点完成: ${data.node_id || ''}`)
-            } else if (currentEvent === 'thought') {
-              appendRunLog(data.content || data.status || '处理中')
-            } else if (currentEvent === 'workflow_complete') {
-              appendRunLog('工作流执行完成')
-              if (data.final_output) {
-                runOutput.value = String(data.final_output)
-              }
-            } else if (currentEvent === 'workflow_error' || currentEvent === 'node_error') {
-              appendRunLog(`错误: ${data.error || '未知错误'}`)
-            } else if (currentEvent === 'done') {
-              appendRunLog(`状态: ${data.status || 'complete'}`)
+      sseParser.parse(chunk, {
+        onEvent: (eventType, data) => {
+          if (eventType === 'token') {
+            runOutput.value += (data.content as string) || ''
+          } else if (eventType === 'workflow_start') {
+            appendRunLog(`开始工作流: ${data.workflow_name || ''}`)
+          } else if (eventType === 'node_start') {
+            appendRunLog(`执行节点: ${data.node_type || ''}`)
+          } else if (eventType === 'node_complete') {
+            appendRunLog(`节点完成: ${data.node_id || ''}`)
+          } else if (eventType === 'thought') {
+            appendRunLog((data.content as string) || (data.status as string) || '处理中')
+          } else if (eventType === 'workflow_complete') {
+            appendRunLog('工作流执行完成')
+            if (data.final_output) {
+              runOutput.value = String(data.final_output)
             }
-          } catch (error) {
-            console.warn('解析执行事件失败', error)
+          } else if (eventType === 'workflow_error' || eventType === 'node_error') {
+            appendRunLog(`错误: ${data.error || '未知错误'}`)
+          } else if (eventType === 'done') {
+            appendRunLog(`状态: ${data.status || 'complete'}`)
           }
-        }
-      }
+        },
+      })
     }
   } catch (error) {
     console.error('执行工作流失败:', error)
@@ -685,14 +664,11 @@ function closeConfigPanel() {
 
 // 保存节点配置
 function saveNodeConfig(nodeId: string, data: Record<string, unknown>) {
-  console.log('saveNodeConfig 被调用', nodeId, data)
   const nodes = getNodes.value
   const node = nodes.find((n: { id: string }) => n.id === nodeId)
   if (node) {
-    console.log('找到节点，更新数据', node)
     // 使用 updateNode 方法更新节点数据，触发响应式更新
     updateNode(nodeId, { data: { ...node.data, ...data } })
-    console.log('节点数据已更新')
   } else {
     console.warn('未找到节点', nodeId)
   }

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from app.api.chat import chat_stream_generator
+from app.api.chat_stream import chat_stream_generator
 from app.models.chat import ChatRequest
 
 

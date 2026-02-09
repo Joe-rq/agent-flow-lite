@@ -16,8 +16,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.core.config import settings
-from app.core.skill_executor import SkillExecutor, format_sse_event, get_skill_executor
-from app.core.skill_loader import SkillLoader, SkillValidationError
+from app.core.skill.skill_executor import SkillExecutor, format_sse_event, get_skill_executor
+from app.core.skill.skill_loader import SkillLoader, SkillValidationError
 from app.models.skill import (
     SkillCreateRequest,
     SkillDetail,

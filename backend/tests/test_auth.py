@@ -64,17 +64,17 @@ class TestEmailNormalization:
     
     async def test_lowercase_email(self):
         """Test email is converted to lowercase."""
-        result = await normalize_email("User@Example.com")
+        result = normalize_email("User@Example.com")
         assert result == "user@example.com"
-    
+
     async def test_strip_whitespace(self):
         """Test whitespace is stripped from email."""
-        result = await normalize_email("  user@example.com  ")
+        result = normalize_email("  user@example.com  ")
         assert result == "user@example.com"
-    
+
     async def test_lowercase_and_strip(self):
         """Test both lowercase and whitespace stripping."""
-        result = await normalize_email("  User@EXAMPLE.com  ")
+        result = normalize_email("  User@EXAMPLE.com  ")
         assert result == "user@example.com"
 
 

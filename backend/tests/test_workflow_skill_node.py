@@ -11,8 +11,8 @@ Tests cover:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.core.workflow_nodes import execute_skill_node
-from app.core.workflow_context import ExecutionContext
+from app.core.workflow.workflow_nodes import execute_skill_node
+from app.core.workflow.workflow_context import ExecutionContext
 
 
 class TestExecuteSkillNode:
@@ -59,7 +59,7 @@ class TestExecuteSkillNode:
         mock_loader = MagicMock()
         mock_loader.get_skill.side_effect = Exception("Skill not found")
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
             events = []
             async for event in execute_skill_node(node, self.ctx, self.get_input):
                 events.append(event)
@@ -100,8 +100,8 @@ class TestExecuteSkillNode:
         mock_executor = MagicMock()
         mock_executor.execute = mock_execute
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 events = []
                 async for event in execute_skill_node(node, self.ctx, self.get_input):
                     events.append(event)
@@ -158,8 +158,8 @@ class TestExecuteSkillNode:
         mock_executor = MagicMock()
         mock_executor.execute = mock_execute
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 async for _ in execute_skill_node(node, self.ctx, self.get_input):
                     pass
 
@@ -208,8 +208,8 @@ class TestExecuteSkillNode:
 
         self.get_input.return_value = "upstream output"
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 async for _ in execute_skill_node(node, self.ctx, self.get_input):
                     pass
 
@@ -240,8 +240,8 @@ class TestExecuteSkillNode:
         mock_executor = MagicMock()
         mock_executor.execute = mock_execute
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 events = []
                 async for event in execute_skill_node(node, self.ctx, self.get_input):
                     events.append(event)
@@ -277,8 +277,8 @@ class TestExecuteSkillNode:
         mock_executor = MagicMock()
         mock_executor.execute = mock_execute
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 events = []
                 async for event in execute_skill_node(node, self.ctx, self.get_input):
                     events.append(event)
@@ -313,8 +313,8 @@ class TestExecuteSkillNode:
         mock_executor = MagicMock()
         mock_executor.execute = mock_execute
 
-        with patch('app.core.workflow_nodes.SkillLoader', return_value=mock_loader):
-            with patch('app.core.workflow_nodes.get_skill_executor', return_value=mock_executor):
+        with patch('app.core.workflow.workflow_nodes.SkillLoader', return_value=mock_loader):
+            with patch('app.core.workflow.workflow_nodes.get_skill_executor', return_value=mock_executor):
                 events = []
                 async for event in execute_skill_node(node, self.ctx, self.get_input):
                     events.append(event)

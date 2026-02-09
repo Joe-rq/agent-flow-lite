@@ -149,7 +149,7 @@
     </div>
 
     <div class="config-footer">
-      <button class="save-btn" @click="() => { console.log('按钮被点击'); handleSave(); }">保存</button>
+      <button class="save-btn" @click="handleSave">保存</button>
       <button class="delete-btn" @click="handleDelete">删除节点</button>
     </div>
   </div>
@@ -244,12 +244,7 @@ const loadKnowledgeBases = async () => {
     }))
   } catch (error) {
     console.error('加载知识库列表失败:', error)
-    // 使用模拟数据作为后备
-    knowledgeBases.value = [
-      { id: 'kb1', name: '产品文档' },
-      { id: 'kb2', name: '用户手册' },
-      { id: 'kb3', name: 'FAQ' }
-    ]
+    knowledgeBases.value = []
   }
 }
 
@@ -371,7 +366,6 @@ const handleClose = () => {
 
 // 保存配置
 const handleSave = () => {
-  console.log('保存按钮被点击', props.nodeId, config.value)
   if (props.nodeId) {
     emit('save', props.nodeId, { ...config.value })
     emit('close')

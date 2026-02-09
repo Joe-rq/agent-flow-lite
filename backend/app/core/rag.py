@@ -11,7 +11,7 @@ import re
 from chromadb.errors import InvalidArgumentError
 from chromadb.api.types import Embedding
 import numpy as np
-from openai import OpenAI
+from openai import AsyncOpenAI
 from llama_index.core import Document as LlamaDocument
 from llama_index.core.node_parser import SentenceSplitter
 
@@ -57,19 +57,19 @@ class SiliconFlowEmbedding:
     def __init__(self, model: str = DEFAULT_EMBEDDING_MODEL):
         s = settings()
         self.model = model
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=s.siliconflow_api_key,
             base_url=s.siliconflow_api_base,
         )
 
-    def get_text_embedding(self, text: str) -> list[float]:
+    async def get_text_embedding(self, text: str) -> list[float]:
         """Get embedding for a single text."""
-        resp = self.client.embeddings.create(model=self.model, input=[text])
+        resp = await self.client.embeddings.create(model=self.model, input=[text])
         return resp.data[0].embedding
 
-    def get_text_embedding_batch(self, texts: list[str]) -> list[list[float]]:
+    async def get_text_embedding_batch(self, texts: list[str]) -> list[list[float]]:
         """Get embeddings for a batch of texts."""
-        resp = self.client.embeddings.create(model=self.model, input=texts)
+        resp = await self.client.embeddings.create(model=self.model, input=texts)
         return [item.embedding for item in resp.data]
 
 
@@ -123,7 +123,7 @@ class RAGPipeline:
 
         return chunks
 
-    def process_document(self, kb_id: str, doc_id: str, file_path: str) -> dict:
+    async def process_document(self, kb_id: str, doc_id: str, file_path: str) -> dict:
         """Process a document: load, chunk, embed, and store."""
         try:
             # Step 1: Load document
@@ -145,7 +145,7 @@ class RAGPipeline:
 
             # Step 4: Embed and store chunks
             texts = [chunk["text"] for chunk in chunks]
-            raw_embeddings = self.embed_model.get_text_embedding_batch(texts)
+            raw_embeddings = await self.embed_model.get_text_embedding_batch(texts)
             embeddings: list[Embedding] = [
                 np.asarray(embedding, dtype=np.float32)
                 for embedding in raw_embeddings
@@ -192,7 +192,7 @@ class RAGPipeline:
                 "message": f"Error processing document: {str(e)}"
             }
 
-    def search(
+    async def search(
         self,
         kb_id: str,
         query: str,
@@ -206,7 +206,7 @@ class RAGPipeline:
             raise ValueError(f"Knowledge base not found: {kb_id}") from e
 
         # Embed query
-        query_embedding = self.embed_model.get_text_embedding(query)
+        query_embedding = await self.embed_model.get_text_embedding(query)
         query_vector: Embedding = np.asarray(query_embedding, dtype=np.float32)
 
         # Query ChromaDB

@@ -6,8 +6,8 @@ from __future__ import annotations
 from collections import deque
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from app.core.workflow_context import ExecutionContext
-from app.core.workflow_nodes import (
+from app.core.workflow.workflow_context import ExecutionContext
+from app.core.workflow.workflow_nodes import (
     execute_condition_node,
     execute_end_node,
     execute_knowledge_node,
@@ -23,9 +23,10 @@ class WorkflowEngine:
 
     def __init__(self, workflow: Workflow):
         self.workflow = workflow
-        self.nodes: Dict[str, dict] = {n["id"]: n for n in workflow.graph_data.nodes}
-        self.edges: List[dict] = workflow.graph_data.edges
+        self.nodes: Dict[str, dict] = {n["id"]: n for n in workflow.graph.graph_data.nodes}
+        self.edges: List[dict] = workflow.graph.graph_data.edges
         self.adjacency = self._build_adjacency()
+        self.last_executed_id: str | None = None
 
     def _build_adjacency(self) -> Dict[str, List[dict]]:
         adjacency: Dict[str, List[dict]] = {node_id: [] for node_id in self.nodes}
@@ -117,6 +118,7 @@ class WorkflowEngine:
                     return
 
             executed.add(node_id)
+            self.last_executed_id = node_id
             node_type = self.nodes[node_id].get("type")
             branch = None
             if node_type == "condition":
@@ -127,7 +129,6 @@ class WorkflowEngine:
                     queue.append(next_id)
 
         final_output = None
-        if executed:
-            last_id = list(executed)[-1]
-            final_output = ctx.step_outputs.get(last_id)
+        if self.last_executed_id:
+            final_output = ctx.step_outputs.get(self.last_executed_id)
         yield {"type": "workflow_complete", "final_output": final_output}

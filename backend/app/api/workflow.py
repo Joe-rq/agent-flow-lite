@@ -20,6 +20,7 @@ from app.models.workflow import (
     WorkflowUpdate,
 )
 from app.core.auth import User, get_current_user
+from app.utils.sse import format_sse_event
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
@@ -205,10 +206,6 @@ async def delete_workflow(workflow_id: str, user: User = Depends(get_current_use
     return None
 
 
-def format_sse(event: str, data: dict) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
-
-
 @router.post("/{workflow_id}/execute")
 async def execute_workflow(workflow_id: str, input_data: dict, user: User = Depends(get_current_user)) -> StreamingResponse:
     initial_input = input_data.get("input", "")
@@ -218,13 +215,13 @@ async def execute_workflow(workflow_id: str, input_data: dict, user: User = Depe
     workflow = await get_workflow(workflow_id)
 
     async def generate() -> AsyncGenerator[str, None]:
-        from app.core.workflow_engine import WorkflowEngine
+        from app.core.workflow.workflow_engine import WorkflowEngine
 
         engine = WorkflowEngine(workflow)
         async for event in engine.execute(initial_input):
             event_type = event.pop("type", "unknown")
-            yield format_sse(event_type, event)
-        yield format_sse("done", {"status": "complete"})
+            yield format_sse_event(event_type, event)
+        yield format_sse_event("done", {"status": "complete"})
 
     return StreamingResponse(
         generate(),

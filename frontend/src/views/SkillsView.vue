@@ -133,29 +133,10 @@ import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
-
-// 类型定义
-interface SkillInput {
-  name: string
-  description?: string
-  required?: boolean
-  default?: string
-}
-
-interface Skill {
-  name: string
-  description?: string
-  inputs: SkillInput[]
-  updatedAt: string
-}
-
-interface SkillApiItem {
-  name: string
-  description?: string
-  inputs?: SkillInput[]
-  updated_at?: string
-  updatedAt?: string
-}
+import { createSSEParser } from '@/utils/sse-parser'
+import { formatDate } from '@/utils/format'
+import { API_BASE } from '@/utils/constants'
+import type { Skill, SkillApiItem } from '@/types'
 
 // 状态
 const router = useRouter()
@@ -168,21 +149,7 @@ const isRunning = ref(false)
 const currentThought = ref('')
 const outputContainer = ref<HTMLElement | null>(null)
 
-const API_BASE = '/api/v1'
 const authStore = useAuthStore()
-
-// 格式化日期
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '未知'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 // 加载技能列表
 async function loadSkills() {
@@ -307,33 +274,23 @@ async function runSkill() {
       throw new Error('No response body')
     }
 
+    const sseParser = createSSEParser()
+
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
 
       const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
 
-      let currentEvent = ''
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          currentEvent = line.slice(7).trim()
-        } else if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6)
-          if (dataStr === '[DONE]') {
-            isRunning.value = false
-            currentThought.value = ''
-            return
-          }
-
-          try {
-            const data = JSON.parse(dataStr)
-            handleSSEEvent(currentEvent, data)
-          } catch {
-            // 忽略解析错误
-          }
-        }
-      }
+      sseParser.parse(chunk, {
+        onEvent: (eventType, data) => {
+          handleSSEEvent(eventType, data)
+        },
+        onDone: () => {
+          isRunning.value = false
+          currentThought.value = ''
+        },
+      })
     }
   } catch (error) {
     console.error('运行技能失败:', error)

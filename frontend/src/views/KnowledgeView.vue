@@ -216,40 +216,9 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import Button from '@/components/ui/Button.vue'
-
-// 类型定义
-interface KnowledgeBase {
-  id: string
-  name: string
-  documentCount: number
-  createdAt: string
-}
-
-interface Document {
-  id: string
-  fileName: string
-  status: 'pending' | 'processing' | 'completed' | 'error'
-  fileSize: number
-  createdAt: string
-}
-
-interface UploadTask {
-  id: string
-  fileName: string
-  fileSize: number
-  progress: number
-  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
-  file: File
-}
-
-interface SearchResult {
-  text: string
-  score: number
-  metadata?: {
-    doc_id?: string
-    chunk_index?: number
-  }
-}
+import { formatDate, formatFileSize } from '@/utils/format'
+import { API_BASE } from '@/utils/constants'
+import type { KnowledgeBase, Document, UploadTask, SearchResult } from '@/types'
 
 // 状态
 const knowledgeBases = ref<KnowledgeBase[]>([])
@@ -269,28 +238,6 @@ const searchError = ref('')
 
 // 轮询定时器
 let pollInterval: number | null = null
-
-// API 基础 URL
-const API_BASE = '/api/v1'
-
-// 格式化日期
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-}
-
-// 格式化文件大小
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
 // 获取上传状态文本
 function getStatusText(status: UploadTask['status']): string {

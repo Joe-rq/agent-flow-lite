@@ -163,11 +163,12 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'
-import Button from '@/components/ui/Button.vue'
+ <script setup lang="ts">
+ import { ref, computed, nextTick, onMounted, watch } from 'vue'
+ import axios from 'axios'
+ import { useAuthStore } from '@/stores/auth'
+ import Button from '@/components/ui/Button.vue'
+ import { createSSEParser } from '@/utils/sse-parser'
 
 // 类型定义
 interface CitationSource {
@@ -380,36 +381,26 @@ async function connectSSE(sessionId: string, message: string) {
   const session = currentSession.value!
   const lastMessage = session.messages[session.messages.length - 1]
 
+  const sseParser = createSSEParser()
+
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
 
     const chunk = decoder.decode(value, { stream: true })
-    const lines = chunk.split('\n')
 
-    let currentEvent = ''
-    for (const line of lines) {
-      if (line.startsWith('event: ')) {
-        currentEvent = line.slice(7).trim()
-      } else if (line.startsWith('data: ')) {
-        const dataStr = line.slice(6)
-        if (dataStr === '[DONE]') {
-          isStreaming.value = false
-          if (lastMessage) {
-            lastMessage.isStreaming = false
-          }
-          currentThought.value = ''
-          return
+    sseParser.parse(chunk, {
+      onEvent: (eventType, data) => {
+        handleSSEEvent(eventType, data, lastMessage)
+      },
+      onDone: () => {
+        isStreaming.value = false
+        if (lastMessage) {
+          lastMessage.isStreaming = false
         }
-
-        try {
-          const data = JSON.parse(dataStr)
-          handleSSEEvent(currentEvent, data, lastMessage)
-        } catch {
-          // 忽略解析错误
-        }
-      }
-    }
+        currentThought.value = ''
+      },
+    })
   }
 
   isStreaming.value = false

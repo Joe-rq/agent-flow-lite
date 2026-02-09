@@ -11,6 +11,12 @@ from datetime import datetime
 from fastapi import HTTPException
 
 from app.api import chat as chat_api
+from app.api.chat_session import (
+    get_session_path,
+    check_session_ownership,
+    save_session,
+    load_session,
+)
 from app.models.user import User, UserRole
 from app.models.chat import ChatRequest, SessionHistory, ChatMessage
 
@@ -40,7 +46,7 @@ def cleanup_sessions():
     yield test_session_ids
     # Cleanup
     for session_id in test_session_ids:
-        session_path = chat_api.get_session_path(session_id)
+        session_path = get_session_path(session_id)
         if session_path.exists():
             session_path.unlink()
 
@@ -54,7 +60,7 @@ class TestCheckSessionOwnership:
             user_id="123"
         )
         user = TestUser.regular(123)
-        assert chat_api.check_session_ownership(session, user) is True
+        assert check_session_ownership(session, user) is True
 
     def test_other_user_cannot_access_session(self):
         session = SessionHistory(
@@ -62,7 +68,7 @@ class TestCheckSessionOwnership:
             user_id="123"
         )
         user = TestUser.regular(456)
-        assert chat_api.check_session_ownership(session, user) is False
+        assert check_session_ownership(session, user) is False
 
     def test_admin_can_access_any_session(self):
         session = SessionHistory(
@@ -70,7 +76,7 @@ class TestCheckSessionOwnership:
             user_id="123"
         )
         admin = TestUser.admin(999)
-        assert chat_api.check_session_ownership(session, admin) is True
+        assert check_session_ownership(session, admin) is True
 
     def test_orphaned_session_accessible_to_all(self):
         """Sessions without user_id are treated as orphaned (backward compatibility)."""
@@ -79,7 +85,7 @@ class TestCheckSessionOwnership:
             user_id=None
         )
         user = TestUser.regular(123)
-        assert chat_api.check_session_ownership(session, user) is True
+        assert check_session_ownership(session, user) is True
 
 
 class TestListSessions:
@@ -104,9 +110,9 @@ class TestListSessions:
             messages=[ChatMessage(role="user", content="Other", timestamp=datetime.utcnow())]
         )
 
-        chat_api.save_session(session1)
-        chat_api.save_session(session2)
-        chat_api.save_session(session3)
+        save_session(session1)
+        save_session(session2)
+        save_session(session3)
         cleanup_sessions.extend(["session-user1-1", "session-user1-2", "session-user2-1"])
 
         user = TestUser.regular(1)
@@ -131,8 +137,8 @@ class TestListSessions:
             messages=[ChatMessage(role="user", content="World", timestamp=datetime.utcnow())]
         )
 
-        chat_api.save_session(session1)
-        chat_api.save_session(session2)
+        save_session(session1)
+        save_session(session2)
         cleanup_sessions.extend(["session-admin-test-1", "session-admin-test-2"])
 
         admin = TestUser.admin(999)
@@ -150,7 +156,7 @@ class TestListSessions:
             user_id=None,
             messages=[ChatMessage(role="user", content="Hello", timestamp=datetime.utcnow())]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("orphan-session")
 
         user = TestUser.regular(123)
@@ -170,7 +176,7 @@ class TestGetSessionHistory:
             user_id="123",
             messages=[ChatMessage(role="user", content="Hello", timestamp=datetime.utcnow())]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("owner-test-session")
 
         user = TestUser.regular(123)
@@ -185,7 +191,7 @@ class TestGetSessionHistory:
             user_id="123",
             messages=[ChatMessage(role="user", content="Hello", timestamp=datetime.utcnow())]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("private-session")
 
         user = TestUser.regular(456)
@@ -201,7 +207,7 @@ class TestGetSessionHistory:
             user_id="123",
             messages=[ChatMessage(role="user", content="Hello", timestamp=datetime.utcnow())]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("admin-access-session")
 
         admin = TestUser.admin(999)
@@ -228,7 +234,7 @@ class TestDeleteSession:
             user_id="123",
             messages=[]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("delete-own-session")
 
         user = TestUser.regular(123)
@@ -236,7 +242,7 @@ class TestDeleteSession:
 
         assert result["status"] == "success"
         # Verify session is deleted
-        assert chat_api.load_session("delete-own-session") is None
+        assert load_session("delete-own-session") is None
 
     @pytest.mark.asyncio
     async def test_non_owner_cannot_delete_session(self, cleanup_sessions):
@@ -245,7 +251,7 @@ class TestDeleteSession:
             user_id="123",
             messages=[]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("protected-session")
 
         user = TestUser.regular(456)
@@ -254,7 +260,7 @@ class TestDeleteSession:
 
         assert exc.value.status_code == 403
         # Verify session still exists
-        assert chat_api.load_session("protected-session") is not None
+        assert load_session("protected-session") is not None
 
     @pytest.mark.asyncio
     async def test_admin_can_delete_any_session(self, cleanup_sessions):
@@ -263,14 +269,14 @@ class TestDeleteSession:
             user_id="123",
             messages=[]
         )
-        chat_api.save_session(session)
+        save_session(session)
         cleanup_sessions.append("admin-delete-session")
 
         admin = TestUser.admin(999)
         result = await chat_api.delete_session("admin-delete-session", admin)
 
         assert result["status"] == "success"
-        assert chat_api.load_session("admin-delete-session") is None
+        assert load_session("admin-delete-session") is None
 
 
 class TestChatCompletionsUserId:
@@ -300,7 +306,7 @@ class TestChatCompletionsUserId:
             user_id="123",
             messages=[]
         )
-        chat_api.save_session(existing_session)
+        save_session(existing_session)
         cleanup_sessions.append("owned-session")
 
         request = ChatRequest(

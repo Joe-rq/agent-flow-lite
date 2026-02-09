@@ -3,13 +3,14 @@ Workflow node execution helpers.
 """
 from __future__ import annotations
 
+import json
 from typing import Any, AsyncGenerator, Callable
 
 from app.core.llm import chat_completion_stream
 from app.core.rag import get_rag_pipeline
-from app.core.skill_executor import get_skill_executor
-from app.core.skill_loader import SkillLoader
-from app.core.workflow_context import ExecutionContext, safe_eval
+from app.core.skill.skill_executor import get_skill_executor
+from app.core.skill.skill_loader import SkillLoader
+from app.core.workflow.workflow_context import ExecutionContext, safe_eval
 
 
 GetInput = Callable[[str, ExecutionContext], Any]
@@ -129,7 +130,7 @@ async def execute_knowledge_node(
 
     try:
         rag_pipeline = get_rag_pipeline()
-        results = rag_pipeline.search(kb_id, query, top_k=5)
+        results = await rag_pipeline.search(kb_id, query, top_k=5)
 
         context_parts = []
         for i, result in enumerate(results[:3], 1):
@@ -267,7 +268,7 @@ async def execute_skill_node(
                     event_type = line[7:].strip()
                 elif line.startswith("data: "):
                     try:
-                        event_data = __import__("json").loads(line[6:])
+                        event_data = json.loads(line[6:])
                     except Exception:
                         event_data = {"content": line[6:]}
 

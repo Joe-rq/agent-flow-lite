@@ -11,7 +11,7 @@ Tests cover:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.core.skill_executor import SkillExecutor, format_sse_event
+from app.core.skill.skill_executor import SkillExecutor, format_sse_event
 
 
 class TestFormatSSEEvent:
@@ -226,7 +226,7 @@ class TestSkillExecutorIntegration:
             yield "Hello"
             yield " World"
 
-        with patch('app.core.skill_executor.chat_completion_stream', mock_stream):
+        with patch('app.core.skill.skill_executor.chat_completion_stream', mock_stream):
             events = []
             async for event in self.executor.execute(skill, inputs):
                 events.append(event)
@@ -256,20 +256,20 @@ class TestSkillExecutorIntegration:
 
         # Mock RAG pipeline
         mock_rag = MagicMock()
-        mock_rag.search.return_value = [
+        mock_rag.search = AsyncMock(return_value=[
             {
                 "text": "AI is artificial intelligence",
                 "metadata": {"doc_id": "doc1", "chunk_index": 0},
                 "score": 0.95
             }
-        ]
+        ])
 
         # Mock the LLM stream
         async def mock_stream(*args, **kwargs):
             yield "AI"
 
         with patch.object(self.executor, '_get_rag_pipeline', return_value=mock_rag):
-            with patch('app.core.skill_executor.chat_completion_stream', mock_stream):
+            with patch('app.core.skill.skill_executor.chat_completion_stream', mock_stream):
                 events = []
                 async for event in self.executor.execute(skill, inputs):
                     events.append(event)
@@ -299,7 +299,7 @@ class TestSkillExecutorIntegration:
             yield "Answer"
 
         with patch.object(self.executor, '_get_rag_pipeline', return_value=mock_rag):
-            with patch('app.core.skill_executor.chat_completion_stream', mock_stream):
+            with patch('app.core.skill.skill_executor.chat_completion_stream', mock_stream):
                 events = []
                 async for event in self.executor.execute(skill, inputs):
                     events.append(event)
@@ -325,7 +325,7 @@ class TestSkillExecutorIntegration:
             yield "Start"
             raise Exception("LLM failed")
 
-        with patch('app.core.skill_executor.chat_completion_stream', mock_stream):
+        with patch('app.core.skill.skill_executor.chat_completion_stream', mock_stream):
             events = []
             async for event in self.executor.execute(skill, inputs):
                 events.append(event)
@@ -357,7 +357,7 @@ class TestSkillExecutorWithSkillDetail:
         async def mock_stream(*args, **kwargs):
             yield "Done"
 
-        with patch('app.core.skill_executor.chat_completion_stream', mock_stream):
+        with patch('app.core.skill.skill_executor.chat_completion_stream', mock_stream):
             events = []
             async for event in self.executor.execute(skill, inputs):
                 events.append(event)

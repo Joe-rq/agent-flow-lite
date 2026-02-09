@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.models.user import AuthToken, User, UserRole
 
 
-async def normalize_email(email: str) -> str:
+def normalize_email(email: str) -> str:
     """Normalize email address: lowercase and strip whitespace."""
     return email.lower().strip()
 
@@ -38,7 +38,7 @@ async def get_or_create_user(
     Returns:
         User: Existing or newly created user
     """
-    normalized_email = await normalize_email(email)
+    normalized_email = normalize_email(email)
     
     # Check for existing active user
     result = await db.execute(
@@ -164,6 +164,36 @@ async def delete_auth_token(
     await db.commit()
     
     return True
+
+
+async def cleanup_expired_tokens(db: AsyncSession) -> int:
+    """
+    Delete all expired authentication tokens.
+    
+    Should be called periodically (e.g., by a scheduled job) to prevent
+    token table bloat.
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        int: Number of expired tokens deleted
+    """
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(AuthToken).where(AuthToken.expires_at < now)
+    )
+    expired_tokens = result.scalars().all()
+    
+    count = 0
+    for token in expired_tokens:
+        await db.delete(token)
+        count += 1
+    
+    if count > 0:
+        await db.commit()
+    
+    return count
 
 
 async def get_current_user(

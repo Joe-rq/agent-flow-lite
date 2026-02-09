@@ -71,7 +71,7 @@ async def login(
         )
     
     # Normalize email
-    normalized_email = await normalize_email(request.email)
+    normalized_email = normalize_email(request.email)
     
     # Get or create user
     user = await get_or_create_user(db, normalized_email)

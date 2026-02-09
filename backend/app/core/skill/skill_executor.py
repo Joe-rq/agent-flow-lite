@@ -202,7 +202,7 @@ class SkillExecutor:
                     rag_pipeline = self._get_rag_pipeline()
                     # Use the first 500 chars of prompt as query for RAG
                     query = substituted_prompt[:500] if len(substituted_prompt) > 500 else substituted_prompt
-                    retrieved_results = rag_pipeline.search(
+                    retrieved_results = await rag_pipeline.search(
                         knowledge_base, query, top_k=5
                     )
 
