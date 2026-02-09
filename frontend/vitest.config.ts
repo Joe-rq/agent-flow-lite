@@ -18,7 +18,7 @@ export default defineConfig({
       }
     },
     maxConcurrency: 5,
-    isolate: false,
+    isolate: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

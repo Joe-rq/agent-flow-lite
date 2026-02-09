@@ -1,45 +1,65 @@
-"""
-Knowledge base storage and helper utilities.
-
-This module provides storage operations, path utilities, and helper functions
-for the knowledge base API. It separates data persistence concerns from HTTP routing.
-"""
+"""Knowledge base storage, path utilities, and task tracking."""
 import json
-import os
 import re
 import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from filelock import FileLock
 
 from app.models.document import DocumentStatus
 
-
-# Task retention period: 30 minutes
 _TASK_RETENTION_SECONDS = 30 * 60
 
 ALLOWED_EXTENSIONS = {".txt", ".md"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-# In-memory task tracking (loaded from disk on module init)
 processing_tasks: dict[str, dict] = {}
 
 
 def _get_project_root() -> Path:
-    """Get the project root directory."""
-    return Path(__file__).parent.parent.parent
+    """Return the backend project root (4 levels up from this file)."""
+    return Path(__file__).parent.parent.parent.parent
 
+
+# ---------------------------------------------------------------------------
+# KB metadata persistence
+# ---------------------------------------------------------------------------
 
 def _get_kb_metadata_file() -> Path:
-    """Get the path to KB metadata file."""
     return _get_project_root() / "data" / "kb_metadata.json"
 
 
+def load_kb_metadata() -> dict:
+    """Load knowledge base metadata from JSON file."""
+    metadata_file = _get_kb_metadata_file()
+    lock = FileLock(str(metadata_file) + ".lock")
+    with lock:
+        if not metadata_file.exists():
+            return {}
+        try:
+            with open(metadata_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
+
+
+def save_kb_metadata(metadata: dict) -> None:
+    """Save knowledge base metadata to JSON file."""
+    metadata_file = _get_kb_metadata_file()
+    metadata_file.parent.mkdir(parents=True, exist_ok=True)
+    lock = FileLock(str(metadata_file) + ".lock")
+    with lock:
+        with open(metadata_file, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Task persistence
+# ---------------------------------------------------------------------------
+
 def _get_tasks_file() -> Path:
-    """Get the path to tasks persistence file."""
     return _get_project_root() / "data" / "processing_tasks.json"
 
 
@@ -73,15 +93,17 @@ def cleanup_old_tasks() -> None:
     now = datetime.now(timezone.utc)
     to_remove = []
     for task_id, task in processing_tasks.items():
-        if task.get("status") in ("completed", "failed"):
-            started_at = task.get("started_at")
-            if started_at:
-                try:
-                    started = datetime.fromisoformat(started_at)
-                    if (now - started).total_seconds() > _TASK_RETENTION_SECONDS:
-                        to_remove.append(task_id)
-                except (ValueError, TypeError):
-                    to_remove.append(task_id)
+        if task.get("status") not in ("completed", "failed"):
+            continue
+        started_at = task.get("started_at")
+        if not started_at:
+            continue
+        try:
+            started = datetime.fromisoformat(started_at)
+            if (now - started).total_seconds() > _TASK_RETENTION_SECONDS:
+                to_remove.append(task_id)
+        except (ValueError, TypeError):
+            to_remove.append(task_id)
     for task_id in to_remove:
         del processing_tasks[task_id]
     save_tasks(processing_tasks)
@@ -114,41 +136,16 @@ def remove_task(task_id: str) -> None:
 processing_tasks = load_tasks()
 
 
-def load_kb_metadata() -> dict:
-    """Load knowledge base metadata from JSON file."""
-    metadata_file = _get_kb_metadata_file()
-    lock = FileLock(str(metadata_file) + ".lock")
-    with lock:
-        if not metadata_file.exists():
-            return {}
-        try:
-            with open(metadata_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            return {}
-
-
-def save_kb_metadata(metadata: dict) -> None:
-    """Save knowledge base metadata to JSON file."""
-    metadata_file = _get_kb_metadata_file()
-    metadata_file.parent.mkdir(parents=True, exist_ok=True)
-    lock = FileLock(str(metadata_file) + ".lock")
-    with lock:
-        with open(metadata_file, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, ensure_ascii=False, indent=2)
-
-
-def get_kb_document_count(kb_id: str) -> int:
-    """Get the number of documents in a knowledge base."""
-    return len(load_documents_metadata(kb_id))
-
+# ---------------------------------------------------------------------------
+# File and document metadata helpers
+# ---------------------------------------------------------------------------
 
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed."""
     return any(filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS)
 
 
-def secure_filename(filename: str) -> str:
+def _secure_filename(filename: str) -> str:
     """Sanitize a filename to prevent path traversal."""
     filename = Path(filename).name
     filename = re.sub(r"[^\w\s\-.]", "", filename)
@@ -160,11 +157,10 @@ def secure_filename(filename: str) -> str:
 def get_upload_path(kb_id: str, filename: str) -> tuple[Path, str]:
     """Get a safe path for saving an uploaded file."""
     safe_kb_id = re.sub(r"[^\w-]", "", kb_id) or "default"
-    project_root = _get_project_root()
-    upload_dir = project_root / "data" / "uploads" / safe_kb_id
+    upload_dir = _get_project_root() / "data" / "uploads" / safe_kb_id
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    safe_name = secure_filename(filename)
+    safe_name = _secure_filename(filename)
     unique_filename = f"{uuid.uuid4().hex[:12]}_{safe_name}"
     full_path = upload_dir / unique_filename
 
@@ -179,8 +175,7 @@ def get_upload_path(kb_id: str, filename: str) -> tuple[Path, str]:
 def get_metadata_path(kb_id: str) -> Path:
     """Get the path for document metadata JSON file."""
     safe_kb_id = re.sub(r"[^\w-]", "", kb_id) or "default"
-    project_root = _get_project_root()
-    metadata_dir = project_root / "data" / "metadata" / safe_kb_id
+    metadata_dir = _get_project_root() / "data" / "metadata" / safe_kb_id
     metadata_dir.mkdir(parents=True, exist_ok=True)
     return metadata_dir / "documents.json"
 
@@ -212,7 +207,7 @@ def update_document_status(
     kb_id: str,
     doc_id: str,
     status: DocumentStatus,
-    error_message: str | None = None
+    error_message: str | None = None,
 ) -> None:
     """Update document status in metadata."""
     all_metadata = load_documents_metadata(kb_id)
@@ -224,18 +219,14 @@ def update_document_status(
         save_documents_metadata(kb_id, all_metadata)
 
 
-def remove_kb_directories(kb_id: str) -> None:
-    """Remove all directories associated with a knowledge base."""
-    project_root = _get_project_root()
-    upload_dir = project_root / "data" / "uploads" / kb_id
-    metadata_dir = project_root / "data" / "metadata" / kb_id
+def get_kb_document_count(kb_id: str) -> int:
+    """Get the number of documents in a knowledge base."""
+    return len(load_documents_metadata(kb_id))
 
-    if upload_dir.exists():
-        shutil.rmtree(upload_dir)
 
-    if metadata_dir.exists():
-        shutil.rmtree(metadata_dir)
-
+# ---------------------------------------------------------------------------
+# KB directory management
+# ---------------------------------------------------------------------------
 
 def validate_kb_id(kb_id: str) -> bool:
     """Validate knowledge base ID format."""
@@ -248,3 +239,12 @@ def get_kb_directories(kb_id: str) -> tuple[Path, Path]:
     upload_dir = project_root / "data" / "uploads" / kb_id
     metadata_dir = project_root / "data" / "metadata" / kb_id
     return upload_dir, metadata_dir
+
+
+def remove_kb_directories(kb_id: str) -> None:
+    """Remove all directories associated with a knowledge base."""
+    upload_dir, metadata_dir = get_kb_directories(kb_id)
+    if upload_dir.exists():
+        shutil.rmtree(upload_dir)
+    if metadata_dir.exists():
+        shutil.rmtree(metadata_dir)

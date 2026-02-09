@@ -1,0 +1,33 @@
+"""Knowledge base core package -- re-exports from submodules."""
+from app.core.knowledge.store import (  # noqa: F401
+    ALLOWED_EXTENSIONS,
+    MAX_FILE_SIZE,
+    add_task,
+    allowed_file,
+    cleanup_old_tasks,
+    get_kb_directories,
+    get_kb_document_count,
+    get_upload_path,
+    load_documents_metadata,
+    load_kb_metadata,
+    processing_tasks,
+    remove_kb_directories,
+    remove_task,
+    save_documents_metadata,
+    save_kb_metadata,
+    update_document_status,
+    update_task,
+    validate_kb_id,
+)
+from app.core.knowledge.processor import (  # noqa: F401
+    InvalidKBIdError,
+    KBNotFoundError,
+    build_document_responses,
+    build_kb_list,
+    create_document_record,
+    create_kb,
+    delete_document_files,
+    delete_kb,
+    process_document_task,
+    start_document_processing,
+)

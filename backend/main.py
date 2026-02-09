@@ -1,6 +1,8 @@
 """
 FastAPI Backend Application
 """
+import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -14,10 +16,28 @@ from app.api.chat import router as chat_router
 from app.api.knowledge import router as knowledge_router
 from app.api.skill import router as skill_router
 from app.api.workflow import router as workflow_router
-from app.core.database import init_db
+from app.core.auth import cleanup_expired_tokens
+from app.core.database import AsyncSessionLocal, init_db
 
 # Load environment variables
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+TOKEN_CLEANUP_INTERVAL = 6 * 3600  # 6 hours
+
+
+async def _periodic_token_cleanup() -> None:
+    """Periodically delete expired authentication tokens."""
+    while True:
+        await asyncio.sleep(TOKEN_CLEANUP_INTERVAL)
+        try:
+            async with AsyncSessionLocal() as db:
+                count = await cleanup_expired_tokens(db)
+                if count > 0:
+                    logger.info("Cleaned up %d expired tokens", count)
+        except Exception:
+            logger.exception("Token cleanup failed")
 
 
 @asynccontextmanager
@@ -25,8 +45,14 @@ async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup: Initialize resources
     await init_db()
+    cleanup_task = asyncio.create_task(_periodic_token_cleanup())
     yield
     # Shutdown: Cleanup resources
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
 
 
 def create_app() -> FastAPI:
