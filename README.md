@@ -1,6 +1,6 @@
 # Agent Flow Lite
 
-一个轻量级、高还原度的智能体编排平台，支持可视化工作流编排、RAG 知识检索和智能对话。
+一个轻量级、高还原度的 AI 智能体编排平台，支持可视化工作流编排、RAG 知识检索、Skill 技能系统和智能对话。
 
 ![Vue 3](https://img.shields.io/badge/Vue%203-4FC08D?logo=vuedotjs&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
