@@ -96,7 +96,10 @@
 
 ### 4.1 前端 (Frontend)
 - **框架:** Vue 3 + Vite + TypeScript (强类型约束)。
-- **UI 方案:** Vue Flow (工作流画布) + 项目内自定义组件与样式（当前未引入 Element Plus）。
+- **UI 方案:** Vue Flow (工作流画布) + 项目内自定义组件与样式。
+- **架构模式:**
+  - **Composable 架构** - 业务逻辑抽取至可复用 composables，按域组织（knowledge/workflow/chat/skills）
+  - **组件拆分** - 页面组件控制在 <=200 行，细粒度子组件按功能域分组
 - **核心逻辑:**
   - 使用 Pinia 管理全局状态。
   - 使用 `EventSource` 处理 SSE 流式响应。

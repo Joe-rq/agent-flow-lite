@@ -11,7 +11,8 @@ docs/
 │   ├── api_docs.md                 # API 接口文档
 │   ├── db_schema.md                # 数据库设计
 │   ├── tech_stack_analysis.md      # 技术栈分析
-│   └── implementation_plan.md      # 实现计划
+│   ├── implementation_plan.md      # 实现计划
+│   └── skill-system-design.md      # Skill 系统技术设计
 │
 ├── testing/         # 测试文档
 │   ├── manual-test-guide.md        # 手动测试指南
@@ -19,7 +20,6 @@ docs/
 │   ├── node-config-test-report.md  # 节点配置测试报告
 │   └── demo_script.md              # 演示脚本
 │
-├── skill-system-design.md          # Skill 系统技术设计
 ├── vibe-coding-guide.html          # Vibe Coding 指南
 ├── README.md                       # 文档总索引（当前文件）
 │
@@ -40,6 +40,7 @@ docs/
 - **db_schema.md** - 数据库表结构和关系设计
 - **tech_stack_analysis.md** - 技术选型分析和决策依据
 - **implementation_plan.md** - 功能实现计划和里程碑
+- **skill-system-design.md** - Skill 系统技术设计（数据模型、API、实现方案）
 
 ### 测试文档 (testing/)
 

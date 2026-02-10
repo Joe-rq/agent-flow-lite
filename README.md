@@ -194,6 +194,7 @@ inputs:
 **前端**
 - Vue 3 + Vite + TypeScript
 - Vue Flow（工作流画布）
+- **Composable 架构** - 逻辑抽取至可复用 composables，大组件拆分至 <=200 行
 - Pinia（状态管理）
 - Axios（HTTP 客户端）
 
@@ -209,9 +210,9 @@ inputs:
 
 ```
 agent-flow-lite/
-├── frontend/              # Vue 3 前端
+├── frontend/              # Vue 3 前端（组件化 + Composable 架构）
 │   ├── src/
-│   │   ├── views/        # 页面组件
+│   │   ├── views/              # 页面组件（已拆分至 <=200 行）
 │   │   │   ├── AdminUsersView.vue     # 用户管理（管理员）
 │   │   │   ├── ChatTerminal.vue       # 对话终端
 │   │   │   ├── KnowledgeView.vue      # 知识库管理
@@ -220,12 +221,48 @@ agent-flow-lite/
 │   │   │   ├── SkillsView.vue         # Skill 列表
 │   │   │   ├── WorkflowEditor.vue     # 工作流编排
 │   │   │   └── ...
-│   │   ├── components/   # 组件
-│   │   │   └── nodes/    # 工作流节点
-│   │   │       ├── SkillNode.vue      # Skill 节点
-│   │   │       └── ...
-│   │   ├── stores/       # 状态管理
-│   │   └── __tests__/    # 测试文件
+│   │   ├── components/         # 组件
+│   │   │   ├── nodes/          # 工作流节点
+│   │   │   │   ├── SkillNode.vue
+│   │   │   │   ├── LLMNode.vue
+│   │   │   │   └── ...
+│   │   │   ├── knowledge/      # 知识库子组件
+│   │   │   │   ├── KbUploadArea.vue
+│   │   │   │   ├── KbSearchTest.vue
+│   │   │   │   └── KbDocumentTable.vue
+│   │   │   ├── workflow/       # 工作流子组件
+│   │   │   │   ├── NodeDrawer.vue
+│   │   │   │   ├── WorkflowRunDialog.vue
+│   │   │   │   └── WorkflowLoadDialog.vue
+│   │   │   ├── chat/           # 对话子组件
+│   │   │   │   ├── ChatSidebar.vue
+│   │   │   │   ├── ChatMessageList.vue
+│   │   │   │   └── ChatInputBar.vue
+│   │   │   ├── skills/         # Skill 子组件
+│   │   │   │   ├── SkillRunDialog.vue
+│   │   │   │   └── SkillPreviewPane.vue
+│   │   │   └── config/         # 节点配置子组件
+│   │   │       ├── LlmNodeConfig.vue
+│   │   │       └── SkillNodeConfig.vue
+│   │   ├── composables/        # 可复用逻辑（按域组织）
+│   │   │   ├── useSSEStream.ts
+│   │   │   ├── useSkillAutocomplete.ts
+│   │   │   ├── useUserAdmin.ts
+│   │   │   ├── knowledge/
+│   │   │   │   └── useKnowledgeApi.ts
+│   │   │   ├── workflow/
+│   │   │   │   ├── useWorkflowCrud.ts
+│   │   │   │   ├── useWorkflowExecution.ts
+│   │   │   │   ├── useNodeDragDrop.ts
+│   │   │   │   └── useNodeConfig.ts
+│   │   │   ├── chat/
+│   │   │   │   ├── useChatSession.ts
+│   │   │   │   └── useChatSSE.ts
+│   │   │   └── skills/
+│   │   │       ├── useSkillRunner.ts
+│   │   │       └── useSkillForm.ts
+│   │   ├── stores/             # Pinia 状态管理
+│   │   └── __tests__/          # 测试文件
 │   └── package.json
 │
 ├── backend/               # FastAPI 后端
