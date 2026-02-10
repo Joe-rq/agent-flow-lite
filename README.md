@@ -21,6 +21,22 @@
 
 ---
 
+## 📸 界面预览
+
+### 登录页
+<img src="assets/screenshots/login.png" alt="登录页" width="800">
+
+### 首页
+<img src="assets/screenshots/home.png" alt="首页" width="800">
+
+### 工作流编辑器
+<img src="assets/screenshots/workflow.png" alt="工作流编辑器" width="800">
+
+### 技能管理
+<img src="assets/screenshots/skill.png" alt="技能管理" width="800">
+
+---
+
 ## 🚀 快速开始
 
 ### 1. 环境准备
