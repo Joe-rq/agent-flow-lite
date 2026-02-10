@@ -1,0 +1,72 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dialog h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.empty-dialog {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.workflow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.workflow-item {
+  padding: 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.workflow-item:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-cyan);
+}
+
+.workflow-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.workflow-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}

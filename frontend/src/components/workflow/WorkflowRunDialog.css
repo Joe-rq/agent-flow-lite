@@ -1,0 +1,85 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.dialog h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.run-dialog {
+  width: 640px;
+}
+
+.run-meta {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.run-input {
+  width: 100%;
+  min-height: 90px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.run-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.run-output,
+.run-logs {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.run-output pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font-size: 12px;
+  color: #111827;
+}
+
+.run-logs ul {
+  padding-left: 18px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #374151;
+}
+
+.run-section-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}

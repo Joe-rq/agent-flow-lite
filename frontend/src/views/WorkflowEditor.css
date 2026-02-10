@@ -1,0 +1,72 @@
+.workflow-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.workflow-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+}
+
+.toolbar-left h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.canvas-container {
+  width: 100%;
+  flex: 1;
+  position: relative;
+  background: #f3f4f6;
+}
+
+:deep(.vue-flow__node) {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+:deep(.vue-flow__handle) {
+  width: 8px;
+  height: 8px;
+  background: #6b7280;
+  border: 2px solid white;
+}
+
+:deep(.vue-flow__handle:hover) {
+  background: #3b82f6;
+}
+
+.btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-secondary);
+}

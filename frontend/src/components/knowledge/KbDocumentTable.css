@@ -1,0 +1,107 @@
+.document-list h3 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+.empty-docs {
+  text-align: center;
+  padding: 40px;
+  color: #95a5a6;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.docs-table {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.docs-header,
+.docs-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 100px;
+  min-width: 680px;
+  gap: 16px;
+  padding: 12px 16px;
+  align-items: center;
+}
+
+.docs-header {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.docs-row {
+  border-top: 1px solid #e9ecef;
+  font-size: 14px;
+}
+
+.docs-row:hover {
+  background-color: #f8f9fa;
+}
+
+.col-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2c3e50;
+}
+
+.col-status {
+  display: flex;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.status-badge.processing {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status-badge.completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.error {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.col-size {
+  color: #7f8c8d;
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.btn-delete:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}

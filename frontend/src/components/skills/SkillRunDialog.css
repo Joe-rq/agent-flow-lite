@@ -1,0 +1,226 @@
+/* 对话框 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.run-dialog {
+  width: 600px;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #2c3e50;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #95a5a6;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-close:hover {
+  background-color: #f5f5f5;
+  color: #e74c3c;
+}
+
+/* 运行输入 */
+.run-inputs {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.required-mark {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #bdc3c7;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #34495e;
+}
+
+.btn-primary:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  border: 1px solid #bdc3c7;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #d5dbdb;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 运行输出 */
+.run-output {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.running-indicator {
+  display: flex;
+  gap: 3px;
+}
+
+.running-indicator .dot {
+  width: 5px;
+  height: 5px;
+  background-color: #3498db;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.running-indicator .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.running-indicator .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-3px);
+  }
+}
+
+.output-content {
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2c3e50;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.thought-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #f3e5f5;
+  border-radius: 6px;
+}
+
+.thought-icon {
+  font-size: 14px;
+}
+
+.thought-text {
+  font-size: 13px;
+  color: #7b1fa2;
+}
+
+.output-text {
+  min-height: 20px;
+}

@@ -1,0 +1,242 @@
+.knowledge-view {
+  padding: 24px;
+  height: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background-color: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #34495e;
+}
+
+.btn-primary:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  border: 1px solid #bdc3c7;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #d5dbdb;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+/* 知识库列表 */
+.kb-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.kb-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kb-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3498db;
+}
+
+.kb-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.kb-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.kb-doc-count {
+  background-color: #ecf0f1;
+  color: #7f8c8d;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.kb-card-footer {
+  color: #95a5a6;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-delete-kb {
+  padding: 4px 10px;
+  background-color: transparent;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.kb-card:hover .btn-delete-kb {
+  opacity: 1;
+}
+
+.btn-delete-kb:hover {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #7f8c8d;
+}
+
+.empty-state p {
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+/* 知识库详情 */
+.kb-detail {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.kb-detail-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.kb-detail-header h2 {
+  margin: 8px 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.kb-meta {
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* 对话框 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--bg-secondary, #ffffff);
+  border-radius: 8px;
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.2));
+}
+
+.dialog h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  color: var(--text-primary, #0f172a);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-primary, #0f172a);
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: var(--bg-primary, #f8fafc);
+  color: var(--text-primary, #0f172a);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent-cyan, #0891b2);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
