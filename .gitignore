@@ -77,3 +77,4 @@ EOF
 # Frontend test results
 frontend/test-results/
 frontend/.sisyphus/
+.claude/settings.local.json
