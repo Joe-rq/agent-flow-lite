@@ -5,7 +5,20 @@ from uuid import uuid4
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.database import AsyncSessionLocal, init_db
 from main import create_app
+
+
+@pytest.fixture(scope='function', autouse=True)
+async def setup_database():
+    """Ensure tables exist before each test and clean up after."""
+    await init_db()
+    yield
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import text
+        await session.execute(text("DELETE FROM auth_tokens"))
+        await session.execute(text("DELETE FROM users"))
+        await session.commit()
 
 
 @pytest.fixture(scope='function')
