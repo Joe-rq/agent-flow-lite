@@ -23,14 +23,14 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
   function getStatusText(status: UploadTask['status']): string {
     const map: Record<string, string> = {
       pending: '等待中', uploading: '上传中', processing: '处理中',
-      completed: '完成', error: '失败',
+      completed: '完成', failed: '失败',
     }
     return map[status] || status
   }
 
   function getDocStatusText(status: Document['status']): string {
     const map: Record<string, string> = {
-      pending: '待处理', processing: '处理中', completed: '已完成', error: '失败',
+      pending: '待处理', processing: '处理中', completed: '已完成', failed: '失败',
     }
     return map[status] || status
   }
@@ -146,7 +146,7 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
       await loadDocuments(selectedKB.value!.id)
       setTimeout(() => { task.status = 'completed' }, 2000)
     } catch (error) {
-      task.status = 'error'
+      task.status = 'failed'
       const err = error as { response?: { data?: { detail?: string } } }
       showError(err.response?.data?.detail || '上传失败')
     }

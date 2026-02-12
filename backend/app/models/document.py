@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DocumentStatus(str, Enum):
@@ -39,8 +39,7 @@ class Document(DocumentBase):
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentResponse(BaseModel):
@@ -53,8 +52,7 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     task_id: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DocumentListResponse(BaseModel):
@@ -70,8 +68,7 @@ class KnowledgeBase(BaseModel):
     document_count: int = Field(default=0, description="Number of documents")
     created_at: datetime = Field(..., description="Creation timestamp")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class KnowledgeBaseCreate(BaseModel):

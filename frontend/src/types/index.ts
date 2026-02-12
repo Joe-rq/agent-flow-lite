@@ -8,6 +8,8 @@ export interface User {
 
 export interface SkillInput {
   name: string
+  label?: string
+  type?: 'text' | 'textarea'
   description?: string
   required?: boolean
   default?: string
@@ -38,7 +40,7 @@ export interface KnowledgeBase {
 export interface Document {
   id: string
   fileName: string
-  status: 'pending' | 'processing' | 'completed' | 'error'
+  status: 'pending' | 'processing' | 'completed' | 'failed'
   fileSize: number
   createdAt: string
 }
@@ -48,7 +50,7 @@ export interface UploadTask {
   fileName: string
   fileSize: number
   progress: number
-  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
+  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'failed'
   file: File
 }
 

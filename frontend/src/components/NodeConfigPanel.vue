@@ -34,6 +34,7 @@
         v-if="nodeType === 'llm'"
         :config="config"
         :skills="skills"
+        @update:config="Object.assign(config, $event)"
         @skill-change="onLLMSkillChange"
       />
 
@@ -89,6 +90,7 @@
         :skills="skills"
         :selected-skill-inputs="selectedSkillInputs"
         :upstream-nodes="upstreamNodes"
+        @update:config="Object.assign(config, $event)"
         @skill-change="onSkillChange"
       />
 

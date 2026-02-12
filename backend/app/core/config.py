@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -51,13 +51,13 @@ class Settings(BaseSettings):
         default="",
         description="Email address for admin user (auto-assigned admin role). Leave empty to disable auto-admin."
     )
-    
-    class Config:
-        """Pydantic configuration."""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "ignore"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 def get_settings() -> Settings:

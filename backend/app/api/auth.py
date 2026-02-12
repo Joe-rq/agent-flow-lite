@@ -6,7 +6,7 @@ Provides register, login, logout, and user info endpoints.
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import (
@@ -46,8 +46,7 @@ class UserResponse(BaseModel):
     is_active: bool = Field(..., description="Whether user is active")
     created_at: str = Field(..., description="Creation timestamp ISO format")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginResponse(BaseModel):

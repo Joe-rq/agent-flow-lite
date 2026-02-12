@@ -35,6 +35,7 @@ from app.core.knowledge.store import (
     load_documents_metadata,
     MAX_FILE_SIZE,
     processing_tasks,
+    validate_kb_id,
 )
 from app.core.rag import EmbeddingDimensionMismatchError, get_rag_pipeline
 from app.models.document import (
@@ -49,6 +50,15 @@ from app.models.document import (
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
 
+def _check_kb_id(kb_id: str) -> None:
+    """Validate kb_id format, raise 400 on failure."""
+    if not validate_kb_id(kb_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid kb_id format: {kb_id}",
+        )
+
+
 @router.post("/{kb_id}/upload")
 async def upload_document(
     kb_id: str,
@@ -57,6 +67,7 @@ async def upload_document(
     user: User = Depends(get_current_user),
 ) -> DocumentResponse:
     """Upload a document and automatically trigger vectorization."""
+    _check_kb_id(kb_id)
     if not file.filename or not allowed_file(file.filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -84,6 +95,7 @@ async def list_documents(
     kb_id: str, user: User = Depends(get_current_user)
 ) -> DocumentListResponse:
     """List all documents in a knowledge base."""
+    _check_kb_id(kb_id)
     documents = build_document_responses(kb_id)
     return DocumentListResponse(documents=documents, total=len(documents))
 
@@ -93,6 +105,7 @@ async def delete_document(
     kb_id: str, doc_id: str, user: User = Depends(get_current_user)
 ) -> JSONResponse:
     """Delete a document from a knowledge base."""
+    _check_kb_id(kb_id)
     try:
         delete_document_files(kb_id, doc_id)
     except KeyError:
@@ -109,6 +122,7 @@ async def process_document(
     user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Process a document: parse, chunk, embed, and store to ChromaDB."""
+    _check_kb_id(kb_id)
     task_id, message, code = start_document_processing(kb_id, doc_id)
     if task_id is None:
         if code == 404:
@@ -138,6 +152,7 @@ async def search_documents(
     user: User = Depends(get_current_user),
 ) -> dict:
     """Search for relevant chunks in a knowledge base."""
+    _check_kb_id(kb_id)
     if not query.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Query cannot be empty.")
     try:
@@ -158,6 +173,7 @@ async def search_documents(
 
 @router.get("/{kb_id}/info")
 async def get_knowledge_base_info(kb_id: str, user: User = Depends(get_current_user)) -> dict:
+    _check_kb_id(kb_id)
     chroma_client = get_chroma_client()
     info = chroma_client.get_collection_info(kb_id)
     doc_count = len(load_documents_metadata(kb_id))

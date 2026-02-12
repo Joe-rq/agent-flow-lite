@@ -18,9 +18,10 @@
             <span v-if="input.required" class="required-mark">*</span>
           </label>
           <input
-            v-model="runInputs[input.name]"
+            :value="runInputs[input.name]"
             type="text"
             :placeholder="input.description || `请输入 ${input.name}`"
+            @input="$emit('update:runInputs', { ...runInputs, [input.name]: ($event.target as HTMLInputElement).value })"
           />
         </div>
       </div>
@@ -81,6 +82,7 @@ const props = defineProps<{
 defineEmits<{
   close: []
   run: []
+  'update:runInputs': [value: Record<string, string>]
 }>()
 
 const outputEl = ref<HTMLElement | null>(null)

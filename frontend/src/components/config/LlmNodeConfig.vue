@@ -5,7 +5,7 @@
     <!-- 技能选择 -->
     <div class="form-group">
       <label>加载技能 (可选)</label>
-      <select v-model="config.skillName" class="form-select" @change="$emit('skill-change')">
+      <select :value="config.skillName" class="form-select" @change="updateField('skillName', ($event.target as HTMLSelectElement).value); $emit('skill-change')">
         <option value="">不使用技能</option>
         <option v-for="skill in skills" :key="skill.name" :value="skill.name">
           {{ skill.name }}
@@ -18,11 +18,12 @@
     <div class="form-group">
       <label>系统提示词</label>
       <textarea
-        v-model="config.systemPrompt"
+        :value="config.systemPrompt"
         rows="6"
         :placeholder="hints?.systemPrompt?.placeholder"
         class="form-textarea"
         :disabled="!!config.skillName"
+        @input="updateField('systemPrompt', ($event.target as HTMLTextAreaElement).value)"
       ></textarea>
       <small v-if="config.skillName" class="form-hint">提示词由技能提供，不可编辑</small>
       <small v-else class="form-hint">{{ hints?.systemPrompt?.hint }}</small>
@@ -32,13 +33,14 @@
     <div class="form-group">
       <label>温度参数: {{ config.temperature }}</label>
       <input
-        v-model.number="config.temperature"
+        :value="config.temperature"
         type="range"
         min="0"
         max="1"
         step="0.1"
         class="form-range"
         :disabled="!!config.skillName"
+        @input="updateField('temperature', Number(($event.target as HTMLInputElement).value))"
       />
       <div class="range-labels">
         <span>精确</span>
@@ -55,14 +57,19 @@ import { fieldHints } from './nodeHelpData'
 
 const hints = fieldHints.llm
 
-defineProps<{
+const props = defineProps<{
   config: NodeConfig
   skills: Skill[]
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'skill-change': []
+  'update:config': [value: NodeConfig]
 }>()
+
+function updateField(field: string, value: unknown) {
+  emit('update:config', { ...props.config, [field]: value })
+}
 </script>
 
 <style src="./node-config-form.css"></style>

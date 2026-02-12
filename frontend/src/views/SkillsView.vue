@@ -70,6 +70,7 @@
       :currentThought="runner.currentThought.value"
       @close="runner.closeRunModal()"
       @run="runner.runSkill()"
+      @update:run-inputs="runner.runInputs.value = $event"
     />
   </div>
 </template>
