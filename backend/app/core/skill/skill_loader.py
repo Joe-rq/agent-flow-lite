@@ -268,18 +268,27 @@ class SkillLoader:
         if not raw_inputs:
             return None
 
-        inputs = [
-            SkillInput(
-                name=inp.get("name", ""),
-                label=inp.get("label", ""),
-                type=inp.get("type", "text"),
-                required=inp.get("required", False),
-                default=inp.get("default"),
-                description=inp.get("description"),
+        inputs = []
+        for inp in raw_inputs:
+            if not isinstance(inp, dict) or not inp.get("name"):
+                continue
+
+            input_name = str(inp.get("name", "")).strip()
+            input_label = str(inp.get("label") or input_name).strip()
+            input_type = inp.get("type") or "text"
+            if input_type not in ("text", "textarea"):
+                input_type = "text"
+
+            inputs.append(
+                SkillInput(
+                    name=input_name,
+                    label=input_label,
+                    type=input_type,
+                    required=inp.get("required", False),
+                    default=inp.get("default"),
+                    description=inp.get("description"),
+                )
             )
-            for inp in raw_inputs
-            if isinstance(inp, dict) and inp.get("name")
-        ]
 
         return inputs if inputs else None
 

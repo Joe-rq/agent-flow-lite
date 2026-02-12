@@ -620,3 +620,28 @@ Just a prompt."""
         skill = loader.create_skill("no-model", content)
 
         assert skill.model is None
+
+    def test_parse_inputs_without_label_or_with_unknown_type(self, loader):
+        content = """---
+name: flexible-inputs
+description: Frontend payload compatible inputs
+inputs:
+  - name: text
+    required: true
+  - name: focus
+    type: string
+    description: scope
+---
+
+Analyze {{text}} with {{focus}}"""
+
+        skill = loader.create_skill("flexible-inputs", content)
+
+        assert skill.inputs is not None
+        assert len(skill.inputs) == 2
+        assert skill.inputs[0].name == "text"
+        assert skill.inputs[0].label == "text"
+        assert skill.inputs[0].type == "text"
+        assert skill.inputs[1].name == "focus"
+        assert skill.inputs[1].label == "focus"
+        assert skill.inputs[1].type == "text"
