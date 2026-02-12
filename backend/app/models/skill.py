@@ -66,6 +66,10 @@ class SkillSummary(BaseModel):
 
     name: str = Field(..., description="Skill name (unique identifier)")
     description: str = Field(..., description="Short description of skill purpose")
+    inputs: Optional[List[SkillInput]] = Field(
+        default=None,
+        description="Input variable definitions",
+    )
     has_inputs: bool = Field(
         default=False,
         description="Whether skill has defined inputs",

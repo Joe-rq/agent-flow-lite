@@ -382,6 +382,7 @@ class SkillLoader:
                     SkillSummary(
                         name=skill.name,
                         description=skill.description,
+                        inputs=skill.inputs,
                         has_inputs=bool(skill.inputs),
                         has_knowledge_base=bool(skill.knowledge_base),
                         updated_at=skill.updated_at,

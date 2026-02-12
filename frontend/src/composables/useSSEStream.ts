@@ -8,14 +8,35 @@ export interface SSEStreamOptions {
   onEvent: (eventType: string, data: SSEEventData) => void
   onDone?: () => void
   onError?: (error: Error) => void
+  signal?: AbortSignal
+}
+
+const SSE_TIMEOUT_MS = 300_000 // 5 min for workflow execution
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    if (body.detail) return String(body.detail)
+  } catch {
+    // response body not JSON, ignore
+  }
+  return `HTTP error! status: ${response.status}`
+}
+
+async function handle401() {
+  const authStore = useAuthStore()
+  authStore.clearAuth()
+  const { default: router } = await import('@/router')
+  router.push('/login')
 }
 
 export function useSSEStream() {
   const isStreaming = ref(false)
+  let abortController: AbortController | null = null
 
   async function fetchSSE(options: SSEStreamOptions): Promise<void> {
     const authStore = useAuthStore()
-    const { url, body, onEvent, onDone, onError } = options
+    const { url, body, onEvent, onDone, onError, signal } = options
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -24,6 +45,12 @@ export function useSSEStream() {
       headers['Authorization'] = `Bearer ${authStore.token}`
     }
 
+    abortController = new AbortController()
+    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
+    const signals = [abortController.signal, timeoutSignal]
+    if (signal) signals.push(signal)
+    const mergedSignal = AbortSignal.any(signals)
+
     isStreaming.value = true
 
     try {
@@ -31,10 +58,13 @@ export function useSSEStream() {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
+        signal: mergedSignal,
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        if (response.status === 401) await handle401()
+        const detail = await readErrorDetail(response)
+        throw new Error(detail)
       }
 
       const reader = response.body?.getReader()
@@ -56,13 +86,19 @@ export function useSSEStream() {
         })
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
       const err = error instanceof Error ? error : new Error(String(error))
       onError?.(err)
       throw err
     } finally {
       isStreaming.value = false
+      abortController = null
     }
   }
 
-  return { isStreaming, fetchSSE }
+  function abort() {
+    abortController?.abort()
+  }
+
+  return { isStreaming, fetchSSE, abort }
 }

@@ -4,6 +4,25 @@ import { createSSEParser } from '@/utils/sse-parser'
 import { API_BASE } from '@/utils/constants'
 import type { Skill } from '@/types'
 
+const SSE_TIMEOUT_MS = 180_000
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    if (body.detail) return String(body.detail)
+  } catch {
+    // not JSON
+  }
+  return `HTTP error! status: ${response.status}`
+}
+
+async function handle401() {
+  const authStore = useAuthStore()
+  authStore.clearAuth()
+  const { default: router } = await import('@/router')
+  router.push('/login')
+}
+
 export function useSkillRunner() {
   const showRunModal = ref(false)
   const runningSkill = ref<Skill | null>(null)
@@ -13,6 +32,7 @@ export function useSkillRunner() {
   const currentThought = ref('')
 
   const authStore = useAuthStore()
+  let abortController: AbortController | null = null
 
   function openRunModal(skill: Skill) {
     runningSkill.value = skill
@@ -78,6 +98,9 @@ export function useSkillRunner() {
     isRunning.value = true
     runOutput.value = ''
     currentThought.value = ''
+    abortController = new AbortController()
+    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
+    const mergedSignal = AbortSignal.any([abortController.signal, timeoutSignal])
 
     try {
       const headers: Record<string, string> = {
@@ -91,10 +114,13 @@ export function useSkillRunner() {
         method: 'POST',
         headers,
         body: JSON.stringify({ inputs: runInputs.value }),
+        signal: mergedSignal,
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        if (response.status === 401) await handle401()
+        const detail = await readErrorDetail(response)
+        throw new Error(detail)
       }
 
       const reader = response.body?.getReader()
@@ -123,13 +149,19 @@ export function useSkillRunner() {
         })
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
       console.error('运行技能失败:', error)
       const err = error as { message?: string }
       runOutput.value += '\n[错误: ' + (err.message || '运行失败') + ']'
     } finally {
       isRunning.value = false
       currentThought.value = ''
+      abortController = null
     }
+  }
+
+  function abort() {
+    abortController?.abort()
   }
 
   return {
@@ -142,5 +174,6 @@ export function useSkillRunner() {
     openRunModal,
     closeRunModal,
     runSkill,
+    abort,
   }
 }

@@ -14,6 +14,25 @@ interface UseChatSSEOptions {
   createNewSession: () => void
 }
 
+const SSE_TIMEOUT_MS = 180_000
+
+async function readErrorDetail(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    if (body.detail) return String(body.detail)
+  } catch {
+    // not JSON
+  }
+  return `HTTP error! status: ${response.status}`
+}
+
+async function handle401() {
+  const authStore = useAuthStore()
+  authStore.clearAuth()
+  const { default: router } = await import('@/router')
+  router.push('/login')
+}
+
 export function useChatSSE(options: UseChatSSEOptions) {
   const {
     currentSession,
@@ -28,6 +47,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
   const isStreaming = ref(false)
   const currentThought = ref('')
   const authStore = useAuthStore()
+  let abortController: AbortController | null = null
 
   function scrollToBottom() {
     nextTick(() => {
@@ -57,6 +77,9 @@ export function useChatSSE(options: UseChatSSEOptions) {
   }
 
   async function connectSSE(sessionId: string, message: string) {
+    abortController = new AbortController()
+    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
+    const mergedSignal = AbortSignal.any([abortController.signal, timeoutSignal])
     const payload = buildChatPayload(sessionId, message)
     const response = await fetch('/api/v1/chat/completions', {
       method: 'POST',
@@ -65,10 +88,13 @@ export function useChatSSE(options: UseChatSSEOptions) {
         Authorization: `Bearer ${authStore.token}`,
       },
       body: JSON.stringify(payload),
+      signal: mergedSignal,
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      if (response.status === 401) await handle401()
+      const detail = await readErrorDetail(response)
+      throw new Error(detail)
     }
 
     const reader = response.body?.getReader()
@@ -103,6 +129,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
     if (lastMessage) lastMessage.isStreaming = false
     currentThought.value = ''
     activeCitation.value = null
+    abortController = null
   }
 
   async function sendMessage(inputMessageRef: Ref<string>) {
@@ -131,6 +158,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
     try {
       await connectSSE(currentSessionId.value, message)
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
       console.error('SSE connection error:', error)
       const err = error as { message?: string }
       const lastMessage = session.messages[session.messages.length - 1]
@@ -146,6 +174,10 @@ export function useChatSSE(options: UseChatSSEOptions) {
     session.updatedAt = Date.now()
   }
 
+  function abort() {
+    abortController?.abort()
+  }
+
   return {
     isStreaming,
     currentThought,
@@ -154,5 +186,6 @@ export function useChatSSE(options: UseChatSSEOptions) {
     sendMessage,
     connectSSE,
     scrollToBottom,
+    abort,
   }
 }

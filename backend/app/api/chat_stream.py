@@ -5,6 +5,7 @@ This module provides async generators that yield SSE events for different
 chat interaction modes including workflow execution, skill invocation,
 and standard chat completion with RAG retrieval.
 """
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -28,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_RAG_TOP_K = 5
+LLM_STREAM_TIMEOUT = 180  # seconds, for single LLM call
+WORKFLOW_TIMEOUT = 300  # seconds, for entire workflow execution
 
 skill_loader = SkillLoader(SKILLS_DIR)
 
@@ -111,19 +114,20 @@ async def skill_stream_generator(
 
         # Execute skill
         full_output = ""
-        async for event in executor.execute(skill, inputs):
-            yield event
+        async with asyncio.timeout(LLM_STREAM_TIMEOUT):
+            async for event in executor.execute(skill, inputs):
+                yield event
 
-            # Accumulate output for session save
-            if event.startswith("event: token"):
-                try:
-                    lines = event.strip().split("\n")
-                    for line in lines:
-                        if line.startswith("data: "):
-                            data = json.loads(line[6:])
-                            full_output += data.get("content", "")
-                except (json.JSONDecodeError, IndexError):
-                    logger.warning("Failed to parse SSE token data")
+                # Accumulate output for session save
+                if event.startswith("event: token"):
+                    try:
+                        lines = event.strip().split("\n")
+                        for line in lines:
+                            if line.startswith("data: "):
+                                data = json.loads(line[6:])
+                                full_output += data.get("content", "")
+                    except (json.JSONDecodeError, IndexError):
+                        logger.warning("Failed to parse SSE token data")
 
         # Save to session history
         if full_output:
@@ -134,6 +138,11 @@ async def skill_stream_generator(
             )
             session.messages.append(assistant_message)
             save_session(session)
+
+    except TimeoutError:
+        logger.warning("Skill execution timed out after %ds", LLM_STREAM_TIMEOUT)
+        yield format_sse_event("error", {"message": f"Skill execution timed out ({LLM_STREAM_TIMEOUT}s)"})
+        yield format_sse_event("done", {"status": "error", "message": "Timeout"})
 
     except Exception as e:
         yield format_sse_event("thought", {
@@ -230,8 +239,15 @@ async def chat_stream_generator(
                 yield format_sse_event("citation", {"sources": sources})
 
         # Step 2: Stream LLM tokens
-        async for token in chat_completion_stream(messages, temperature=0.7):
-            yield format_sse_event("token", {"content": token})
+        async with asyncio.timeout(LLM_STREAM_TIMEOUT):
+            async for token in chat_completion_stream(messages, temperature=0.7):
+                yield format_sse_event("token", {"content": token})
+
+    except TimeoutError:
+        has_error = True
+        error_message = f"LLM response timed out ({LLM_STREAM_TIMEOUT}s)"
+        logger.warning("Chat LLM stream timed out after %ds", LLM_STREAM_TIMEOUT)
+        yield format_sse_event("token", {"content": f"\n[Error: {error_message}]"})
 
     except Exception as e:
         has_error = True
@@ -323,58 +339,64 @@ async def workflow_stream_generator(
     engine = WorkflowEngine(workflow)
     full_output = ""
 
-    async for event in engine.execute(request.message):
-        event_type = event.get("type")
+    try:
+        async with asyncio.timeout(WORKFLOW_TIMEOUT):
+            async for event in engine.execute(request.message):
+                event_type = event.get("type")
 
-        if event_type == "workflow_start":
-            yield format_sse_event("thought", {
-                "type": "workflow",
-                "status": "start",
-                "workflow_name": event.get("workflow_name")
-            })
+                if event_type == "workflow_start":
+                    yield format_sse_event("thought", {
+                        "type": "workflow",
+                        "status": "start",
+                        "workflow_name": event.get("workflow_name")
+                    })
 
-        elif event_type == "node_start":
-            yield format_sse_event("thought", {
-                "type": "node",
-                "status": "start",
-                "node_id": event.get("node_id"),
-                "node_type": event.get("node_type")
-            })
+                elif event_type == "node_start":
+                    yield format_sse_event("thought", {
+                        "type": "node",
+                        "status": "start",
+                        "node_id": event.get("node_id"),
+                        "node_type": event.get("node_type")
+                    })
 
-        elif event_type == "token":
-            content = event.get("content", "")
-            full_output += content
-            yield format_sse_event("token", {"content": content})
+                elif event_type == "token":
+                    content = event.get("content", "")
+                    full_output += content
+                    yield format_sse_event("token", {"content": content})
 
-        elif event_type == "thought":
-            payload = {"type": event.get("type_detail", "info")}
-            payload.update({k: v for k, v in event.items() if k not in ("type", "type_detail")})
-            yield format_sse_event("thought", payload)
+                elif event_type == "thought":
+                    payload = {"type": event.get("type_detail", "info")}
+                    payload.update({k: v for k, v in event.items() if k not in ("type", "type_detail")})
+                    yield format_sse_event("thought", payload)
 
-        elif event_type == "node_complete":
-            yield format_sse_event("thought", {
-                "type": "node",
-                "status": "complete",
-                "node_id": event.get("node_id")
-            })
+                elif event_type == "node_complete":
+                    yield format_sse_event("thought", {
+                        "type": "node",
+                        "status": "complete",
+                        "node_id": event.get("node_id")
+                    })
 
-        elif event_type in ("node_error", "workflow_error"):
-            message = event.get("error", "Unknown workflow error")
-            yield format_sse_event("error", {"message": message})
-            yield format_sse_event("done", {"status": "error", "message": message})
-            return
+                elif event_type in ("node_error", "workflow_error"):
+                    message = event.get("error", "Unknown workflow error")
+                    yield format_sse_event("error", {"message": message})
+                    yield format_sse_event("done", {"status": "error", "message": message})
+                    return
 
-        elif event_type == "workflow_complete":
-            final_output = event.get("final_output", full_output)
-            assistant_message = ChatMessage(
-                role="assistant",
-                content=str(final_output),
-                timestamp=datetime.now(timezone.utc)
-            )
-            session.messages.append(assistant_message)
-            save_session(session)
-            yield format_sse_event("done", {
-                "status": "success",
-                "message": "Workflow completed"
-            })
-            return
+                elif event_type == "workflow_complete":
+                    final_output = event.get("final_output", full_output)
+                    assistant_message = ChatMessage(
+                        role="assistant",
+                        content=str(final_output),
+                        timestamp=datetime.now(timezone.utc)
+                    )
+                    session.messages.append(assistant_message)
+                    save_session(session)
+                    yield format_sse_event("done", {
+                        "status": "success",
+                        "message": "Workflow completed"
+                    })
+                    return
+    except TimeoutError:
+        logger.warning("Workflow execution timed out after %ds", WORKFLOW_TIMEOUT)
+        yield format_sse_event("error", {"message": f"Workflow execution timed out ({WORKFLOW_TIMEOUT}s)"})
+        yield format_sse_event("done", {"status": "error", "message": "Timeout"})
