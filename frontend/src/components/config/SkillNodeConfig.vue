@@ -9,6 +9,7 @@
           {{ skill.name }}
         </option>
       </select>
+      <small class="form-hint">{{ hints?.skillName?.hint }}</small>
     </div>
     <div v-if="selectedSkillInputs.length > 0" class="form-group">
       <label>输入映射</label>
@@ -31,6 +32,9 @@
 
 <script setup lang="ts">
 import type { NodeConfig, Skill, WorkflowNode } from '@/composables/workflow/useNodeConfig'
+import { fieldHints } from './nodeHelpData'
+
+const hints = fieldHints.skill
 
 defineProps<{
   config: NodeConfig

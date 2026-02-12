@@ -28,6 +28,29 @@
   color: #111827;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #3b82f6;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.help-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
 .close-btn {
   width: 28px;
   height: 28px;

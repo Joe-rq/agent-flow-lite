@@ -2,7 +2,10 @@
   <div v-if="visible" class="config-panel">
     <div class="config-header">
       <h3>节点配置</h3>
-      <button class="close-btn" @click="handleClose">×</button>
+      <div class="header-actions">
+        <button v-if="nodeType" class="help-btn" @click="showHelp = true">查看示例</button>
+        <button class="close-btn" @click="handleClose">×</button>
+      </div>
     </div>
 
     <div v-if="nodeId" class="node-id-bar">
@@ -19,9 +22,10 @@
           <input
             v-model="config.inputVariable"
             type="text"
-            placeholder="例如: user_query"
+            :placeholder="hints.start?.inputVariable?.placeholder"
             class="form-input"
           />
+          <small class="form-hint">{{ hints.start?.inputVariable?.hint }}</small>
         </div>
       </div>
 
@@ -44,6 +48,7 @@
               {{ kb.name }}
             </option>
           </select>
+          <small class="form-hint">{{ hints.knowledge?.knowledgeBaseId?.hint }}</small>
         </div>
       </div>
 
@@ -55,9 +60,10 @@
           <input
             v-model="config.outputVariable"
             type="text"
-            placeholder="例如: result"
+            :placeholder="hints.end?.outputVariable?.placeholder"
             class="form-input"
           />
+          <small class="form-hint">{{ hints.end?.outputVariable?.hint }}</small>
         </div>
       </div>
 
@@ -69,10 +75,10 @@
           <textarea
             v-model="config.expression"
             rows="4"
-            placeholder="例如: {{step1.output}} === 'yes'"
+            :placeholder="hints.condition?.expression?.placeholder"
             class="form-textarea"
           ></textarea>
-          <small class="form-hint">使用 &#123;&#123;stepId.output&#125;&#125; 引用其他节点的输出</small>
+          <small class="form-hint">{{ hints.condition?.expression?.hint }}</small>
         </div>
       </div>
 
@@ -96,12 +102,17 @@
       <button class="save-btn" @click="handleSave">保存</button>
       <button class="delete-btn" @click="handleDelete">删除节点</button>
     </div>
+
+    <NodeHelpDialog :visible="showHelp" :node-type="nodeType" @close="showHelp = false" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import LlmNodeConfig from '@/components/config/LlmNodeConfig.vue'
 import SkillNodeConfig from '@/components/config/SkillNodeConfig.vue'
+import NodeHelpDialog from '@/components/config/NodeHelpDialog.vue'
+import { fieldHints as hints } from '@/components/config/nodeHelpData'
 import { useNodeConfig } from '@/composables/workflow/useNodeConfig'
 
 interface Props {
@@ -120,6 +131,8 @@ const emit = defineEmits<{
 
 const { config, knowledgeBases, skills, upstreamNodes, selectedSkillInputs, onSkillChange, onLLMSkillChange } =
   useNodeConfig(props)
+
+const showHelp = ref(false)
 
 const handleClose = () => {
   emit('close')

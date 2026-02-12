@@ -20,11 +20,12 @@
       <textarea
         v-model="config.systemPrompt"
         rows="6"
-        placeholder="输入系统提示词..."
+        :placeholder="hints?.systemPrompt?.placeholder"
         class="form-textarea"
         :disabled="!!config.skillName"
       ></textarea>
       <small v-if="config.skillName" class="form-hint">提示词由技能提供，不可编辑</small>
+      <small v-else class="form-hint">{{ hints?.systemPrompt?.hint }}</small>
     </div>
 
     <!-- 温度参数 -->
@@ -50,6 +51,9 @@
 
 <script setup lang="ts">
 import type { NodeConfig, Skill } from '@/composables/workflow/useNodeConfig'
+import { fieldHints } from './nodeHelpData'
+
+const hints = fieldHints.llm
 
 defineProps<{
   config: NodeConfig

@@ -84,6 +84,30 @@ def normalize_expression(expression: str) -> str:
 _SAFE_NAMES: Dict[str, Any] = {"None": None, "True": True, "False": False}
 
 
+_INCLUDES_RE = re.compile(
+    r"""
+    (                           # group 1: subject before .includes(
+      (?:'[^']*')               #   single-quoted string
+      | (?:"[^"]*")             #   double-quoted string
+      | [\w.]+                  #   identifier / variable
+    )
+    \.includes\(                # .includes(
+    (                           # group 2: argument
+      (?:'[^']*')
+      | (?:"[^"]*")
+      | [\w.]+
+    )
+    \)                          # closing paren
+    """,
+    re.VERBOSE,
+)
+
+
+def _rewrite_includes(expression: str) -> str:
+    """Rewrite JS-style ``A.includes(B)`` to Python ``(B) in (A)``."""
+    return _INCLUDES_RE.sub(r"(\2) in (\1)", expression)
+
+
 def _rewrite_contains(expression: str) -> str:
     in_single = False
     in_double = False
@@ -113,6 +137,7 @@ def _rewrite_contains(expression: str) -> str:
 
 def safe_eval(expression: str) -> bool:
     expr = normalize_expression(expression)
+    expr = _rewrite_includes(expr)
     expr = _rewrite_contains(expr)
     if simple_eval is None:
         import logging
