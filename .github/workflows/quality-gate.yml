@@ -140,6 +140,7 @@ jobs:
             tests/test_chat_citation.py \
             tests/test_chat_scoped.py \
             tests/test_workflow_api.py \
+            tests/integration/test_skill_workflow_roundtrip.py \
             tests/test_knowledge_dimension_mismatch.py
 
   # ============================================================================
