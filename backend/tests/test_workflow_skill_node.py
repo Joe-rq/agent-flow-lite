@@ -11,6 +11,8 @@ Tests cover:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from app.api.skill import SKILLS_DIR as API_SKILLS_DIR
+from app.core.workflow.workflow_nodes import _get_skills_dir
 from app.core.workflow.workflow_nodes import execute_skill_node
 from app.core.workflow.workflow_context import ExecutionContext
 
@@ -323,6 +325,10 @@ class TestExecuteSkillNode:
         citation_events = [e for e in events if e["type"] == "citation"]
         assert len(citation_events) == 1
         assert citation_events[0]["sources"][0]["doc_id"] == "doc1"
+
+
+def test_workflow_skill_dir_matches_skill_api_dir():
+    assert _get_skills_dir().resolve() == API_SKILLS_DIR.resolve()
 
 
 if __name__ == "__main__":
