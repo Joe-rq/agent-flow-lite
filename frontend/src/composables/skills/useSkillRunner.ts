@@ -99,8 +99,7 @@ export function useSkillRunner() {
     runOutput.value = ''
     currentThought.value = ''
     abortController = new AbortController()
-    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
-    const mergedSignal = AbortSignal.any([abortController.signal, timeoutSignal])
+    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
 
     try {
       const headers: Record<string, string> = {
@@ -114,7 +113,7 @@ export function useSkillRunner() {
         method: 'POST',
         headers,
         body: JSON.stringify({ inputs: runInputs.value }),
-        signal: mergedSignal,
+        signal: abortController.signal,
       })
 
       if (!response.ok) {
@@ -154,6 +153,7 @@ export function useSkillRunner() {
       const err = error as { message?: string }
       runOutput.value += '\n[错误: ' + (err.message || '运行失败') + ']'
     } finally {
+      clearTimeout(timeoutId)
       isRunning.value = false
       currentThought.value = ''
       abortController = null

@@ -78,8 +78,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
 
   async function connectSSE(sessionId: string, message: string) {
     abortController = new AbortController()
-    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
-    const mergedSignal = AbortSignal.any([abortController.signal, timeoutSignal])
+    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
     const payload = buildChatPayload(sessionId, message)
     const response = await fetch('/api/v1/chat/completions', {
       method: 'POST',
@@ -88,7 +87,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
         Authorization: `Bearer ${authStore.token}`,
       },
       body: JSON.stringify(payload),
-      signal: mergedSignal,
+      signal: abortController.signal,
     })
 
     if (!response.ok) {
@@ -130,6 +129,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
     currentThought.value = ''
     activeCitation.value = null
     abortController = null
+    clearTimeout(timeoutId)
   }
 
   async function sendMessage(inputMessageRef: Ref<string>) {

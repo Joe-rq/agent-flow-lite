@@ -46,10 +46,10 @@ export function useSSEStream() {
     }
 
     abortController = new AbortController()
-    const timeoutSignal = AbortSignal.timeout(SSE_TIMEOUT_MS)
-    const signals = [abortController.signal, timeoutSignal]
-    if (signal) signals.push(signal)
-    const mergedSignal = AbortSignal.any(signals)
+    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    if (signal) {
+      signal.addEventListener('abort', () => abortController?.abort(), { once: true })
+    }
 
     isStreaming.value = true
 
@@ -58,7 +58,7 @@ export function useSSEStream() {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
-        signal: mergedSignal,
+        signal: abortController.signal,
       })
 
       if (!response.ok) {
@@ -91,6 +91,7 @@ export function useSSEStream() {
       onError?.(err)
       throw err
     } finally {
+      clearTimeout(timeoutId)
       isStreaming.value = false
       abortController = null
     }
