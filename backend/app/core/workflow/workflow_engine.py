@@ -23,8 +23,9 @@ class WorkflowEngine:
 
     def __init__(self, workflow: Workflow):
         self.workflow = workflow
-        self.nodes: Dict[str, dict] = {n["id"]: n for n in workflow.graph.graph_data.nodes}
-        self.edges: List[dict] = workflow.graph.graph_data.edges
+        graph_data = workflow.graph_data
+        self.nodes: Dict[str, dict] = {n["id"]: n for n in graph_data.nodes}
+        self.edges: List[dict] = graph_data.edges
         self.adjacency = self._build_adjacency()
         self.last_executed_id: str | None = None
 
