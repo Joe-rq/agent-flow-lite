@@ -60,7 +60,7 @@ class WorkflowEngine:
         outgoing = self.adjacency.get(node_id, [])
         next_nodes = []
         for edge in outgoing:
-            if branch and edge.get("sourceHandle") != branch:
+            if branch and edge.get("sourceHandle") not in (None, branch):
                 continue
             target = edge.get("target")
             if target:

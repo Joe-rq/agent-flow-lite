@@ -6,6 +6,18 @@ from __future__ import annotations
 from typing import Any, Dict
 import re
 
+InvalidExpression: type[Exception]
+
+
+class _MissingInvalidExpression(Exception):
+    pass
+
+try:
+    from simpleeval import InvalidExpression, simple_eval
+except ImportError:
+    InvalidExpression = _MissingInvalidExpression
+    simple_eval = None
+
 
 # Support node IDs with hyphens (UUIDs like beddf374-3de6-4aba-bd0e-03a49b5baac7)
 TEMPLATE_PATTERN = re.compile(r"\{\{([\w-]+(?:\.[\w-]+)*)\}\}")
@@ -72,20 +84,46 @@ def normalize_expression(expression: str) -> str:
 _SAFE_NAMES: Dict[str, Any] = {"None": None, "True": True, "False": False}
 
 
+def _rewrite_contains(expression: str) -> str:
+    in_single = False
+    in_double = False
+    i = 0
+    lower = expression.lower()
+
+    while i < len(expression):
+        ch = expression[i]
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+
+        if not in_single and not in_double and lower.startswith("contains", i):
+            prev_ok = i == 0 or not expression[i - 1].isalnum()
+            next_idx = i + 8
+            next_ok = next_idx >= len(expression) or not expression[next_idx].isalnum()
+            if prev_ok and next_ok:
+                left = expression[:i].strip()
+                right = expression[next_idx:].strip()
+                if left and right:
+                    return f"({right}) in ({left})"
+        i += 1
+
+    return expression
+
+
 def safe_eval(expression: str) -> bool:
     expr = normalize_expression(expression)
-    try:
-        from simpleeval import simple_eval, InvalidExpression
-
-        return bool(simple_eval(expr, names=_SAFE_NAMES, functions={}))
-
-    except ImportError:
+    expr = _rewrite_contains(expr)
+    if simple_eval is None:
         import logging
         logging.warning(
             f"simpleeval not available, falling back to string comparison for: {expr}"
         )
         lowered = expr.lower()
         return lowered in ("true", "yes", "1")
+
+    try:
+        return bool(simple_eval(expr, names=_SAFE_NAMES, functions={}))
 
     except (TypeError, ValueError, NameError, InvalidExpression):
         import logging
