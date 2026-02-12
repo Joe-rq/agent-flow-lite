@@ -5,6 +5,11 @@
       <button class="close-btn" @click="handleClose">×</button>
     </div>
 
+    <div v-if="nodeId" class="node-id-bar">
+      <span class="node-id-label">节点 ID：</span>
+      <code class="node-id-value">{{ nodeId }}</code>
+    </div>
+
     <div class="config-body">
       <!-- Start 节点配置 -->
       <div v-if="nodeType === 'start'" class="config-section">

@@ -22,6 +22,10 @@ class ExecutionContext:
         self.variables[f"{node_id}.output"] = value
 
     def get_variable(self, var_path: str) -> Any:
+        # First try flat key lookup (e.g. "node-id.output" stored by set_output)
+        if var_path in self.variables:
+            return self.variables[var_path]
+        # Fallback to nested path traversal
         current: Any = self.variables
         for part in var_path.split("."):
             if isinstance(current, dict):

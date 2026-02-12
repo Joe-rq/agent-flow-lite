@@ -71,7 +71,9 @@ class WorkflowEngine:
             "knowledge": lambda n: execute_knowledge_node(
                 n, ctx, self._get_input_for_node
             ),
-            "condition": lambda n: execute_condition_node(n, ctx),
+            "condition": lambda n: execute_condition_node(
+                n, ctx, self._get_input_for_node
+            ),
             "end": lambda n: execute_end_node(n, ctx, self._get_input_for_node),
             "skill": lambda n: execute_skill_node(n, ctx, self._get_input_for_node)
         }
@@ -123,7 +125,7 @@ class WorkflowEngine:
             node_type = self.nodes[node_id].get("type")
             branch = None
             if node_type == "condition":
-                branch = "true" if ctx.step_outputs.get(node_id) else "false"
+                branch = "true" if ctx.variables.get(f"{node_id}.__branch") else "false"
 
             for next_id in self._get_next_nodes(node_id, branch):
                 if next_id not in executed:

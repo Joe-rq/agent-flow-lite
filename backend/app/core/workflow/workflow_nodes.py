@@ -154,7 +154,7 @@ async def execute_knowledge_node(
 
 
 async def execute_condition_node(
-    node: dict, ctx: ExecutionContext
+    node: dict, ctx: ExecutionContext, get_input: GetInput
 ) -> AsyncGenerator[dict, None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "condition"}
@@ -164,7 +164,13 @@ async def execute_condition_node(
     resolved = ctx.resolve_expression(expression)
     result = safe_eval(resolved)
 
-    ctx.set_output(node_id, result)
+    # Store boolean for branch routing (used by engine)
+    ctx.variables[f"{node_id}.__branch"] = result
+    # Pass through predecessor's output so downstream nodes get useful
+    # content instead of a bare boolean.
+    passthrough = get_input(node_id, ctx)
+    ctx.set_output(node_id, passthrough)
+
     yield {
         "type": "thought",
         "type_detail": "condition",
@@ -172,7 +178,7 @@ async def execute_condition_node(
         "expression": resolved,
         "branch": "true" if result else "false"
     }
-    yield {"type": "node_complete", "node_id": node_id, "output": result}
+    yield {"type": "node_complete", "node_id": node_id, "output": passthrough}
 
 
 async def execute_end_node(
