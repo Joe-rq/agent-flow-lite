@@ -4,10 +4,10 @@ Workflow node execution helpers.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any, AsyncGenerator, Callable
 
 from app.core.llm import chat_completion_stream
+from app.core.paths import SKILLS_DIR
 from app.core.rag import get_rag_pipeline
 from app.core.skill.skill_executor import get_skill_executor
 from app.core.skill.skill_loader import SkillLoader
@@ -15,10 +15,6 @@ from app.core.workflow.workflow_context import ExecutionContext, safe_eval
 
 
 GetInput = Callable[[str, ExecutionContext], Any]
-
-
-def _get_skills_dir() -> Path:
-    return Path(__file__).resolve().parents[3] / "data" / "skills"
 
 
 async def execute_start_node(
@@ -51,8 +47,7 @@ async def execute_llm_node(
 
     if skill_name:
         try:
-            skills_dir = _get_skills_dir()
-            skill_loader = SkillLoader(skills_dir)
+            skill_loader = SkillLoader(SKILLS_DIR)
             skill = skill_loader.get_skill(skill_name)
 
             if skill.prompt:
@@ -216,8 +211,7 @@ async def execute_skill_node(
 
     # Load the skill
     try:
-        skills_dir = _get_skills_dir()
-        skill_loader = SkillLoader(skills_dir)
+        skill_loader = SkillLoader(SKILLS_DIR)
         skill = skill_loader.get_skill(skill_name)
     except Exception as exc:
         yield {

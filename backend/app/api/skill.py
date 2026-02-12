@@ -9,13 +9,13 @@ Provides RESTful endpoints for managing skills:
 - DELETE /api/v1/skills/{name} - Delete skill
 - POST /api/v1/skills/{name}/run - Execute skill with SSE streaming
 """
-from pathlib import Path
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.core.config import settings
+from app.core.paths import SKILLS_DIR
 from app.core.skill.skill_executor import SkillExecutor, format_sse_event, get_skill_executor
 from app.core.skill.skill_loader import SkillLoader, SkillValidationError
 from app.models.skill import (
@@ -32,7 +32,6 @@ from app.models.user import UserRole
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 
 # Initialize skill loader with skills directory
-SKILLS_DIR = Path(__file__).parent.parent.parent / "data" / "skills"
 skill_loader = SkillLoader(SKILLS_DIR)
 
 

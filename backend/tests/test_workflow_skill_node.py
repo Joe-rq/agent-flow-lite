@@ -7,12 +7,12 @@ Tests cover:
 - Input mapping from upstream nodes
 - SSE event parsing and forwarding
 - Error handling for missing skills
+- Path consistency between modules
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.api.skill import SKILLS_DIR as API_SKILLS_DIR
-from app.core.workflow.workflow_nodes import _get_skills_dir
+from app.core.paths import SKILLS_DIR
 from app.core.workflow.workflow_nodes import execute_skill_node
 from app.core.workflow.workflow_context import ExecutionContext
 
@@ -327,8 +327,12 @@ class TestExecuteSkillNode:
         assert citation_events[0]["sources"][0]["doc_id"] == "doc1"
 
 
-def test_workflow_skill_dir_matches_skill_api_dir():
-    assert _get_skills_dir().resolve() == API_SKILLS_DIR.resolve()
+def test_skills_dir_points_to_backend_data_skills():
+    """Verify SKILLS_DIR resolves to backend/data/skills."""
+    resolved = SKILLS_DIR.resolve()
+    assert resolved.name == "skills"
+    assert resolved.parent.name == "data"
+    assert resolved.parent.parent.name == "backend"
 
 
 if __name__ == "__main__":

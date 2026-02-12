@@ -8,12 +8,12 @@ and standard chat completion with RAG retrieval.
 import json
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import AsyncGenerator, List, Optional
 
 from fastapi import HTTPException
 
 from app.core.llm import chat_completion_stream
+from app.core.paths import SKILLS_DIR
 from app.core.rag import get_rag_pipeline
 from app.core.skill.skill_loader import SkillLoader, SkillValidationError
 from app.core.skill.skill_executor import get_skill_executor
@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 # Constants
 DEFAULT_RAG_TOP_K = 5
 
-SKILLS_DIR = Path(__file__).parent.parent.parent / "data" / "skills"
 skill_loader = SkillLoader(SKILLS_DIR)
 
 
