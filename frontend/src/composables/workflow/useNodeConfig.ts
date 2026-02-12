@@ -75,7 +75,7 @@ export function useNodeConfig(props: Props) {
 
   const loadKnowledgeBases = async () => {
     try {
-      const response = await axios.get('/api/v1/knowledge/')
+      const response = await axios.get('/api/v1/knowledge')
       let kbList = []
       if (response.data && Array.isArray(response.data.items)) {
         kbList = response.data.items
