@@ -288,23 +288,34 @@ agent-flow-lite/
 │   │   │   ├── admin.py          # 用户管理（管理员）
 │   │   │   ├── auth.py           # 认证授权
 │   │   │   ├── chat.py           # 对话接口
+│   │   │   ├── chat_session.py   # 会话管理
+│   │   │   ├── chat_stream.py    # SSE 流式对话
 │   │   │   ├── knowledge.py      # 知识库接口
 │   │   │   ├── skill.py          # Skill 管理
 │   │   │   └── workflow.py       # 工作流接口
 │   │   ├── core/         # 核心逻辑
 │   │   │   ├── auth.py           # JWT 认证
 │   │   │   ├── chroma_client.py  # ChromaDB 客户端
+│   │   │   ├── config.py         # 配置管理
 │   │   │   ├── database.py       # SQLAlchemy ORM
+│   │   │   ├── knowledge/        # RAG 知识库模块
+│   │   │   │   ├── processor.py   # 文档处理
+│   │   │   │   └── store.py      # 向量存储
 │   │   │   ├── llm.py            # LLM 客户端
+│   │   │   ├── paths.py          # 路径工具
 │   │   │   ├── rag.py            # RAG 管道
-│   │   │   ├── skill_executor.py # Skill 执行器
-│   │   │   ├── skill_loader.py   # Skill 加载器
-│   │   │   └── workflow_engine.py # 工作流引擎
+│   │   │   ├── skill/           # Skill 模块
+│   │   │   │   ├── executor.py   # Skill 执行器
+│   │   │   │   └── loader.py     # Skill 加载器
+│   │   │   └── workflow/        # 工作流引擎模块
+│   │   │       ├── context.py    # 执行上下文
+│   │   │       ├── engine.py     # 工作流引擎
+│   │   │       └── nodes.py      # 节点定义
 │   │   └── models/       # 数据模型
 │   │       ├── skill.py          # Skill 模型
 │   │       ├── user.py           # 用户模型
 │   │       └── ...
-│   ├── tests/            # 测试套件（11 个测试文件）
+│   ├── tests/            # 测试套件（13 个测试文件，含集成测试）
 │   ├── data/             # 运行时数据
 │   │   ├── chromadb/     # 向量数据
 │   │   ├── sessions/     # 会话历史
@@ -417,8 +428,8 @@ Quality Gate 的关键检查是 4 项：
 ### 添加新功能
 
 **添加工作流节点类型**：
-1. 在 `backend/app/core/workflow_nodes.py` 添加执行函数
-2. 在 `backend/app/core/workflow_engine.py` 注册节点类型
+1. 在 `backend/app/core/workflow/nodes.py` 添加执行函数
+2. 在 `backend/app/core/workflow/engine.py` 注册节点类型
 3. 在 `frontend/src/components/nodes/` 创建节点组件
 4. 在 `frontend/src/views/WorkflowEditor.vue` 添加节点配置
 

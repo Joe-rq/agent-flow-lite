@@ -8,6 +8,7 @@
 docs/
 ├── design/          # 设计文档
 │   ├── prd.md                      # 产品需求文档
+│   ├── prd-gap-analysis.md         # PRD 差距分析
 │   ├── api_docs.md                 # API 接口文档
 │   ├── db_schema.md                # 数据库设计
 │   ├── tech_stack_analysis.md      # 技术栈分析
@@ -20,6 +21,9 @@ docs/
 │   ├── node-config-test-report.md  # 节点配置测试报告
 │   └── demo_script.md              # 演示脚本
 │
+├── code-review-fix-plan.md         # 代码审查修复计划
+├── presentation_script.md          # 演示脚本
+├── workflow-tutorials.md           # 工作流教程
 ├── vibe-coding-guide.html          # Vibe Coding 指南
 ├── README.md                       # 文档总索引（当前文件）
 │
@@ -36,6 +40,7 @@ docs/
 包含项目的设计和规划文档：
 
 - **prd.md** - 产品需求文档，定义核心功能和用户故事
+- **prd-gap-analysis.md** - PRD 差距分析，识别实现与需求的偏差
 - **api_docs.md** - API 接口详细说明
 - **db_schema.md** - 数据库表结构和关系设计
 - **tech_stack_analysis.md** - 技术选型分析和决策依据
@@ -50,6 +55,12 @@ docs/
 - **test-manual-checklist.md** - 测试检查清单
 - **node-config-test-report.md** - 工作流节点配置测试结果
 - **demo_script.md** - 产品演示脚本
+
+### 根目录文档
+
+- **code-review-fix-plan.md** - 代码审查问题修复计划
+- **presentation_script.md** - 产品演示脚本
+- **workflow-tutorials.md** - 工作流使用教程
 
 ### 归档文档 (archive/)
 
