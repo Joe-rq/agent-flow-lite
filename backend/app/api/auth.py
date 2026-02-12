@@ -1,30 +1,41 @@
 """
 Authentication API endpoints.
 
-Provides login, logout, and user info endpoints.
+Provides register, login, logout, and user info endpoints.
 """
 import re
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import (
+    authenticate_user,
     create_auth_token,
     delete_auth_token,
     get_current_user,
-    get_or_create_user,
     normalize_email,
+    register_user,
 )
 from app.core.database import get_db
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
+EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+MIN_PASSWORD_LENGTH = 6
+
+
+class RegisterRequest(BaseModel):
+    """Register request model."""
+    email: str = Field(..., description="User email address")
+    password: str = Field(..., description="User password")
+
 
 class LoginRequest(BaseModel):
     """Login request model."""
     email: str = Field(..., description="User email address")
+    password: str = Field(..., description="User password")
 
 
 class UserResponse(BaseModel):
@@ -50,52 +61,95 @@ class LogoutResponse(BaseModel):
     success: bool = Field(..., description="Whether logout was successful")
 
 
+def _validate_email(email: str) -> None:
+    """Validate email format, raise HTTPException on failure."""
+    if not email or not re.match(EMAIL_PATTERN, email.strip()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid email address required"
+        )
+
+
+def _validate_password(password: str) -> None:
+    """Validate password, raise HTTPException on failure."""
+    if not password or len(password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password must be at least {MIN_PASSWORD_LENGTH} characters"
+        )
+
+
+def _user_response(user: User) -> UserResponse:
+    """Build UserResponse from User model."""
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        role=user.role.value,
+        is_active=user.is_active,
+        created_at=user.created_at.isoformat()
+    )
+
+
+@router.post("/register", response_model=LoginResponse)
+async def register(
+    request: RegisterRequest,
+    db: AsyncSession = Depends(get_db)
+) -> LoginResponse:
+    """
+    Register a new user with email and password.
+
+    Returns auth token and user info on success.
+    """
+    _validate_email(request.email)
+    _validate_password(request.password)
+
+    try:
+        user = await register_user(db, request.email, request.password)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered"
+        )
+
+    token = await create_auth_token(db, user.id)
+
+    return LoginResponse(token=token.token, user=_user_response(user))
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ) -> LoginResponse:
     """
-    Login endpoint - creates user if not exists and returns auth token.
-    
-    - **email**: User email address
-    
+    Login with email and password.
+
     Returns auth token and user info.
     """
-    # Validate email
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not request.email or not re.match(email_pattern, request.email.strip()):
+    _validate_email(request.email)
+
+    if not request.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Valid email address required"
+            detail="Password is required"
         )
-    
-    # Normalize email
-    normalized_email = normalize_email(request.email)
-    
-    # Get or create user
-    user = await get_or_create_user(db, normalized_email)
-    
-    # Check if user is active
+
+    user = await authenticate_user(db, request.email, request.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled"
         )
-    
-    # Create auth token
+
     token = await create_auth_token(db, user.id)
-    
-    return LoginResponse(
-        token=token.token,
-        user=UserResponse(
-            id=user.id,
-            email=user.email,
-            role=user.role.value,
-            is_active=user.is_active,
-            created_at=user.created_at.isoformat()
-        )
-    )
+
+    return LoginResponse(token=token.token, user=_user_response(user))
 
 
 @router.get("/me", response_model=UserResponse)

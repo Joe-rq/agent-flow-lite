@@ -24,7 +24,7 @@ interface GraphEdge {
   targetHandle?: string | null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function useWorkflowCrud(
   toObject: () => { nodes: any[]; edges: any[] },
   setNodes: (nodes: any[]) => void,

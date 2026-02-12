@@ -68,7 +68,7 @@ def parse_sse_events(stream_text: str) -> list[tuple[str, dict]]:
 
 @pytest.mark.asyncio
 async def test_skill_create_and_execute_in_workflow_roundtrip(client: AsyncClient) -> None:
-    login_resp = await client.post('/api/v1/auth/login', json={'email': f'rt-{uuid4().hex[:8]}@example.com'})
+    login_resp = await client.post('/api/v1/auth/register', json={'email': f'rt-{uuid4().hex[:8]}@example.com', 'password': 'password123'})
     assert login_resp.status_code == 200
     token = login_resp.json()['token']
     headers = {'Authorization': f'Bearer {token}'}

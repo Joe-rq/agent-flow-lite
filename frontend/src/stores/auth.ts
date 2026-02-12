@@ -18,8 +18,17 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
-  async function login(email: string): Promise<void> {
-    const response = await axios.post('/api/v1/auth/login', { email })
+  async function login(email: string, password: string): Promise<void> {
+    const response = await axios.post('/api/v1/auth/login', { email, password })
+    const { token: newToken, user: userData } = response.data
+
+    token.value = newToken
+    user.value = userData
+    localStorage.setItem('auth_token', newToken)
+  }
+
+  async function register(email: string, password: string): Promise<void> {
+    const response = await axios.post('/api/v1/auth/register', { email, password })
     const { token: newToken, user: userData } = response.data
 
     token.value = newToken
@@ -86,6 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     login,
+    register,
     logout,
     init,
     setUser,

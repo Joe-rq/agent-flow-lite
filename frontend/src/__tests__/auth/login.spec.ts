@@ -60,14 +60,36 @@ describe('Auth Store', () => {
     }
     vi.mocked(axios.post).mockResolvedValueOnce(mockResponse)
 
-    await authStore.login('test@example.com')
+    await authStore.login('test@example.com', 'password123')
 
     expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', {
       email: 'test@example.com',
+      password: 'password123',
     })
     expect(authStore.token).toBe('test-token-123')
     expect(authStore.user).toEqual({ id: '1', email: 'test@example.com', role: 'user' })
     expect(localStorage.getItem('auth_token')).toBe('test-token-123')
+  })
+
+  it('should register successfully and store token', async () => {
+    const authStore = useAuthStore()
+    const mockResponse = {
+      data: {
+        token: 'new-token-456',
+        user: { id: '2', email: 'new@example.com', role: 'user' },
+      },
+    }
+    vi.mocked(axios.post).mockResolvedValueOnce(mockResponse)
+
+    await authStore.register('new@example.com', 'password123')
+
+    expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/register', {
+      email: 'new@example.com',
+      password: 'password123',
+    })
+    expect(authStore.token).toBe('new-token-456')
+    expect(authStore.user).toEqual({ id: '2', email: 'new@example.com', role: 'user' })
+    expect(localStorage.getItem('auth_token')).toBe('new-token-456')
   })
 
   it('should logout successfully and clear state', async () => {
@@ -166,114 +188,83 @@ describe('Refresh-Logout Bug (RED PHASE)', () => {
   })
 
   it('init with cached token should restore both token and user for isAuthenticated=true', async () => {
-    // Setup: Simulate previous login state with token in localStorage
-    // The user was logged in, then refreshed the page
     localStorage.setItem('auth_token', 'cached-token')
 
     const authStore = useAuthStore()
 
-    // Mock /api/v1/auth/me to return user data
     vi.mocked(axios.get).mockResolvedValueOnce({
       data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
     })
 
-    // Expected behavior: init() should restore BOTH token and user
     await authStore.init()
 
-    // User should be restored from /me endpoint
     expect(authStore.token).toBe('cached-token')
     expect(authStore.user).not.toBeNull()
     expect(authStore.isAuthenticated).toBe(true)
   })
 
   it('refresh with valid token but missing user should trigger revalidation via /api/v1/auth/me', async () => {
-    // Setup: Token exists in localStorage (user refreshed page)
     localStorage.setItem('auth_token', 'valid-token')
 
     const authStore = useAuthStore()
 
-    // Mock /api/v1/auth/me to return user data
     const mockMeResponse = {
       data: { id: '1', email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' },
     }
     vi.mocked(axios.get).mockResolvedValueOnce(mockMeResponse)
 
-    // Call init which should trigger revalidation when user is missing
     const result = await authStore.init()
 
     expect(result).toBe(true)
     expect(authStore.token).toBe('valid-token')
-
-    // Should call /api/v1/auth/me to fetch user
     expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
-
-    // User should be restored after revalidation
     expect(authStore.user).not.toBeNull()
     expect(authStore.isAuthenticated).toBe(true)
   })
 
   it('401 from /me should clear auth state and redirect to /login', async () => {
-    // Setup: Token exists in localStorage
     localStorage.setItem('auth_token', 'expired-token')
 
     const authStore = useAuthStore()
 
-    // Mock /api/v1/auth/me to return 401 (token invalid/expired)
     const mock401Error = {
       response: { status: 401 },
     }
     vi.mocked(axios.get).mockRejectedValueOnce(mock401Error)
 
-    // Call init which should handle 401 from /me
     await authStore.init()
 
-    // Should clear auth state on 401
     expect(authStore.token).toBeNull()
     expect(authStore.user).toBeNull()
     expect(localStorage.getItem('auth_token')).toBeNull()
   })
 
   it('network failure during /me should gracefully handle without breaking', async () => {
-    // Setup: Token exists in localStorage
     localStorage.setItem('auth_token', 'valid-token')
 
     const authStore = useAuthStore()
 
-    // Mock /api/v1/auth/me to fail with network error
     vi.mocked(axios.get).mockRejectedValueOnce(new Error('Network Error'))
 
-    // Expected behavior: init() should call /me and handle network failures gracefully
     await authStore.init()
 
-    // Should not throw - network failures should be handled gracefully
     expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
   })
 
   it('isAuthenticated should be false when token exists but user is null', () => {
-    // This test documents the core bug: isAuthenticated requires BOTH token AND user
-    // If only token is restored (current init behavior), user stays null → not authenticated
-
     localStorage.setItem('auth_token', 'some-token')
     const authStore = useAuthStore()
 
-    // Call init which only restores token
     authStore.init()
 
-    // Current buggy state: token is restored, user is still null
     expect(authStore.token).not.toBeNull()
     expect(authStore.user).toBeNull()
-
-    // This is the root cause of refresh-logout
     expect(authStore.isAuthenticated).toBe(false)
   })
 
   it('should call /api/v1/auth/me to restore user after init', async () => {
-    // This test verifies that init() calls /me to restore user
-
-    // Setup: Token exists in localStorage
     localStorage.setItem('auth_token', 'cached-token')
 
-    // Mock /me to return user data
     vi.mocked(axios.get).mockResolvedValueOnce({
       data: { id: 1, email: 'test@example.com', role: 'user', is_active: true, created_at: '2024-01-01' }
     })
@@ -281,7 +272,6 @@ describe('Refresh-Logout Bug (RED PHASE)', () => {
     const authStore = useAuthStore()
     await authStore.init()
 
-    // init() should call /me to fetch user
     expect(axios.get).toHaveBeenCalledWith('/api/v1/auth/me')
   })
 })
@@ -319,15 +309,18 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('智能体编排平台')
   })
 
-  it('should display email input', () => {
+  it('should display email and password inputs', () => {
     const wrapper = mount(LoginView, {
       global: {
         plugins: [router, pinia],
       },
     })
-    const input = wrapper.find('input[type="email"]')
-    expect(input.exists()).toBe(true)
-    expect(input.attributes('placeholder')).toBe('请输入邮箱地址')
+    const emailInput = wrapper.find('input[type="email"]')
+    const passwordInput = wrapper.find('input[type="password"]')
+    expect(emailInput.exists()).toBe(true)
+    expect(passwordInput.exists()).toBe(true)
+    expect(emailInput.attributes('placeholder')).toBe('请输入邮箱地址')
+    expect(passwordInput.attributes('placeholder')).toBe('请输入密码')
   })
 
   it('should display login button', () => {
@@ -336,7 +329,8 @@ describe('LoginView', () => {
         plugins: [router, pinia],
       },
     })
-    expect(wrapper.text()).toContain('登录')
+    const button = wrapper.find('button')
+    expect(button.text()).toContain('登录')
   })
 
   it('should show error for empty email', async () => {
@@ -368,7 +362,23 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('请输入有效的邮箱地址')
   })
 
-  it('should call login API with valid email', async () => {
+  it('should show error for empty password', async () => {
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, pinia],
+      },
+    })
+
+    const emailInput = wrapper.find('input[type="email"]')
+    await emailInput.setValue('test@example.com')
+
+    const button = wrapper.find('button')
+    await button.trigger('click')
+
+    expect(wrapper.text()).toContain('请输入密码')
+  })
+
+  it('should call login API with valid email and password', async () => {
     const mockResponse = {
       data: {
         token: 'test-token',
@@ -383,14 +393,18 @@ describe('LoginView', () => {
       },
     })
 
-    const input = wrapper.find('input[type="email"]')
-    await input.setValue('test@example.com')
+    const emailInput = wrapper.find('input[type="email"]')
+    await emailInput.setValue('test@example.com')
+
+    const passwordInput = wrapper.find('input[type="password"]')
+    await passwordInput.setValue('password123')
 
     const button = wrapper.find('button')
     await button.trigger('click')
 
     expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', {
       email: 'test@example.com',
+      password: 'password123',
     })
   })
 
@@ -411,8 +425,11 @@ describe('LoginView', () => {
       },
     })
 
-    const input = wrapper.find('input[type="email"]')
-    await input.setValue('test@example.com')
+    const emailInput = wrapper.find('input[type="email"]')
+    await emailInput.setValue('test@example.com')
+
+    const passwordInput = wrapper.find('input[type="password"]')
+    await passwordInput.setValue('password123')
 
     const button = wrapper.find('button')
     await button.trigger('click')
@@ -424,7 +441,7 @@ describe('LoginView', () => {
 
   it('should show error message on login failure', async () => {
     vi.mocked(axios.post).mockRejectedValueOnce({
-      response: { data: { detail: '用户不存在' } },
+      response: { data: { detail: 'Invalid email or password' } },
     })
 
     const wrapper = mount(LoginView, {
@@ -433,31 +450,48 @@ describe('LoginView', () => {
       },
     })
 
-    const input = wrapper.find('input[type="email"]')
-    await input.setValue('test@example.com')
+    const emailInput = wrapper.find('input[type="email"]')
+    await emailInput.setValue('test@example.com')
+
+    const passwordInput = wrapper.find('input[type="password"]')
+    await passwordInput.setValue('wrongpassword')
 
     const button = wrapper.find('button')
     await button.trigger('click')
 
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(wrapper.text()).toContain('用户不存在')
+    expect(wrapper.text()).toContain('Invalid email or password')
   })
 
-  it('should display login/register button', () => {
+  it('should toggle between login and register mode', async () => {
     const wrapper = mount(LoginView, {
       global: {
         plugins: [router, pinia],
       },
     })
-    expect(wrapper.text()).toContain('登录 / 注册')
+
+    // Initially in login mode
+    expect(wrapper.text()).toContain('没有账号？')
+    expect(wrapper.text()).toContain('去注册')
+
+    // Toggle to register mode
+    const toggleLink = wrapper.find('.toggle-link')
+    await toggleLink.trigger('click')
+
+    expect(wrapper.text()).toContain('已有账号？')
+    expect(wrapper.text()).toContain('去登录')
+
+    // Should show confirm password field in register mode
+    const passwordInputs = wrapper.findAll('input[type="password"]')
+    expect(passwordInputs.length).toBe(2)
   })
 
-  it('should call login API when button is clicked with valid email', async () => {
+  it('should call register API in register mode', async () => {
     const mockResponse = {
       data: {
-        token: 'test-token',
-        user: { id: '1', email: 'newuser@example.com', role: 'user' },
+        token: 'new-token',
+        user: { id: '2', email: 'new@example.com', role: 'user' },
       },
     }
     vi.mocked(axios.post).mockResolvedValueOnce(mockResponse)
@@ -468,14 +502,23 @@ describe('LoginView', () => {
       },
     })
 
-    const input = wrapper.find('input[type="email"]')
-    await input.setValue('newuser@example.com')
+    // Toggle to register mode
+    const toggleLink = wrapper.find('.toggle-link')
+    await toggleLink.trigger('click')
+
+    const emailInput = wrapper.find('input[type="email"]')
+    await emailInput.setValue('new@example.com')
+
+    const passwordInputs = wrapper.findAll('input[type="password"]')
+    await passwordInputs[0].setValue('password123')
+    await passwordInputs[1].setValue('password123')
 
     const button = wrapper.find('button')
     await button.trigger('click')
 
-    expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/login', {
-      email: 'newuser@example.com',
+    expect(axios.post).toHaveBeenCalledWith('/api/v1/auth/register', {
+      email: 'new@example.com',
+      password: 'password123',
     })
   })
 })

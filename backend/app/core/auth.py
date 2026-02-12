@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
+import bcrypt
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,47 +22,87 @@ def normalize_email(email: str) -> str:
     return email.lower().strip()
 
 
-async def get_or_create_user(
+def hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    """Verify a password against its bcrypt hash."""
+    return bcrypt.checkpw(password.encode(), password_hash.encode())
+
+
+async def register_user(
     db: AsyncSession,
-    email: str
+    email: str,
+    password: str,
 ) -> User:
     """
-    Get existing user or create new user if not exists.
-    
+    Register a new user with email and password.
+
     Auto-assigns admin role if email matches ADMIN_EMAIL setting.
-    Soft-deleted users are treated as non-existent (new user created).
-    
+
     Args:
         db: Database session
         email: User email address
-        
+        password: Plain text password
+
     Returns:
-        User: Existing or newly created user
+        User: Newly created user
+
+    Raises:
+        ValueError: If user with this email already exists
     """
-    normalized_email = normalize_email(email)
-    
-    # Check for existing active user
+    normalized = normalize_email(email)
+
     result = await db.execute(
-        select(User).where(
-            User.email == normalized_email,
-            User.deleted_at.is_(None)
-        )
+        select(User).where(User.email == normalized, User.deleted_at.is_(None))
     )
-    user = result.scalar_one_or_none()
-    
-    if user:
-        return user
-    
-    # Determine role based on admin email
+    if result.scalar_one_or_none():
+        raise ValueError("User with this email already exists")
+
     admin_email = settings().admin_email
-    role = UserRole.ADMIN if normalized_email == admin_email else UserRole.USER
-    
-    # Create new user
-    user = User(email=normalized_email, role=role)
+    role = UserRole.ADMIN if admin_email and normalized == admin_email else UserRole.USER
+
+    user = User(email=normalized, password_hash=hash_password(password), role=role)
     db.add(user)
     await db.commit()
     await db.refresh(user)
-    
+    return user
+
+
+async def authenticate_user(
+    db: AsyncSession,
+    email: str,
+    password: str,
+) -> Optional[User]:
+    """
+    Authenticate a user by email and password.
+
+    Args:
+        db: Database session
+        email: User email address
+        password: Plain text password
+
+    Returns:
+        User if credentials valid, None otherwise
+    """
+    normalized = normalize_email(email)
+
+    result = await db.execute(
+        select(User).where(User.email == normalized, User.deleted_at.is_(None))
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return None
+
+    if not user.password_hash:
+        return None
+
+    if not verify_password(password, user.password_hash):
+        return None
+
     return user
 
 

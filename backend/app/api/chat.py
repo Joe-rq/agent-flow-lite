@@ -160,7 +160,7 @@ async def chat_completions(
                     context_parts.append(f"[{i}] {r['text']}")
                 retrieved_context = "\n\n".join(context_parts)
         except Exception:
-            pass  # Continue without RAG context if retrieval fails
+            logger.warning("RAG retrieval failed for kb_id=%s", request.kb_id, exc_info=True)
 
     system_prompt = build_system_prompt(
         bool(request.kb_id),

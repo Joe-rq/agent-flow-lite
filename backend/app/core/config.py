@@ -48,8 +48,8 @@ class Settings(BaseSettings):
 
     # Admin Configuration
     admin_email: str = Field(
-        default="admin@mail.com",
-        description="Email address for admin user (auto-assigned admin role)"
+        default="",
+        description="Email address for admin user (auto-assigned admin role). Leave empty to disable auto-admin."
     )
     
     class Config:

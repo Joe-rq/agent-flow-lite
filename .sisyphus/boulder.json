@@ -1,14 +1,9 @@
 {
-  "active_plan": "D:\\03resource\\_Projects\\agent-flow-lite\\.sisyphus\\plans\\code-review-fix-v3.md",
-  "started_at": "2026-02-09T06:19:34.120Z",
-  "completed_at": "2026-02-07T23:40:00.000Z",
-  "session_ids": [
-    "ses_3c7581c85ffe6A1IEITi6A18vT",
-    "ses_3c755f5a1ffeE3a8UZZb2Y8a6R",
-    "ses_3c7439b5bffelTT94UavlzlbTL",
-    "ses_3bf4371e8ffegtMBhyNLswJ9bm"
-  ],
-  "plan_name": "week1-quality-baseline",
+  ""active_plan": "",
+  "completed_at": "2026-02-12T12:56:00.000Z",
+  "session_ids": ["ses_3ae2dc411ffezVJ9dRGnj0LHUd", "ses_3ae1aafdffe2riTR2EOIILznN", "ses_3ae1a820fffeQS96crd3Ul0PcK", "ses_3ae16f52dffe8XGfQYQXt6H6oh", "ses_3ae129298ffe9OsNgpoiWPLIIv"],
+  "plan_name": "agents-md-refresh",
   "status": "completed",
-  "agent": "atlas"
+  "agent": "atlas",
+  "previous_plan": "/Users/qrq/Documents/code/05-web-projects/ agent-flow-lite/.sisyphus/plans/agents-md-refresh.md"
 }

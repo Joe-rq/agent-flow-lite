@@ -8,10 +8,15 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
 const isLoading = ref(false)
 const error = ref('')
+const isRegisterMode = ref(false)
 
-async function handleLogin() {
+async function handleSubmit() {
+  error.value = ''
+
   if (!email.value.trim()) {
     error.value = '请输入邮箱地址'
     return
@@ -23,18 +28,44 @@ async function handleLogin() {
     return
   }
 
+  if (!password.value) {
+    error.value = '请输入密码'
+    return
+  }
+
+  if (isRegisterMode.value) {
+    if (password.value.length < 6) {
+      error.value = '密码至少需要 6 个字符'
+      return
+    }
+    if (password.value !== confirmPassword.value) {
+      error.value = '两次输入的密码不一致'
+      return
+    }
+  }
+
   isLoading.value = true
-  error.value = ''
 
   try {
-    await authStore.login(email.value.trim())
+    if (isRegisterMode.value) {
+      await authStore.register(email.value.trim(), password.value)
+    } else {
+      await authStore.login(email.value.trim(), password.value)
+    }
     router.push('/')
   } catch (err) {
     const errorObj = err as { response?: { data?: { detail?: string } } }
-    error.value = errorObj.response?.data?.detail || '登录失败，请重试'
+    error.value = errorObj.response?.data?.detail || (isRegisterMode.value ? '注册失败，请重试' : '登录失败，请重试')
   } finally {
     isLoading.value = false
   }
+}
+
+function toggleMode() {
+  isRegisterMode.value = !isRegisterMode.value
+  error.value = ''
+  password.value = ''
+  confirmPassword.value = ''
 }
 </script>
 
@@ -55,7 +86,31 @@ async function handleLogin() {
             type="email"
             placeholder="请输入邮箱地址"
             :disabled="isLoading"
-            @keydown.enter="handleLogin"
+            @keydown.enter="handleSubmit"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            placeholder="请输入密码"
+            :disabled="isLoading"
+            @keydown.enter="handleSubmit"
+          />
+        </div>
+
+        <div v-if="isRegisterMode" class="form-group">
+          <label for="confirmPassword">确认密码</label>
+          <input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            :disabled="isLoading"
+            @keydown.enter="handleSubmit"
           />
         </div>
 
@@ -67,14 +122,19 @@ async function handleLogin() {
           variant="primary"
           size="lg"
           :disabled="isLoading"
-          @click="handleLogin"
+          @click="handleSubmit"
         >
-          {{ isLoading ? '登录中...' : '登录 / 注册' }}
+          {{ isLoading ? (isRegisterMode ? '注册中...' : '登录中...') : (isRegisterMode ? '注册' : '登录') }}
         </Button>
       </div>
 
       <div class="login-footer">
-        <p>输入邮箱即可开始使用</p>
+        <p>
+          {{ isRegisterMode ? '已有账号？' : '没有账号？' }}
+          <a href="#" class="toggle-link" @click.prevent="toggleMode">
+            {{ isRegisterMode ? '去登录' : '去注册' }}
+          </a>
+        </p>
       </div>
     </div>
   </div>
@@ -184,5 +244,15 @@ async function handleLogin() {
   color: var(--text-muted);
   font-size: var(--text-sm);
   margin: 0;
+}
+
+.toggle-link {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
 }
 </style>

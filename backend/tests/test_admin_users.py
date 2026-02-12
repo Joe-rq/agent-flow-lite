@@ -2,9 +2,8 @@ import pytest
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import create_auth_token, get_or_create_user
+from app.core.auth import create_auth_token, register_user
 from app.core.database import AsyncSessionLocal, init_db
-from app.core.config import settings
 from app.models.user import User, UserRole
 from main import create_app
 
@@ -43,16 +42,19 @@ async def setup_database():
 
 @pytest.fixture(scope="function")
 async def admin_user(db_session: AsyncSession):
-    admin_email = settings().admin_email
-    user = await get_or_create_user(db_session, admin_email)
-    await db_session.commit()
-    return user
+    from app.core import config
+    original = config._settings
+    try:
+        config._settings = config.Settings(admin_email="admin@test.com")
+        user = await register_user(db_session, "admin@test.com", "password123")
+        return user
+    finally:
+        config._settings = original
 
 
 @pytest.fixture(scope="function")
 async def regular_user(db_session: AsyncSession):
-    user = await get_or_create_user(db_session, "user@example.com")
-    await db_session.commit()
+    user = await register_user(db_session, "user@example.com", "password123")
     return user
 
 
@@ -99,8 +101,8 @@ class TestListUsers:
     
     async def test_list_users_excludes_deleted(self, client, admin_token, db_session: AsyncSession):
         from datetime import datetime, timezone
-        
-        user = await get_or_create_user(db_session, "deleted@example.com")
+
+        user = await register_user(db_session, "deleted@example.com", "password123")
         user.deleted_at = datetime.now(timezone.utc)
         await db_session.commit()
         
