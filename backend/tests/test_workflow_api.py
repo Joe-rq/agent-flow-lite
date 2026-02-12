@@ -28,7 +28,7 @@ async def test_list_workflows_handles_mixed_datetime_offsets(monkeypatch: pytest
         }
     }
 
-    monkeypatch.setattr(workflow_api, 'load_workflows', lambda: mock_data)
+    monkeypatch.setattr(workflow_api, 'load_workflows_readonly', lambda: mock_data)
 
     result = await workflow_api.list_workflows(user=MagicMock())
 

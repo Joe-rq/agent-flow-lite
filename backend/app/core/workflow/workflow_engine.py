@@ -37,6 +37,25 @@ class WorkflowEngine:
                 adjacency[source].append(edge)
         return adjacency
 
+    def _has_cycle(self) -> bool:
+        """Detect cycles via DFS coloring (0=white, 1=gray, 2=black)."""
+        color: Dict[str, int] = {nid: 0 for nid in self.nodes}
+
+        def dfs(nid: str) -> bool:
+            color[nid] = 1
+            for edge in self.adjacency.get(nid, []):
+                target = edge.get("target")
+                if not target or target not in color:
+                    continue
+                if color[target] == 1:
+                    return True
+                if color[target] == 0 and dfs(target):
+                    return True
+            color[nid] = 2
+            return False
+
+        return any(color[nid] == 0 and dfs(nid) for nid in self.nodes)
+
     def _get_next_nodes(self, node_id: str, branch: Optional[str]) -> List[str]:
         outgoing = self.adjacency.get(node_id, [])
         next_nodes = []
@@ -101,6 +120,10 @@ class WorkflowEngine:
         ]
         if not start_nodes:
             yield {"type": "workflow_error", "error": "Workflow has no start node"}
+            return
+
+        if self._has_cycle():
+            yield {"type": "workflow_error", "error": "Workflow contains a cycle"}
             return
 
         ctx = ExecutionContext(initial_input)
