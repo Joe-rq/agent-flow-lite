@@ -8,8 +8,12 @@
       <span class="node-desc">{{ expression || '点击配置条件' }}</span>
     </div>
     <Handle type="target" :position="Position.Left" />
-    <Handle type="source" :position="Position.Right" id="true" class="handle-true" />
-    <Handle type="source" :position="Position.Bottom" id="false" class="handle-false" />
+    <Handle type="source" :position="Position.Right" id="true" class="handle-true">
+      <span class="handle-label handle-label-right">True</span>
+    </Handle>
+    <Handle type="source" :position="Position.Bottom" id="false" class="handle-false">
+      <span class="handle-label handle-label-bottom">False</span>
+    </Handle>
   </div>
 </template>
 
@@ -88,5 +92,27 @@ export default {
 
 :deep(.handle-false) {
   border-color: #ef4444;
+}
+
+.handle-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.handle-label-right {
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #10b981;
+}
+
+.handle-label-bottom {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ef4444;
 }
 </style>

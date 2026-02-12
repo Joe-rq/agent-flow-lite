@@ -7,7 +7,8 @@ from typing import Any, Dict
 import re
 
 
-TEMPLATE_PATTERN = re.compile(r"\{\{(\w+(?:\.\w+)*)\}\}")
+# Support node IDs with hyphens (UUIDs like beddf374-3de6-4aba-bd0e-03a49b5baac7)
+TEMPLATE_PATTERN = re.compile(r"\{\{([\w-]+(?:\.[\w-]+)*)\}\}")
 
 
 class ExecutionContext:
@@ -44,19 +45,31 @@ class ExecutionContext:
     def resolve_expression(self, expression: str) -> str:
         def replace_var(match: re.Match[str]) -> str:
             value = self.get_variable(match.group(1))
+            if value is None:
+                return match.group(0)
             return repr(value)
 
         return TEMPLATE_PATTERN.sub(replace_var, expression)
 
 
 def normalize_expression(expression: str) -> str:
+    """Normalize JS-style operators to Python, preserving string literals."""
     expr = expression.strip()
     expr = expr.replace("===", "==").replace("!==", "!=")
     expr = expr.replace("&&", " and ").replace("||", " or ")
-    expr = re.sub(r"\btrue\b", "True", expr, flags=re.IGNORECASE)
-    expr = re.sub(r"\bfalse\b", "False", expr, flags=re.IGNORECASE)
-    expr = re.sub(r"\bcontains\b", "in", expr, flags=re.IGNORECASE)
-    return expr
+
+    # Only replace true/false/contains OUTSIDE of string literals
+    # Split by quoted strings, only transform non-string parts
+    parts = re.split(r'("(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')', expr)
+    for i, part in enumerate(parts):
+        if i % 2 == 0:  # Not inside a string literal
+            part = re.sub(r"\btrue\b", "True", part, flags=re.IGNORECASE)
+            part = re.sub(r"\bfalse\b", "False", part, flags=re.IGNORECASE)
+            parts[i] = part
+    return "".join(parts)
+
+
+_SAFE_NAMES: Dict[str, Any] = {"None": None, "True": True, "False": False}
 
 
 def safe_eval(expression: str) -> bool:
@@ -64,8 +77,7 @@ def safe_eval(expression: str) -> bool:
     try:
         from simpleeval import simple_eval, InvalidExpression
 
-        # Explicit empty whitelists - no implicit imports or function calls
-        return bool(simple_eval(expr, names={}, functions={}))
+        return bool(simple_eval(expr, names=_SAFE_NAMES, functions={}))
 
     except ImportError:
         import logging
@@ -73,7 +85,6 @@ def safe_eval(expression: str) -> bool:
             f"simpleeval not available, falling back to string comparison for: {expr}"
         )
         lowered = expr.lower()
-        # Fallback contract: only boolean literal values are True
         return lowered in ("true", "yes", "1")
 
     except (TypeError, ValueError, NameError, InvalidExpression):

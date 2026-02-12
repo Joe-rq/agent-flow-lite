@@ -97,6 +97,7 @@ async def execute_llm_node(
             "node_id": node_id,
             "error": f"LLM call failed: {exc}"
         }
+        ctx.set_output(node_id, "")
         return
 
     ctx.set_output(node_id, output)
