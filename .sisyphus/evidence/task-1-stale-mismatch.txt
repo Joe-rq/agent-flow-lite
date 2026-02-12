@@ -1,0 +1,97 @@
+# Stale Entries / Mismatches in AGENTS.md
+# Generated: 2026-02-12
+# Comparison: AGENTS.md vs. Current Configurations
+
+================================================================================
+## CRITICAL MISMATCHES
+================================================================================
+
+### 1. Vitest `isolate` Configuration
+
+**AGENTS.md (lines 99-106)**:
+```typescript
+test: {
+  pool: 'forks',
+  poolOptions: { forks: { maxForks: 2, minForks: 1 } },
+  maxConcurrency: 5,
+  isolate: false,  // <-- STALE VALUE
+}
+```
+
+**Reality (frontend/vitest.config.ts:21)**:
+```typescript
+isolate: true,
+```
+
+**Impact**: AGENTS.md documents `isolate: false` but actual config uses `true`.
+This affects test isolation behavior. The CI explicitly passes `--isolate` flag
+(quality-gate.yml:98, :173) which overrides this setting anyway.
+
+**Verdict**: MISMATCH - AGENTS.md needs update to `isolate: true`
+
+================================================================================
+## DOCUMENTATION GAPS (Not in AGENTS.md but exists in configs)
+================================================================================
+
+### 2. Missing Frontend Test Commands
+
+**Missing**: `npm run test:e2e`
+**Source**: frontend/package.json:19
+**Definition**: `npx playwright test src/__tests__/login-verification.spec.ts`
+**CI Usage**: quality-gate.yml:285
+**Note**: This is a valid command used in CI but not documented in AGENTS.md
+
+### 3. Missing Backend CI Test Pattern
+
+**Missing**: Specific pytest file list for critical tests
+**Source**: quality-gate.yml:135-144
+**Definition**:
+```
+uv run pytest -q \
+  tests/test_auth.py \
+  tests/test_chat_citation.py \
+  tests/test_chat_scoped.py \
+  tests/test_workflow_api.py \
+  tests/integration/test_skill_workflow_roundtrip.py \
+  tests/test_knowledge_dimension_mismatch.py
+```
+**Note**: AGENTS.md only shows generic `uv run pytest -q` but CI runs specific
+P0 test files. This is an informational gap, not a functional mismatch.
+
+================================================================================
+## NON-CRITICAL DISCREPANCIES
+================================================================================
+
+### 4. Pytest-xdist Documentation (Misleading)
+
+**AGENTS.md (lines 117-120)**:
+```bash
+✅ uv run pytest -n 2 -q     # Correct - limit workers
+❌ uv run pytest -n auto      # Wrong - uses all cores
+```
+
+**Reality**:
+- `pytest-xdist` is NOT installed in backend/pyproject.toml
+- CI does NOT use `-n` flag (uses plain `uv run pytest -q`)
+- The `-n` documentation is theoretical guidance, not current practice
+
+**Impact**: Documentation suggests xdist usage pattern but it's not actually
+configured or used. This is misleading but not broken.
+
+**Verdict**: STALE DOCUMENTATION - either install xdist and use it, or remove
+the -n guidance from AGENTS.md
+
+================================================================================
+## SUMMARY
+================================================================================
+
+| Issue Type          | Count | Resolution Required |
+|---------------------|------|----------------------|
+| Critical Mismatch   | 1    | Update `isolate: false` → `true` |
+| Missing Commands    | 2    | Add `test:e2e`, CI test pattern |
+| Misleading Docs     | 1    | Remove or activate xdist guidance |
+
+**Priority Actions**:
+1. Fix `isolate` mismatch (AGENTS.md line 105)
+2. Decide on pytest-xdist (install it or remove -n documentation)
+3. Optionally document `test:e2e` command

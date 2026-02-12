@@ -1,0 +1,101 @@
+# Command/Style Source Matrix
+# Generated: 2026-02-12
+# Purpose: Authoritative mapping of commands to their source of truth
+
+================================================================================
+## FRONTEND COMMANDS
+Source: frontend/package.json:6-20
+================================================================================
+
+| Command            | Script Definition                  | Source Line |
+|--------------------|-----------------------------------|-------------|
+| npm install        | (standard npm)                    | implicit    |
+| npm run dev        | vite                              | :7          |
+| npm run build      | run-p type-check "build-only {@}" -- | :8        |
+| npm run preview    | vite preview                      | :9          |
+| npm run build-only | vite build                        | :10         |
+| npm run type-check | vue-tsc --build                   | :11         |
+| npm run lint       | run-s lint:*                      | :12         |
+| npm run lint:oxlint| oxlint . --fix                    | :13         |
+| npm run lint:eslint| eslint . --fix --cache            | :14         |
+| npm run format     | prettier --write --experimental-cli src/ | :15    |
+| npm run test       | vitest run                        | :16         |
+| npm run test:watch | vitest                            | :17         |
+| npm run test:ui    | vitest --ui                       | :18         |
+| npm run test:e2e   | npx playwright test src/__tests__/login-verification.spec.ts | :19 |
+
+================================================================================
+## BACKEND COMMANDS
+Source: backend/pyproject.toml:29-42
+================================================================================
+
+| Command                        | Definition                         | Source Line |
+|--------------------------------|------------------------------------|-------------|
+| uv venv                        | (standard uv)                      | implicit    |
+| uv pip install -e .            | (standard uv pip)                  | implicit    |
+| uv run uvicorn main:app --reload | (standard uvicorn)               | implicit    |
+| uv run pytest -q               | pytest with -q (quiet mode)       | :40         |
+| uv run pytest tests/test_smoke.py -q | specific file with -q         | AGENTS.md:41 (derived) |
+| uv run pytest -k "citation" -q | pattern match with -q             | AGENTS.md:41 (derived) |
+
+Note: Pytest config in pyproject.toml:36-41:
+  testpaths = ["tests"]
+  python_files = ["test_*.python"]
+  pythonpath = ["."]
+  addopts = "-q"
+  asyncio_mode = "auto"
+
+================================================================================
+## CI TEST PATTERNS
+Source: .github/workflows/quality-gate.yml
+================================================================================
+
+| Context              | Command                                                                 | Source Line |
+|---------------------|-------------------------------------------------------------------------|-------------|
+| Frontend P0 tests   | npm run test -- --run --isolate src/__tests__/App.spec.ts src/__tests__/views/ChatTerminal.spec.ts src/__tests__/auth/login.spec.ts | :95-101 |
+| Frontend full tests | npm run test -- --run --isolate                                       | :173        |
+| Backend P0 tests    | uv run pytest -q tests/test_auth.py tests/test_chat_citation.py tests/test_chat_scoped.py tests/test_workflow_api.py tests/integration/test_skill_workflow_roundtrip.py tests/test_knowledge_dimension_mismatch.py | :135-144 |
+| Backend full tests  | uv run pytest -q                                                       | :218        |
+| Backend deps install| uv sync --group dev                                                    | :133        |
+
+================================================================================
+## VITEST CONFIGURATION
+Source: frontend/vitest.config.ts:7-26
+================================================================================
+
+| Setting           | Value                    | Source Line |
+|-------------------|--------------------------|-------------|
+| environment       | jsdom                    | :8          |
+| globals           | true                     | :9          |
+| include           | src/**/*.{test,spec}.{js,ts,jsx,tsx} | :10 |
+| exclude           | src/__tests__/login-verification.spec.ts, node_modules/, e2e/ | :11 |
+| pool              | forks                    | :13         |
+| maxForks          | 2                        | :16         |
+| minForks          | 1                        | :17         |
+| maxConcurrency    | 5                        | :20         |
+| isolate           | true                     | :21         |
+| coverage provider | v8                       | :23         |
+
+================================================================================
+## AGENTS.md COMMAND REFERENCES
+================================================================================
+
+| AGENTS.md Section          | Documented Command                              | Match? |
+|---------------------------|-------------------------------------------------|--------|
+| Lines 22-31 (Frontend)   | npm install, npm run dev, npm run build, etc.   | ✅ MATCH |
+| Lines 36-42 (Backend)     | uv venv, uv pip install -e ., uv run pytest -q  | ✅ MATCH |
+| Lines 95-107 (Vitest cfg) | pool: 'forks', maxForks: 2, isolate: false     | ❌ MISMATCH (isolate) |
+| Lines 117-120 (Pytest)    | uv run pytest -n 2 -q                          | ⚠️ PARTIAL (n2 not used in CI) |
+
+================================================================================
+## NOTES
+================================================================================
+
+1. Backend pytest-xdist usage: AGENTS.md shows `-n 2` but CI does NOT use xdist
+   workers (uses default single-worker pytest with -q flag). The `-n` flag would
+   require `pytest-xdist` to be installed, which is NOT in pyproject.toml dev
+   dependencies. This is a documentation-to-reality gap but not a functional
+   mismatch since xdist is not installed.
+
+2. Frontend test:e2e command: AGENTS.md does not document this command, but it
+   exists in package.json:19 and is used in CI quality-gate.yml:285.

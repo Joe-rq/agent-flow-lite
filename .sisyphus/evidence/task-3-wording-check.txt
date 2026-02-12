@@ -1,0 +1,32 @@
+# Task 3: AGENTS.md Wording Check for Cursor/Copilot References
+
+## Verification Result: PASS
+
+### Check Performed
+- Searched AGENTS.md for references to Cursor and Copilot rule files
+- Specifically checked for mentions of:
+  - `.cursorrules`
+  - `.cursor/rules/`
+  - `.github/copilot-instructions.md`
+  - "Cursor rules"
+  - "Copilot instructions"
+
+### Finding
+**NO false claims found.** AGENTS.md does NOT claim these files exist.
+
+The document accurately describes repository guidelines without referencing optional rule files that are not present. Wording is appropriate and does not assume existence of Cursor/Copilot configuration files.
+
+### AGENTS.md Content Analysis
+AGENTS.md contains:
+- Repository overview
+- Environment requirements
+- Commands (Frontend/Backend)
+- Code style guidelines
+- Test resource constraints
+- Critical implementation notes
+- Repository-specific notes
+
+None of these sections falsely reference or depend on Cursor/Copilot rule files.
+
+## Conclusion
+AGENTS.md wording is correct and consistent with the actual state (rule files are absent).

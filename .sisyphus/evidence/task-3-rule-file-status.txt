@@ -1,0 +1,19 @@
+# Task 3: Optional Rule-File Status Report
+
+## Rule File Existence Status
+
+| File/Directory | Status | Verification Command |
+|----------------|--------|----------------------|
+| `.cursorrules` | ABSENT | `test -f .cursorrules && echo "EXISTS" \|\| echo "ABSENT"` |
+| `.cursor/rules/` | ABSENT | `test -d .cursor/rules/ && echo "EXISTS" \|\| echo "ABSENT"` |
+| `.github/copilot-instructions.md` | ABSENT | `test -f .github/copilot-instructions.md && echo "EXISTS" \|\| echo "ABSENT"` |
+
+## Summary
+
+All three optional Cursor/Copilot rule files are ABSENT in this repository.
+
+- No `.cursorrules` file at root
+- No `.cursor/rules/` directory
+- No `.github/copilot-instructions.md` file
+
+This is the expected state. AGENTS.md does not reference or depend on these files.

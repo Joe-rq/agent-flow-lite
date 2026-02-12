@@ -1,0 +1,89 @@
+# Task 2: Section Coverage Report
+# Generated: 2026-02-12
+# Purpose: Verify AGENTS.md includes all required sections
+
+================================================================================
+## REQUIRED SECTIONS CHECKLIST
+================================================================================
+
+| Section | Required | Status | AGENTS.md Location |
+|---------|----------|--------|-------------------|
+| Repository Overview | Yes | ✅ PRESENT | Lines 3-6 |
+| Environment Requirements | Yes | ✅ PRESENT | Lines 8-11 |
+| Frontend Command Matrix | Yes | ✅ PRESENT | Lines 17-31 |
+| Backend Command Matrix | Yes | ✅ PRESENT | Lines 33-43 |
+| Single-Test Examples | Yes | ✅ PRESENT | Lines 29, 41-42 |
+| Code Style (General) | Yes | ✅ PRESENT | Lines 45-52 |
+| Code Style (Frontend) | Yes | ✅ PRESENT | Lines 54-68 |
+| Code Style (Backend) | Yes | ✅ PRESENT | Lines 70-84 |
+| Test Resource Constraints | Yes | ✅ PRESENT | Lines 86-104 |
+| CI Post-Push Checks | Yes | ✅ PRESENT | Lines 106-115 |
+| Critical Implementation Notes | Yes | ✅ PRESENT | Lines 117-146 |
+| Repository-Specific Notes | Yes | ✅ PRESENT | Lines 148-153 |
+| When in Doubt | Yes | ✅ PRESENT | Lines 155-160 |
+
+================================================================================
+## SINGLE-TEST COMMANDS VERIFICATION
+================================================================================
+
+| Command | Pattern | Status |
+|---------|---------|--------|
+| Frontend single file | `npx vitest run src/__tests__/App.spec.ts` | ✅ Line 29 |
+| Frontend pattern | `npx vitest run -t "test name"` | ✅ Line 30 |
+| Backend single file | `uv run pytest tests/test_smoke.py -q` | ✅ Line 41 |
+| Backend pattern | `uv run pytest -k "citation" -q` | ✅ Line 42 |
+
+================================================================================
+## VITEST ISOLATE FIX VERIFICATION
+================================================================================
+
+| Check | Before | After | Status |
+|-------|--------|-------|--------|
+| isolate value | `isolate: false` | `isolate: true` | ✅ FIXED |
+| Location | Line 105 (old) | Line 97 (new) | ✅ UPDATED |
+
+================================================================================
+## PYTEST-XDIST REMOVAL VERIFICATION
+================================================================================
+
+| Check | Before | After | Status |
+|-------|--------|-------|--------|
+| xdist guidance | Present (lines 117-120) | REMOVED | ✅ FIXED |
+| Reason | Not installed in pyproject.toml | N/A | ✅ CORRECT |
+
+================================================================================
+## CI POST-PUSH CHECKS VERIFICATION
+================================================================================
+
+| Command | Pattern | Status |
+|---------|---------|--------|
+| List runs | `gh run list --workflow="Quality Gate" --limit 3` | ✅ Line 108 |
+| View jobs | `gh run view <run-id> --json jobs --jq ...` | ✅ Line 109 |
+| Key jobs documented | 4 jobs listed | ✅ Lines 111-113 |
+
+================================================================================
+## LINE BUDGET VERIFICATION
+================================================================================
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Total lines | ~150 | 160 | ✅ WITHIN TOLERANCE |
+| Tolerance | 130-180 | 160 | ✅ PASS |
+
+Reduction from original 177 lines to 160 lines (-17 lines) achieved by:
+- Removing Error Handling subsection (merged into API Conventions)
+- Removing pytest-xdist section
+- Removing redundant formatting/linting file references
+- Removing DeepSeek API client note (not critical)
+- Consolidating last updated date
+
+================================================================================
+## SUMMARY
+================================================================================
+
+✅ ALL REQUIRED SECTIONS PRESENT
+✅ SINGLE-TEST COMMANDS DOCUMENTED
+✅ ISOLATE=TRUE FIX APPLIED
+✅ PYTEST-XDIST REMOVED
+✅ CI POST-PUSH CHECKS ADDED
+✅ LINE BUDGET WITHIN TOLERANCE (160 lines)

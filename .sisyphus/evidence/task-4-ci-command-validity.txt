@@ -1,0 +1,98 @@
+# Task 4: CI Command Validity Verification
+# Date: 2026-02-12
+
+## Documented CI Commands in AGENTS.md
+
+### Command 1: List Recent Workflow Runs
+```
+gh run list --workflow="Quality Gate" --limit 3
+```
+**Location**: AGENTS.md:105
+**Purpose**: View recent Quality Gate workflow runs after push
+
+### Command 2: View Specific Run Details
+```
+gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+```
+**Location**: AGENTS.md:106
+**Purpose**: Check status of individual jobs in a workflow run
+
+## CI Workflow Configuration Verification
+
+### Workflow File
+`.github/workflows/quality-gate.yml`
+
+### Job Names in Workflow (Line References)
+| Job Name | Line | Status |
+|----------|------|--------|
+| frontend-type-check | 31 | ✅ MATCH |
+| frontend-build | 53 | ✅ MATCH |
+| frontend-critical-tests | 76 | ✅ MATCH |
+| backend-critical-tests | 104 | ✅ MATCH |
+
+### Critical Jobs (from AGENTS.md documentation)
+These 4 jobs are identified as the key quality gate checks:
+1. `frontend-type-check`
+2. `frontend-build`
+3. `frontend-critical-tests`
+4. `backend-critical-tests`
+
+All 4 jobs exist in `.github/workflows/quality-gate.yml` ✅
+
+## Command Syntax Validation
+
+### gh run list
+```bash
+# Syntax check
+gh run list --workflow="Quality Gate" --limit 3
+# --workflow: Specify workflow name (quoted string)
+# --limit: Number of runs to display
+# ✅ Valid gh CLI syntax
+```
+
+### gh run view
+```bash
+# Syntax check
+gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+# <run-id>: Placeholder for actual run ID
+# --json jobs: Output jobs in JSON format
+# --jq: jq filter to format output
+# ✅ Valid gh CLI syntax
+```
+
+## Cross-Reference with Scripts
+
+### Script Reference
+`scripts/check-ci-status.sh:63` - References CI check commands
+
+### Verification
+The documented `gh` commands in AGENTS.md are:
+- Syntactically valid
+- Compatible with the actual workflow configuration
+- Matching the expected job names
+
+## Usage After Git Push
+
+After pushing code, run:
+```bash
+# 1. Check recent workflow runs
+gh run list --workflow="Quality Gate" --limit 3
+
+# 2. Get run ID from output, then check job statuses
+gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+```
+
+Expected output format for step 2:
+```
+frontend-type-check: SUCCESS
+frontend-build: SUCCESS
+frontend-critical-tests: SUCCESS
+backend-critical-tests: SUCCESS
+```
+
+## Summary
+
+✅ CI commands documented in AGENTS.md are valid
+✅ All job names match the actual workflow configuration
+✅ Command syntax is correct for gh CLI
+✅ Post-push verification workflow is clearly documented

@@ -26,8 +26,8 @@ npm run type-check       # TypeScript check only
 npm run lint             # ESLint + OXLint with auto-fix
 npm run format           # Prettier format
 npm run test             # Run all tests (one-shot)
-npx vitest run src/__tests__/views/MyView.spec.ts    # Single test file
-npx vitest run -t "test name"                          # Run by pattern
+npx vitest run src/__tests__/App.spec.ts    # Single test file
+npx vitest run -t "test name"               # Run by pattern
 ```
 
 ### Backend (`cd backend`)
@@ -53,16 +53,12 @@ uv run pytest -k "citation" -q          # Run tests matching pattern
 
 ### Frontend (Vue 3 + TypeScript)
 
-**Formatting**: Prettier with no semicolons, single quotes, print width 100 (see `.prettierrc.json`)
-
-**Linting**: ESLint + OXLint (see `eslint.config.ts`, `.oxlintrc.json`)
+**Formatting**: Prettier with no semicolons, single quotes, print width 100
 
 **Conventions**:
 - Prefer `<script setup lang="ts">`
 - SFC order: `<template>` → `<script setup>` → `<style scoped>`
 - Use `@/` alias for src imports
-- Keep components small and cohesive
-- Prefer scoped styles unless global is intentional
 - Use Composition API (ref/computed/watch) consistently
 - File names: kebab-case.ts or PascalCase.ts
 - Functions/variables: camelCase, Classes: PascalCase
@@ -73,8 +69,7 @@ uv run pytest -k "citation" -q          # Run tests matching pattern
 - Use docstrings for modules and public functions
 - Use type hints everywhere
 - Import order: stdlib → third-party → local
-- Use `Path` from pathlib for filesystem paths
-- Functions/variables: snake_case, Classes: PascalCase, Files: lowercase_with_underscores.py
+- Functions/variables: snake_case, Classes: PascalCase
 
 **API Conventions**:
 - Use `APIRouter` with versioned prefix (`/api/v1/...`) and tags
@@ -83,18 +78,9 @@ uv run pytest -k "citation" -q          # Run tests matching pattern
 - Raise `HTTPException` with proper status codes
 - Keep API routers thin; put logic in `app/core` helpers
 
-### Error Handling
-
-- Raise `HTTPException` for client errors (400/404/409)
-- Catch narrow exceptions; do not swallow errors silently
-- Include human-readable error messages in API responses
-- For background tasks, update status metadata on failure
-
 ## Test Resource Constraints (CRITICAL)
 
-### Frontend (Vitest)
-
-Vitest defaults spawn multiple workers (2-3GB each) - **must limit concurrency to avoid OOM**.
+Vitest spawns multiple workers (2-3GB each) - **must limit concurrency to avoid OOM**.
 
 Required config (`frontend/vitest.config.ts`):
 ```typescript
@@ -102,7 +88,7 @@ test: {
   pool: 'forks',
   poolOptions: { forks: { maxForks: 2, minForks: 1 } },
   maxConcurrency: 5,
-  isolate: false,
+  isolate: true,
 }
 ```
 
@@ -111,13 +97,16 @@ test: {
 - ❌ `vitest` (watch mode) in automated scripts - use `vitest run` instead
 - ❌ Removing `maxForks` limit
 
-### Backend (Pytest)
+## CI Post-Push Checks
 
-If using `pytest-xdist`:
+After `git push`, verify Quality Gate status:
+
 ```bash
-✅ uv run pytest -n 2 -q     # Correct - limit workers
-❌ uv run pytest -n auto      # Wrong - uses all cores
+gh run list --workflow="Quality Gate" --limit 3
+gh run view <run-id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
 ```
+
+Key jobs: `frontend-type-check`, `frontend-build`, `frontend-critical-tests`, `backend-critical-tests`
 
 ## Critical Implementation Notes
 
@@ -142,27 +131,22 @@ app.mount('#app')
 ```typescript
 // WRONG
 const { meta } = useRoute()  // Stale
-
 // RIGHT
 const route = useRoute()     // Reactive
-if (route.meta.hideChrome) { ... }
 ```
 
 ### Embedding Model Change Protocol
 
 When changing `EMBEDDING_MODEL` in `.env`:
 1. **Dimension mismatch will occur** for existing knowledge bases
-2. **Search returns 409 Conflict** with new error handling
-3. **Fix**: Delete `backend/data/chromadb/` and re-upload documents
-4. Future: Add per-KB model tracking in metadata
+2. **Search returns 409 Conflict** - delete `backend/data/chromadb/` and re-upload
 
 ## Repository-Specific Notes
 
 - Backend entrypoint: `main.py` (FastAPI app instance: `app`)
 - Chat streaming uses SSE (see `backend/app/api/chat.py`)
 - RAG pipeline: LlamaIndex + ChromaDB (`backend/app/core/rag.py`)
-- DeepSeek API client: `backend/app/core/llm.py`
-- Runtime data stored under `backend/data/` - do not depend on existing data for logic
+- Runtime data stored under `backend/data/` - do not depend on existing data
 
 ## When in Doubt
 
@@ -173,4 +157,4 @@ When changing `EMBEDDING_MODEL` in `.env`:
 
 ---
 
-*Last updated: 2026-02-10*
+*Last updated: 2026-02-12*
