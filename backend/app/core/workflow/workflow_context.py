@@ -1,6 +1,7 @@
 """
 Workflow execution context and expression helpers.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -11,6 +12,7 @@ InvalidExpression: type[Exception]
 
 class _MissingInvalidExpression(Exception):
     pass
+
 
 try:
     from simpleeval import InvalidExpression, simple_eval
@@ -26,9 +28,18 @@ TEMPLATE_PATTERN = re.compile(r"\{\{([\w-]+(?:\.[\w-]+)*)\}\}")
 class ExecutionContext:
     """Execution context for variables and node outputs."""
 
-    def __init__(self, initial_input: str):
+    def __init__(
+        self,
+        initial_input: str,
+        user_id: int | None = None,
+        model: str | None = None,
+        conversation_history: list[dict[str, str]] | None = None,
+    ):
         self.variables: Dict[str, Any] = {"input": initial_input}
         self.step_outputs: Dict[str, Any] = {}
+        self.user_id = user_id
+        self.model = model
+        self.conversation_history = conversation_history or []
 
     def set_output(self, node_id: str, value: Any) -> None:
         self.step_outputs[node_id] = value
@@ -141,6 +152,7 @@ def safe_eval(expression: str) -> bool:
     expr = _rewrite_contains(expr)
     if simple_eval is None:
         import logging
+
         logging.warning(
             f"simpleeval not available, falling back to string comparison for: {expr}"
         )
@@ -152,10 +164,12 @@ def safe_eval(expression: str) -> bool:
 
     except (TypeError, ValueError, NameError, InvalidExpression):
         import logging
+
         logging.warning(f"Expression evaluation error in {expr}")
         return False
 
     except Exception as e:
         import logging
+
         logging.error(f"Unexpected error in safe_eval({expr}): {e}")
         raise

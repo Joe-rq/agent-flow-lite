@@ -1,6 +1,7 @@
 """
 FastAPI Backend Application
 """
+
 import asyncio
 import logging
 import os
@@ -14,13 +15,16 @@ from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
 from app.api.knowledge import router as knowledge_router
+from app.api.publish import router as publish_router
+from app.api.settings import router as settings_router
 from app.api.skill import router as skill_router
 from app.api.workflow import router as workflow_router
 from app.core.auth import cleanup_expired_tokens
 from app.core.database import AsyncSessionLocal, init_db
+from app.middleware.rate_limit import setup_rate_limiting
 
 # Load environment variables
-load_dotenv()
+_ = load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +45,14 @@ async def _periodic_token_cleanup() -> None:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Application lifespan context manager"""
     # Startup: Initialize resources
     await init_db()
     cleanup_task = asyncio.create_task(_periodic_token_cleanup())
     yield
     # Shutdown: Cleanup resources
-    cleanup_task.cancel()
+    _ = cleanup_task.cancel()
     try:
         await cleanup_task
     except asyncio.CancelledError:
@@ -63,6 +67,8 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    setup_rate_limiting(app)
 
     # Configure CORS
     origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
@@ -83,17 +89,23 @@ def create_app() -> FastAPI:
             "status": "running",
         }
 
+    _ = root
+
     @app.get("/health")
     async def health_check():
         """Health check endpoint"""
         return {"status": "healthy"}
 
+    _ = health_check
+
     app.include_router(auth_router)
     app.include_router(workflow_router)
     app.include_router(knowledge_router)
+    app.include_router(settings_router)
     app.include_router(skill_router)
     app.include_router(chat_router)
     app.include_router(admin_router)
+    app.include_router(publish_router)
 
     return app
 

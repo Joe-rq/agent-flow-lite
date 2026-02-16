@@ -3,6 +3,7 @@ Authentication tests.
 
 Tests for auth endpoints and token validation.
 """
+
 import pytest
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, text
@@ -52,6 +53,10 @@ async def client():
 async def setup_database():
     """Setup database before each test."""
     await init_db()
+    from app.api.auth import _failed_logins, _failed_logins_lock
+
+    with _failed_logins_lock:
+        _failed_logins.clear()
     yield
     # Cleanup: Delete all data
     async with AsyncSessionLocal() as session:
@@ -113,6 +118,7 @@ class TestUserRegistration:
 
     async def test_admin_role_assigned(self, db_session: AsyncSession):
         from app.core import config
+
         original = config._settings
         try:
             config._settings = config.Settings(admin_email="admin@test.com")
@@ -123,6 +129,7 @@ class TestUserRegistration:
 
     async def test_no_admin_when_admin_email_empty(self, db_session: AsyncSession):
         from app.core import config
+
         original = config._settings
         try:
             config._settings = config.Settings(admin_email="")
@@ -222,7 +229,7 @@ class TestAuthEndpoints:
     async def test_register_creates_user(self, client):
         response = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
 
         assert response.status_code == 200
@@ -235,36 +242,35 @@ class TestAuthEndpoints:
     async def test_register_duplicate_email(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         response = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password456"}
+            json={"email": "test@example.com", "password": "password456"},
         )
         assert response.status_code == 409
 
     async def test_register_short_password(self, client):
         response = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "12345"}
+            json={"email": "test@example.com", "password": "12345"},
         )
         assert response.status_code == 400
 
     async def test_register_empty_password(self, client):
         response = await client.post(
-            "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": ""}
+            "/api/v1/auth/register", json={"email": "test@example.com", "password": ""}
         )
         assert response.status_code == 400
 
     async def test_login_success(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
 
         assert response.status_code == 200
@@ -275,73 +281,86 @@ class TestAuthEndpoints:
     async def test_login_wrong_password(self, client):
         await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "test@example.com", "password": "wrongpassword"}
+            json={"email": "test@example.com", "password": "wrongpassword"},
         )
         assert response.status_code == 401
 
     async def test_login_nonexistent_user(self, client):
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "noone@example.com", "password": "password123"}
+            json={"email": "noone@example.com", "password": "password123"},
         )
         assert response.status_code == 401
+
+    async def test_login_rate_limited_after_repeated_failures(self, client):
+        email = "lock@example.com"
+        await client.post(
+            "/api/v1/auth/register", json={"email": email, "password": "password123"}
+        )
+
+        for _ in range(5):
+            response = await client.post(
+                "/api/v1/auth/login", json={"email": email, "password": "wrongpassword"}
+            )
+            assert response.status_code == 401
+
+        blocked = await client.post(
+            "/api/v1/auth/login", json={"email": email, "password": "password123"}
+        )
+        assert blocked.status_code == 429
+        assert blocked.headers.get("Retry-After") is not None
 
     async def test_login_invalid_email(self, client):
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "invalid-email", "password": "password123"}
+            json={"email": "invalid-email", "password": "password123"},
         )
         assert response.status_code == 400
 
     async def test_login_rejects_bare_at(self, client):
         response = await client.post(
-            "/api/v1/auth/login",
-            json={"email": "@", "password": "password123"}
+            "/api/v1/auth/login", json={"email": "@", "password": "password123"}
         )
         assert response.status_code == 400
 
     async def test_login_rejects_double_at(self, client):
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "user@@domain.com", "password": "password123"}
+            json={"email": "user@@domain.com", "password": "password123"},
         )
         assert response.status_code == 400
 
     async def test_login_rejects_no_tld(self, client):
         response = await client.post(
-            "/api/v1/auth/login",
-            json={"email": "a@b", "password": "password123"}
+            "/api/v1/auth/login", json={"email": "a@b", "password": "password123"}
         )
         assert response.status_code == 400
 
     async def test_login_rejects_empty_email(self, client):
         response = await client.post(
-            "/api/v1/auth/login",
-            json={"email": "", "password": "password123"}
+            "/api/v1/auth/login", json={"email": "", "password": "password123"}
         )
         assert response.status_code == 400
 
     async def test_login_rejects_empty_password(self, client):
         response = await client.post(
-            "/api/v1/auth/login",
-            json={"email": "test@example.com", "password": ""}
+            "/api/v1/auth/login", json={"email": "test@example.com", "password": ""}
         )
         assert response.status_code == 400
 
     async def test_me_endpoint(self, client):
         reg = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         token = reg.json()["token"]
 
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
 
         assert response.status_code == 200
@@ -353,29 +372,26 @@ class TestAuthEndpoints:
 
     async def test_me_with_invalid_token(self, client):
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": "Bearer invalid-token"}
+            "/api/v1/auth/me", headers={"Authorization": "Bearer invalid-token"}
         )
         assert response.status_code == 401
 
     async def test_logout_endpoint(self, client):
         reg = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         token = reg.json()["token"]
 
         response = await client.post(
-            "/api/v1/auth/logout",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"}
         )
 
         assert response.status_code == 200
         assert response.json()["success"] is True
 
         me_response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
         assert me_response.status_code == 401
 
@@ -386,7 +402,7 @@ class TestAuthEndpoints:
     async def test_disabled_user_cannot_access(self, client):
         reg = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         token = reg.json()["token"]
         user_id = reg.json()["user"]["id"]
@@ -398,15 +414,14 @@ class TestAuthEndpoints:
             await session.commit()
 
         response = await client.get(
-            "/api/v1/auth/me",
-            headers={"Authorization": f"Bearer {token}"}
+            "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 403
 
     async def test_disabled_user_cannot_login(self, client):
         reg = await client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         user_id = reg.json()["user"]["id"]
 
@@ -418,6 +433,6 @@ class TestAuthEndpoints:
 
         response = await client.post(
             "/api/v1/auth/login",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": "test@example.com", "password": "password123"},
         )
         assert response.status_code == 403

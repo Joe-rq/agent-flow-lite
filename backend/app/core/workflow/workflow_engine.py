@@ -1,19 +1,22 @@
 """
 Workflow execution engine.
 """
+
 from __future__ import annotations
 
 from collections import deque
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Optional
 
 from app.core.workflow.workflow_context import ExecutionContext
 from app.core.workflow.workflow_nodes import (
+    execute_code_node,
     execute_condition_node,
     execute_end_node,
+    execute_http_node,
     execute_knowledge_node,
     execute_llm_node,
     execute_skill_node,
-    execute_start_node
+    execute_start_node,
 )
 from app.models.workflow import Workflow
 
@@ -24,13 +27,15 @@ class WorkflowEngine:
     def __init__(self, workflow: Workflow):
         self.workflow = workflow
         graph_data = workflow.graph_data
-        self.nodes: Dict[str, dict] = {n["id"]: n for n in graph_data.nodes}
-        self.edges: List[dict] = graph_data.edges
+        self.nodes: dict[str, dict[str, Any]] = {n["id"]: n for n in graph_data.nodes}
+        self.edges: list[dict[str, Any]] = graph_data.edges
         self.adjacency = self._build_adjacency()
         self.last_executed_id: str | None = None
 
-    def _build_adjacency(self) -> Dict[str, List[dict]]:
-        adjacency: Dict[str, List[dict]] = {node_id: [] for node_id in self.nodes}
+    def _build_adjacency(self) -> dict[str, list[dict[str, Any]]]:
+        adjacency: dict[str, list[dict[str, Any]]] = {
+            node_id: [] for node_id in self.nodes
+        }
         for edge in self.edges:
             source = edge.get("source")
             if source in adjacency:
@@ -39,7 +44,7 @@ class WorkflowEngine:
 
     def _has_cycle(self) -> bool:
         """Detect cycles via DFS coloring (0=white, 1=gray, 2=black)."""
-        color: Dict[str, int] = {nid: 0 for nid in self.nodes}
+        color: dict[str, int] = {nid: 0 for nid in self.nodes}
 
         def dfs(nid: str) -> bool:
             color[nid] = 1
@@ -56,7 +61,7 @@ class WorkflowEngine:
 
         return any(color[nid] == 0 and dfs(nid) for nid in self.nodes)
 
-    def _get_next_nodes(self, node_id: str, branch: Optional[str]) -> List[str]:
+    def _get_next_nodes(self, node_id: str, branch: Optional[str]) -> list[str]:
         outgoing = self.adjacency.get(node_id, [])
         next_nodes = []
         for edge in outgoing:
@@ -77,7 +82,7 @@ class WorkflowEngine:
 
     async def _execute_node(
         self, node_id: str, ctx: ExecutionContext
-    ) -> AsyncGenerator[dict, None]:
+    ) -> AsyncGenerator[dict[str, Any], None]:
         node = self.nodes.get(node_id)
         if not node:
             yield {"type": "node_error", "node_id": node_id, "error": "Node not found"}
@@ -94,29 +99,39 @@ class WorkflowEngine:
                 n, ctx, self._get_input_for_node
             ),
             "end": lambda n: execute_end_node(n, ctx, self._get_input_for_node),
-            "skill": lambda n: execute_skill_node(n, ctx, self._get_input_for_node)
+            "skill": lambda n: execute_skill_node(n, ctx, self._get_input_for_node),
+            "http": lambda n: execute_http_node(n, ctx, self._get_input_for_node),
+            "code": lambda n: execute_code_node(n, ctx, self._get_input_for_node),
         }
         executor = executors.get(node_type)
         if not executor:
             yield {
                 "type": "node_error",
                 "node_id": node_id,
-                "error": f"Unknown node type: {node_type}"
+                "error": f"Unknown node type: {node_type}",
             }
             return
 
         async for event in executor(node):
             yield event
 
-    async def execute(self, initial_input: str) -> AsyncGenerator[dict, None]:
+    async def execute(
+        self,
+        initial_input: str,
+        user_id: int | None = None,
+        model: str | None = None,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> AsyncGenerator[dict[str, Any], None]:
         yield {
             "type": "workflow_start",
             "workflow_id": self.workflow.id,
-            "workflow_name": self.workflow.name
+            "workflow_name": self.workflow.name,
         }
 
         start_nodes = [
-            node_id for node_id, node in self.nodes.items() if node.get("type") == "start"
+            node_id
+            for node_id, node in self.nodes.items()
+            if node.get("type") == "start"
         ]
         if not start_nodes:
             yield {"type": "workflow_error", "error": "Workflow has no start node"}
@@ -126,7 +141,12 @@ class WorkflowEngine:
             yield {"type": "workflow_error", "error": "Workflow contains a cycle"}
             return
 
-        ctx = ExecutionContext(initial_input)
+        ctx = ExecutionContext(
+            initial_input,
+            user_id=user_id,
+            model=model,
+            conversation_history=conversation_history,
+        )
         queue = deque(start_nodes)
         executed: set[str] = set()
 

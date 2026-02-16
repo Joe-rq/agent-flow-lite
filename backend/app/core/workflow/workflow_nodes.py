@@ -1,25 +1,54 @@
 """
 Workflow node execution helpers.
 """
+
 from __future__ import annotations
 
 import json
+import logging
+import asyncio
 from typing import Any, AsyncGenerator, Callable
 
+import httpx
+
+from app.core.config import settings
+from app.core.feature_flags import is_feature_enabled
 from app.core.llm import chat_completion_stream
 from app.core.paths import SKILLS_DIR
 from app.core.rag import get_rag_pipeline
 from app.core.skill.skill_executor import get_skill_executor
 from app.core.skill.skill_loader import SkillLoader
 from app.core.workflow.workflow_context import ExecutionContext, safe_eval
+from app.utils.code_sandbox import execute_python
+from app.utils.ssrf_guard import ensure_url_safe
+
+logger = logging.getLogger(__name__)
 
 
 GetInput = Callable[[str, ExecutionContext], Any]
 
 
+def _extract_json_path(payload: Any, path: str) -> Any:
+    current = payload
+    for part in path.split("."):
+        part = part.strip()
+        if not part:
+            continue
+        if isinstance(current, dict):
+            current = current.get(part)
+        elif isinstance(current, list) and part.isdigit():
+            index = int(part)
+            if index < 0 or index >= len(current):
+                return None
+            current = current[index]
+        else:
+            return None
+    return current
+
+
 async def execute_start_node(
-    node: dict, ctx: ExecutionContext
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext
+) -> AsyncGenerator[dict[str, Any], None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "start"}
 
@@ -34,8 +63,8 @@ async def execute_start_node(
 
 
 async def execute_llm_node(
-    node: dict, ctx: ExecutionContext, get_input: GetInput
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "llm"}
 
@@ -44,6 +73,8 @@ async def execute_llm_node(
 
     system_prompt = data.get("systemPrompt", "You are a helpful assistant.")
     temperature = data.get("temperature", 0.7)
+    target_model = data.get("model") or ctx.model
+    inherit_chat_history = bool(data.get("inheritChatHistory", False))
 
     if skill_name:
         try:
@@ -54,7 +85,11 @@ async def execute_llm_node(
                 system_prompt = skill.prompt
 
             if skill.model:
-                temperature = skill.model.temperature if skill.model.temperature is not None else temperature
+                temperature = (
+                    skill.model.temperature
+                    if skill.model.temperature is not None
+                    else temperature
+                )
 
             yield {
                 "type": "thought",
@@ -62,13 +97,19 @@ async def execute_llm_node(
                 "node_id": node_id,
                 "skill_name": skill_name,
                 "has_prompt": bool(skill.prompt),
-                "has_model_config": bool(skill.model)
+                "has_model_config": bool(skill.model),
             }
         except Exception as exc:
+            logger.warning(
+                "Failed to load skill '%s' for LLM node '%s'",
+                skill_name,
+                node_id,
+                exc_info=True,
+            )
             yield {
                 "type": "node_error",
                 "node_id": node_id,
-                "error": f"Failed to load skill '{skill_name}': {exc}"
+                "error": f"Failed to load skill '{skill_name}': {exc}",
             }
             ctx.set_output(node_id, "")
             return
@@ -76,21 +117,27 @@ async def execute_llm_node(
     system_prompt = ctx.resolve_template(system_prompt)
     input_text = get_input(node_id, ctx)
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": str(input_text)}
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if inherit_chat_history and ctx.conversation_history:
+        messages.extend(ctx.conversation_history)
+    messages.append({"role": "user", "content": str(input_text)})
 
     output = ""
     try:
-        async for token in chat_completion_stream(messages, temperature=temperature):
+        async for token in chat_completion_stream(
+            messages,
+            model=target_model,
+            temperature=temperature,
+            user_id=ctx.user_id,
+        ):
             output += token
             yield {"type": "token", "node_id": node_id, "content": token}
     except Exception as exc:
+        logger.warning("LLM call failed for node '%s'", node_id, exc_info=True)
         yield {
             "type": "node_error",
             "node_id": node_id,
-            "error": f"LLM call failed: {exc}"
+            "error": f"LLM call failed: {exc}",
         }
         ctx.set_output(node_id, "")
         return
@@ -100,8 +147,8 @@ async def execute_llm_node(
 
 
 async def execute_knowledge_node(
-    node: dict, ctx: ExecutionContext, get_input: GetInput
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "knowledge"}
 
@@ -111,7 +158,7 @@ async def execute_knowledge_node(
         yield {
             "type": "node_error",
             "node_id": node_id,
-            "error": "Knowledge base not configured"
+            "error": "Knowledge base not configured",
         }
         ctx.set_output(node_id, "")
         return
@@ -123,7 +170,7 @@ async def execute_knowledge_node(
         "status": "start",
         "node_id": node_id,
         "kb_id": kb_id,
-        "query": query
+        "query": query,
     }
 
     try:
@@ -141,17 +188,20 @@ async def execute_knowledge_node(
             "type_detail": "retrieval",
             "status": "complete",
             "node_id": node_id,
-            "results_count": len(results)
+            "results_count": len(results),
         }
         yield {"type": "node_complete", "node_id": node_id, "output": output}
     except Exception as exc:
+        logger.warning(
+            "Knowledge retrieval failed for node '%s'", node_id, exc_info=True
+        )
         yield {"type": "node_error", "node_id": node_id, "error": str(exc)}
         ctx.set_output(node_id, "")
 
 
 async def execute_condition_node(
-    node: dict, ctx: ExecutionContext, get_input: GetInput
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "condition"}
 
@@ -172,14 +222,14 @@ async def execute_condition_node(
         "type_detail": "condition",
         "node_id": node_id,
         "expression": resolved,
-        "branch": "true" if result else "false"
+        "branch": "true" if result else "false",
     }
     yield {"type": "node_complete", "node_id": node_id, "output": passthrough}
 
 
 async def execute_end_node(
-    node: dict, ctx: ExecutionContext, get_input: GetInput
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "end"}
 
@@ -190,22 +240,20 @@ async def execute_end_node(
 
 
 async def execute_skill_node(
-    node: dict, ctx: ExecutionContext, get_input: GetInput
-) -> AsyncGenerator[dict, None]:
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
     """Execute a skill node with input mapping from upstream nodes."""
     node_id = node["id"]
     yield {"type": "node_start", "node_id": node_id, "node_type": "skill"}
 
     data = node.get("data", {})
     skill_name = data.get("skillName")
-    input_mappings = data.get("inputMappings", {})  # Map skill input name -> upstream node id
+    input_mappings = data.get(
+        "inputMappings", {}
+    )  # Map skill input name -> upstream node id
 
     if not skill_name:
-        yield {
-            "type": "node_error",
-            "node_id": node_id,
-            "error": "Skill not selected"
-        }
+        yield {"type": "node_error", "node_id": node_id, "error": "Skill not selected"}
         ctx.set_output(node_id, "")
         return
 
@@ -214,10 +262,16 @@ async def execute_skill_node(
         skill_loader = SkillLoader(SKILLS_DIR)
         skill = skill_loader.get_skill(skill_name)
     except Exception as exc:
+        logger.warning(
+            "Failed to load skill '%s' for skill node '%s'",
+            skill_name,
+            node_id,
+            exc_info=True,
+        )
         yield {
             "type": "node_error",
             "node_id": node_id,
-            "error": f"Failed to load skill '{skill_name}': {exc}"
+            "error": f"Failed to load skill '{skill_name}': {exc}",
         }
         ctx.set_output(node_id, "")
         return
@@ -277,36 +331,33 @@ async def execute_skill_node(
                 yield {
                     "type": "token",
                     "node_id": node_id,
-                    "content": event_data["content"]
+                    "content": event_data["content"],
                 }
             elif event_type == "thought":
                 yield {
                     "type": "thought",
                     "type_detail": event_data.get("type", "skill_execution"),
                     "node_id": node_id,
-                    **{k: v for k, v in event_data.items() if k != "type"}
+                    **{k: v for k, v in event_data.items() if k != "type"},
                 }
             elif event_type == "citation":
-                yield {
-                    "type": "citation",
-                    "node_id": node_id,
-                    **event_data
-                }
+                yield {"type": "citation", "node_id": node_id, **event_data}
             elif event_type == "done":
                 if event_data.get("status") == "error":
                     yield {
                         "type": "node_error",
                         "node_id": node_id,
-                        "error": event_data.get("message", "Skill execution failed")
+                        "error": event_data.get("message", "Skill execution failed"),
                     }
                     ctx.set_output(node_id, "")
                     return
 
     except Exception as exc:
+        logger.warning("Skill execution failed for node '%s'", node_id, exc_info=True)
         yield {
             "type": "node_error",
             "node_id": node_id,
-            "error": f"Skill execution failed: {exc}"
+            "error": f"Skill execution failed: {exc}",
         }
         ctx.set_output(node_id, "")
         return
@@ -314,3 +365,178 @@ async def execute_skill_node(
     final_output = "".join(output_parts)
     ctx.set_output(node_id, final_output)
     yield {"type": "node_complete", "node_id": node_id, "output": final_output}
+
+
+async def execute_http_node(
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
+    node_id = node["id"]
+    yield {"type": "node_start", "node_id": node_id, "node_type": "http"}
+
+    if not await is_feature_enabled("ENABLE_HTTP_NODE"):
+        yield {
+            "type": "node_error",
+            "node_id": node_id,
+            "error": "此功能已被管理员禁用",
+        }
+        ctx.set_output(node_id, "")
+        return
+
+    data = node.get("data", {})
+    method = str(data.get("method", "GET")).upper()
+    if method not in {"GET", "POST", "PUT", "DELETE"}:
+        yield {
+            "type": "node_error",
+            "node_id": node_id,
+            "error": "HTTP method not supported",
+        }
+        ctx.set_output(node_id, "")
+        return
+
+    raw_url = str(data.get("url", "")).strip()
+    resolved_url = ctx.resolve_template(raw_url)
+    if not resolved_url:
+        yield {"type": "node_error", "node_id": node_id, "error": "URL is required"}
+        ctx.set_output(node_id, "")
+        return
+
+    allowlist = [
+        item.strip()
+        for item in settings().http_node_allow_domains.split(",")
+        if item.strip()
+    ]
+    try:
+        safe_url = ensure_url_safe(resolved_url, allow_domains=allowlist)
+    except ValueError as exc:
+        yield {"type": "node_error", "node_id": node_id, "error": str(exc)}
+        ctx.set_output(node_id, "")
+        return
+
+    headers: dict[str, str] = {}
+    raw_headers = data.get("headers", {})
+    if isinstance(raw_headers, dict):
+        for key, value in raw_headers.items():
+            headers[str(key)] = ctx.resolve_template(str(value))
+
+    timeout_seconds = int(data.get("timeoutSeconds", 10) or 10)
+    timeout_seconds = max(1, min(timeout_seconds, 30))
+
+    request_body = data.get("body")
+    json_payload: Any = None
+    text_payload: str | None = None
+    if isinstance(request_body, dict):
+        json_payload = {
+            str(key): ctx.resolve_template(str(value))
+            for key, value in request_body.items()
+        }
+    elif isinstance(request_body, str) and request_body.strip():
+        text_payload = ctx.resolve_template(request_body)
+
+    try:
+        async with httpx.AsyncClient(
+            follow_redirects=False,
+            trust_env=False,
+            timeout=timeout_seconds,
+        ) as client:
+            response = await client.request(
+                method,
+                safe_url,
+                headers=headers,
+                json=json_payload,
+                content=text_payload,
+            )
+    except Exception:
+        logger.warning("HTTP node request failed for node '%s'", node_id, exc_info=True)
+        yield {
+            "type": "node_error",
+            "node_id": node_id,
+            "error": "HTTP request failed",
+        }
+        ctx.set_output(node_id, "")
+        return
+
+    body_limit = 1024 * 1024
+    response_text = response.text
+    if len(response_text.encode("utf-8", errors="ignore")) > body_limit:
+        response_text = response_text.encode("utf-8", errors="ignore")[
+            :body_limit
+        ].decode("utf-8", errors="ignore")
+
+    response_path = str(data.get("responsePath", "")).strip()
+    output: Any = response_text
+    if response_path:
+        try:
+            parsed_json = response.json()
+            extracted = _extract_json_path(parsed_json, response_path)
+            output = "" if extracted is None else extracted
+        except Exception:
+            output = ""
+
+    output_str = str(output)
+    ctx.set_output(node_id, output_str)
+    yield {
+        "type": "node_complete",
+        "node_id": node_id,
+        "output": output_str,
+        "status_code": response.status_code,
+    }
+
+
+async def execute_code_node(
+    node: dict[str, Any], ctx: ExecutionContext, get_input: GetInput
+) -> AsyncGenerator[dict[str, Any], None]:
+    node_id = node["id"]
+    yield {"type": "node_start", "node_id": node_id, "node_type": "code"}
+
+    if not await is_feature_enabled("ENABLE_CODE_NODE"):
+        yield {
+            "type": "node_error",
+            "node_id": node_id,
+            "error": "此功能已被管理员禁用",
+        }
+        ctx.set_output(node_id, "")
+        return
+
+    data = node.get("data", {})
+    code = str(data.get("code", ""))
+    if not code.strip():
+        yield {"type": "node_error", "node_id": node_id, "error": "Code is required"}
+        ctx.set_output(node_id, "")
+        return
+
+    timeout_seconds = int(data.get("timeoutSeconds", 30) or 30)
+    timeout_seconds = max(1, min(timeout_seconds, 30))
+    memory_limit_mb = int(data.get("memoryLimitMb", 256) or 256)
+    memory_limit_mb = max(64, min(memory_limit_mb, 512))
+
+    input_value = str(get_input(node_id, ctx))
+    env = {
+        "WORKFLOW_INPUT": input_value,
+        "USER_ID": str(ctx.user_id) if ctx.user_id is not None else "anonymous",
+    }
+
+    extra_env = data.get("env", {})
+    if isinstance(extra_env, dict):
+        for key, value in extra_env.items():
+            env[str(key)] = ctx.resolve_template(str(value))
+
+    result = await asyncio.to_thread(
+        execute_python,
+        code,
+        env,
+        timeout_seconds,
+        memory_limit_mb,
+    )
+
+    if not result.ok:
+        yield {
+            "type": "node_error",
+            "node_id": node_id,
+            "error": result.error,
+        }
+        ctx.set_output(node_id, "")
+        return
+
+    output = result.stdout.strip()
+    ctx.set_output(node_id, output)
+    yield {"type": "node_complete", "node_id": node_id, "output": output}
