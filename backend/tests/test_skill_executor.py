@@ -12,6 +12,12 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.core.skill.skill_executor import SkillExecutor, format_sse_event
+from app.models.skill import SkillInput
+
+
+def _si(name: str, *, required: bool = False, default: str | None = None) -> SkillInput:
+    """Shorthand to build a SkillInput for tests."""
+    return SkillInput(name=name, label=name, required=required, default=default)
 
 
 class TestFormatSSEEvent:
@@ -45,10 +51,7 @@ class TestValidateInputs:
 
     def test_validate_all_required_present(self):
         """Test validation passes when all required inputs are provided."""
-        skill_inputs = [
-            {"name": "article", "required": True},
-            {"name": "style", "required": False}
-        ]
+        skill_inputs = [_si("article", required=True), _si("style")]
         provided = {"article": "some content"}
 
         # Should not raise
@@ -56,10 +59,7 @@ class TestValidateInputs:
 
     def test_validate_missing_required(self):
         """Test validation fails when required input is missing."""
-        skill_inputs = [
-            {"name": "article", "required": True},
-            {"name": "style", "required": False}
-        ]
+        skill_inputs = [_si("article", required=True), _si("style")]
         provided = {}
 
         with pytest.raises(ValueError, match="Missing required input: 'article'"):
@@ -67,9 +67,7 @@ class TestValidateInputs:
 
     def test_validate_empty_required(self):
         """Test validation fails when required input is empty string."""
-        skill_inputs = [
-            {"name": "article", "required": True}
-        ]
+        skill_inputs = [_si("article", required=True)]
         provided = {"article": ""}
 
         with pytest.raises(ValueError, match="Missing required input: 'article'"):
@@ -77,9 +75,7 @@ class TestValidateInputs:
 
     def test_validate_no_required_fields(self):
         """Test validation passes when no required fields defined."""
-        skill_inputs = [
-            {"name": "style", "required": False}
-        ]
+        skill_inputs = [_si("style")]
         provided = {}
 
         # Should not raise
@@ -104,7 +100,7 @@ class TestSubstituteVariables:
     def test_substitute_single_variable(self):
         """Test substituting a single variable."""
         prompt = "Hello {{name}}!"
-        skill_inputs = [{"name": "name", "default": ""}]
+        skill_inputs = [_si("name")]
         provided = {"name": "World"}
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -114,9 +110,9 @@ class TestSubstituteVariables:
         """Test substituting multiple variables."""
         prompt = "{{greeting}} {{name}}, how is {{thing}}?"
         skill_inputs = [
-            {"name": "greeting", "default": ""},
-            {"name": "name", "default": ""},
-            {"name": "thing", "default": "everything"}
+            _si("greeting"),
+            _si("name"),
+            _si("thing", default="everything"),
         ]
         provided = {"greeting": "Hi", "name": "Alice"}
 
@@ -126,7 +122,7 @@ class TestSubstituteVariables:
     def test_substitute_uses_default(self):
         """Test that default values are used when input not provided."""
         prompt = "Style: {{style}}"
-        skill_inputs = [{"name": "style", "default": "formal"}]
+        skill_inputs = [_si("style", default="formal")]
         provided = {}
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -135,7 +131,7 @@ class TestSubstituteVariables:
     def test_substitute_empty_string_for_missing(self):
         """Test that empty string is used when no default and not provided."""
         prompt = "Content: {{missing}}"
-        skill_inputs = [{"name": "missing", "default": ""}]
+        skill_inputs = [_si("missing")]
         provided = {}
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -143,10 +139,8 @@ class TestSubstituteVariables:
 
     def test_substitute_single_pass_no_recursion(self):
         """Test that substitution is single-pass (no recursion)."""
-        # This is a critical requirement - if we had {{a}} -> {{b}} -> value,
-        # it should NOT recursively substitute
         prompt = "Value: {{var}}"
-        skill_inputs = [{"name": "var", "default": ""}]
+        skill_inputs = [_si("var")]
         provided = {"var": "{{other}}"}  # The value looks like a variable
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -156,10 +150,7 @@ class TestSubstituteVariables:
     def test_substitute_with_hyphens_and_underscores(self):
         """Test variable names with hyphens and underscores."""
         prompt = "{{my-var}} and {{my_var}}"
-        skill_inputs = [
-            {"name": "my-var", "default": ""},
-            {"name": "my_var", "default": ""}
-        ]
+        skill_inputs = [_si("my-var"), _si("my_var")]
         provided = {"my-var": "hyphen", "my_var": "underscore"}
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -177,7 +168,7 @@ class TestSubstituteVariables:
     def test_substitute_unknown_variable(self):
         """Test that unknown variables are replaced with empty string."""
         prompt = "Known: {{known}}, Unknown: {{unknown}}"
-        skill_inputs = [{"name": "known", "default": ""}]
+        skill_inputs = [_si("known")]
         provided = {"known": "value"}
 
         result = self.executor.substitute_variables(prompt, skill_inputs, provided)
@@ -195,7 +186,7 @@ class TestSkillExecutorIntegration:
     async def test_execute_missing_required_input(self):
         """Test that missing required input yields error events."""
         skill = {
-            "inputs": [{"name": "article", "required": True}],
+            "inputs": [_si("article", required=True)],
             "prompt": "Summarize: {{article}}",
             "knowledge_base": None,
             "model": {}
@@ -214,7 +205,7 @@ class TestSkillExecutorIntegration:
     async def test_execute_success_flow(self):
         """Test successful execution flow with mocked LLM."""
         skill = {
-            "inputs": [{"name": "article", "required": True}],
+            "inputs": [_si("article", required=True)],
             "prompt": "Summarize: {{article}}",
             "knowledge_base": None,
             "model": {"temperature": 0.5}
@@ -247,7 +238,7 @@ class TestSkillExecutorIntegration:
     async def test_execute_with_rag(self):
         """Test execution with knowledge_base triggers RAG retrieval."""
         skill = {
-            "inputs": [{"name": "question", "required": True}],
+            "inputs": [_si("question", required=True)],
             "prompt": "Answer: {{question}}",
             "knowledge_base": "test-kb",
             "model": {}
@@ -283,7 +274,7 @@ class TestSkillExecutorIntegration:
     async def test_execute_rag_error_continues(self):
         """Test that RAG error doesn't stop execution."""
         skill = {
-            "inputs": [{"name": "question", "required": True}],
+            "inputs": [_si("question", required=True)],
             "prompt": "Answer: {{question}}",
             "knowledge_base": "test-kb",
             "model": {}
@@ -346,7 +337,7 @@ class TestSkillExecutorWithSkillDetail:
         """Test execution with object-style skill (not dict)."""
         # Create a mock skill object
         skill = MagicMock()
-        skill.inputs = [{"name": "text", "required": True}]
+        skill.inputs = [_si("text", required=True)]
         skill.prompt = "Process: {{text}}"
         skill.knowledge_base = None
         skill.model = {"temperature": 0.7}

@@ -39,23 +39,18 @@ class SkillExecutor:
         Validate that all required inputs are provided.
 
         Args:
-            skill_inputs: List of input definitions from skill (Dict or SkillInput)
+            skill_inputs: List of SkillInput definitions
             provided_inputs: Dictionary of provided input values
 
         Raises:
             ValueError: If a required input is missing
         """
         for input_def in skill_inputs:
-            # Support both dict and SkillInput objects
-            if isinstance(input_def, dict):
-                name = input_def.get("name")
-                required = input_def.get("required", False)
-            else:
-                name = input_def.name
-                required = input_def.required
-
-            if required and (name not in provided_inputs or not provided_inputs[name]):
-                raise ValueError(f"Missing required input: '{name}'")
+            if input_def.required and (
+                input_def.name not in provided_inputs
+                or not provided_inputs[input_def.name]
+            ):
+                raise ValueError(f"Missing required input: '{input_def.name}'")
 
     def substitute_variables(
         self,
@@ -68,7 +63,7 @@ class SkillExecutor:
 
         Args:
             prompt: The prompt template with {{variable}} placeholders
-            skill_inputs: List of input definitions with defaults (Dict or SkillInput)
+            skill_inputs: List of SkillInput definitions with defaults
             provided_inputs: Dictionary of provided input values
 
         Returns:
@@ -79,13 +74,8 @@ class SkillExecutor:
         variable_values: Dict[str, str] = {}
 
         for input_def in skill_inputs:
-            # Support both dict and SkillInput objects
-            if isinstance(input_def, dict):
-                name = input_def.get("name")
-                default = input_def.get("default", "")
-            else:
-                name = input_def.name
-                default = input_def.default
+            name = input_def.name
+            default = input_def.default
 
             if not isinstance(name, str) or not name:
                 continue

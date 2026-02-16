@@ -113,8 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import axios from 'axios'
+import { onMounted, ref } from 'vue'
 import { VueFlow, useVueFlow, Handle, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -136,6 +135,7 @@ import { useWorkflowCrud } from '@/composables/workflow/useWorkflowCrud'
 import { useWorkflowExecution } from '@/composables/workflow/useWorkflowExecution'
 import { useNodeDragDrop } from '@/composables/workflow/useNodeDragDrop'
 import { useEditorActions } from '@/composables/workflow/useEditorActions'
+import { useFeatureFlags } from '@/composables/workflow/useFeatureFlags'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -167,35 +167,7 @@ const {
 } = useEditorActions(flow)
 
 const drawerOpen = ref(true)
-const featureFlags = ref<Record<string, boolean>>({})
-
-const enabledNodeTypes = computed(() => {
-  const base = ['start', 'llm', 'knowledge', 'condition', 'skill', 'end']
-  if (featureFlags.value.ENABLE_HTTP_NODE) {
-    base.splice(base.length - 1, 0, 'http')
-  }
-  if (featureFlags.value.ENABLE_CODE_NODE) {
-    base.splice(base.length - 1, 0, 'code')
-  }
-  return base
-})
-
-async function loadFeatureFlags() {
-  try {
-    const response = await axios.get('/api/v1/settings/feature-flags')
-    const items = Array.isArray(response.data?.items) ? response.data.items : []
-    const nextFlags: Record<string, boolean> = {}
-    for (const item of items) {
-      if (typeof item?.key === 'string') {
-        nextFlags[item.key] = Boolean(item.enabled)
-      }
-    }
-    featureFlags.value = nextFlags
-  } catch (error) {
-    console.error('加载功能开关失败:', error)
-    featureFlags.value = {}
-  }
-}
+const { enabledNodeTypes, loadFeatureFlags } = useFeatureFlags()
 
 const elements = ref([
   { id: '1', type: 'start', label: '开始', position: { x: 100, y: 100 } },
