@@ -1,0 +1,110 @@
+# Phase Gate Definitions
+# Machine-readable gate rules for CI enforcement.
+# Run: uv run --project backend --group dev python scripts/verify_gates.py --phase <N>
+# Gate check failure blocks merge to main.
+
+gates:
+  p1_to_p2:
+    description: "P1 出口闸门 — 三件套不过线 P2 一律不启动"
+    checks:
+      rate_limiting:
+        description: "slowapi 限流已集成且生效"
+        rules:
+          - type: grep_code
+            pattern: "slowapi|SlowAPI|Limiter"
+            paths: ["backend/app/"]
+            min_matches: 2
+            message: "未检测到 slowapi 集成"
+          - type: grep_code
+            pattern: "HTTP_429|429_TOO_MANY_REQUESTS|RateLimitExceeded|_rate_limit_exceeded_handler|Retry-After|X-RateLimit"
+            paths: ["backend/app/"]
+            min_matches: 1
+            message: "未检测到 429 响应处理"
+
+      audit_logging:
+        description: "审计日志已集成，关键操作有结构化记录"
+        rules:
+          - type: grep_code
+            pattern: "audit|AuditLog|audit_log"
+            paths: ["backend/app/"]
+            min_matches: 3
+            message: "未检测到审计日志模块"
+          - type: json_log_schema
+            log_pattern: "audit*.log"
+            required_fields: ["timestamp", "user_id", "action", "resource_id", "ip"]
+            message: "审计日志缺少必要字段"
+
+      token_metering:
+        description: "LLM 调用 token 计量已集成"
+        rules:
+          - type: grep_code
+            pattern: "input_tokens|output_tokens|token_usage|usage\\.prompt_tokens"
+            paths: ["backend/app/core/llm.py", "backend/app/"]
+            min_matches: 2
+            message: "未检测到 token 计量逻辑"
+          - type: grep_code
+            pattern: "TOKEN_USAGE_LOG|token_usage\\.log|_write_token_usage"
+            paths: ["backend/app/core/llm.py"]
+            min_matches: 1
+            message: "未检测到 token 计量日志写入"
+
+      pytest_cov:
+        description: "pytest-cov 已安装，覆盖率管道可用"
+        rules:
+          - type: grep_code
+            pattern: "pytest-cov"
+            paths: ["backend/pyproject.toml"]
+            min_matches: 1
+            message: "pyproject.toml 未包含 pytest-cov 依赖"
+
+  p2_to_p3:
+    description: "P2 出口闸门 — 模板留存验证"
+    checks:
+      feature_flags:
+        description: "P2 新能力全部通过 feature flag 控制"
+        rules:
+          - type: grep_code
+            pattern: "ENABLE_CODE_NODE|ENABLE_HTTP_NODE|ENABLE_OPENAI_API|ENABLE_PUBLIC_EMBED"
+            paths: ["backend/app/"]
+            min_matches: 4
+            message: "P2 功能缺少 feature flag 控制"
+      ssrf_guard:
+        description: "SSRF 防护模块存在"
+        rules:
+          - type: file_exists
+            paths: ["backend/app/utils/ssrf_guard.py"]
+            message: "缺少 SSRF 防护模块"
+          - type: grep_code
+            pattern: "trust_env.*False|trust_env=False"
+            paths: ["backend/"]
+            min_matches: 1
+            message: "HTTP client 未设置 trust_env=False"
+      code_sandbox:
+        description: "代码节点安全措施存在"
+        rules:
+          - type: grep_code
+            pattern: "shell.*=.*False|shell=False"
+            paths: ["backend/"]
+            min_matches: 1
+            message: "代码节点未显式禁用 shell"
+          - type: grep_code
+            pattern: "RLIMIT|setrlimit|resource\\.setrlimit"
+            paths: ["backend/"]
+            min_matches: 1
+            message: "代码节点未设置资源限制"
+
+  p3_to_p4:
+    description: "P3 出口闸门 — 质量基线"
+    checks:
+      test_coverage:
+        description: "后端测试覆盖率 >= 70%"
+        rules:
+          - type: command
+            cmd: "cd backend && uv run pytest --cov=app --cov-fail-under=70 -q"
+            message: "后端测试覆盖率未达 70%"
+      alembic:
+        description: "Alembic 迁移已集成"
+        rules:
+          - type: file_exists
+            paths: ["backend/alembic.ini", "backend/alembic/"]
+            message: "未检测到 Alembic 迁移配置"
