@@ -5,11 +5,12 @@ This module provides async generators that yield SSE events for different
 chat interaction modes including workflow execution, skill invocation,
 and standard chat completion with RAG retrieval.
 """
+
 import asyncio
 import json
 import logging
 from datetime import datetime, timezone
-from typing import AsyncGenerator, List, Optional
+from typing import Any, AsyncGenerator, List, Optional
 
 from fastapi import HTTPException
 
@@ -43,10 +44,7 @@ def build_excerpt(text: str, limit: int = EXCERPT_LIMIT) -> str:
 
 
 async def skill_stream_generator(
-    skill_name: str,
-    remaining_text: str,
-    session: SessionHistory,
-    user: User
+    skill_name: str, remaining_text: str, session: SessionHistory, user: User
 ) -> AsyncGenerator[str, None]:
     """
     Generate SSE stream for @skill execution.
@@ -64,35 +62,34 @@ async def skill_stream_generator(
 
     try:
         # Load the skill
-        yield format_sse_event("thought", {
-            "type": "skill",
-            "status": "start",
-            "skill_name": skill_name
-        })
+        yield format_sse_event(
+            "thought", {"type": "skill", "status": "start", "skill_name": skill_name}
+        )
 
         try:
             skill = skill_loader.get_skill(skill_name)
         except SkillValidationError as e:
-            yield format_sse_event("thought", {
-                "type": "skill",
-                "status": "error",
-                "error": str(e)
-            })
-            yield format_sse_event("done", {
-                "status": "error",
-                "message": f"Skill '{skill_name}' not found"
-            })
+            yield format_sse_event(
+                "thought", {"type": "skill", "status": "error", "error": str(e)}
+            )
+            yield format_sse_event(
+                "done",
+                {"status": "error", "message": f"Skill '{skill_name}' not found"},
+            )
             return
 
-        yield format_sse_event("thought", {
-            "type": "skill",
-            "status": "loaded",
-            "skill_name": skill.name,
-            "description": skill.description
-        })
+        yield format_sse_event(
+            "thought",
+            {
+                "type": "skill",
+                "status": "loaded",
+                "skill_name": skill.name,
+                "description": skill.description,
+            },
+        )
 
         # Build inputs: map remaining_text to first required input
-        inputs: dict = {}
+        inputs: dict[str, str] = {}
         skill_inputs = skill.inputs or []
 
         # Find first required input
@@ -134,32 +131,38 @@ async def skill_stream_generator(
             assistant_message = ChatMessage(
                 role="assistant",
                 content=full_output,
-                timestamp=datetime.now(timezone.utc)
+                timestamp=datetime.now(timezone.utc),
             )
             session.messages.append(assistant_message)
             save_session(session)
 
     except TimeoutError:
         logger.warning("Skill execution timed out after %ds", LLM_STREAM_TIMEOUT)
-        yield format_sse_event("error", {"message": f"Skill execution timed out ({LLM_STREAM_TIMEOUT}s)"})
+        yield format_sse_event(
+            "error", {"message": f"Skill execution timed out ({LLM_STREAM_TIMEOUT}s)"}
+        )
         yield format_sse_event("done", {"status": "error", "message": "Timeout"})
 
-    except Exception as e:
-        yield format_sse_event("thought", {
-            "type": "skill",
-            "status": "error",
-            "error": str(e)
-        })
-        yield format_sse_event("done", {
-            "status": "error",
-            "message": f"Skill execution failed: {str(e)}"
-        })
+    except Exception:
+        logger.warning("Skill stream failed for '%s'", skill_name, exc_info=True)
+        yield format_sse_event(
+            "thought",
+            {
+                "type": "skill",
+                "status": "error",
+                "error": "Skill execution failed",
+            },
+        )
+        yield format_sse_event(
+            "done", {"status": "error", "message": "Skill execution failed"}
+        )
 
 
 async def chat_stream_generator(
     request: ChatRequest,
-    messages: List[dict],
-    pre_retrieved_results: Optional[List[dict]] = None
+    messages: List[dict[str, Any]],
+    pre_retrieved_results: Optional[List[dict[str, Any]]] = None,
+    user_id: int | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Generate SSE stream for chat completion.
@@ -170,26 +173,32 @@ async def chat_stream_generator(
     - citation: Source metadata from RAG
     - done: Completion marker
     """
-    retrieved_results: List[dict] = pre_retrieved_results or []
+    retrieved_results: List[dict[str, Any]] = pre_retrieved_results or []
     has_error = False
     error_message = ""
 
     try:
         # Step 1: RAG Retrieval (if kb_id provided)
         if request.kb_id:
-            yield format_sse_event("thought", {
-                "type": "retrieval",
-                "status": "start",
-                "kb_id": request.kb_id,
-                "query": request.message
-            })
+            yield format_sse_event(
+                "thought",
+                {
+                    "type": "retrieval",
+                    "status": "start",
+                    "kb_id": request.kb_id,
+                    "query": request.message,
+                },
+            )
 
-            yield format_sse_event("thought", {
-                "type": "retrieval",
-                "status": "searching",
-                "kb_id": request.kb_id,
-                "query": request.message
-            })
+            yield format_sse_event(
+                "thought",
+                {
+                    "type": "retrieval",
+                    "status": "searching",
+                    "kb_id": request.kb_id,
+                    "query": request.message,
+                },
+            )
 
             if pre_retrieved_results is None:
                 try:
@@ -197,34 +206,44 @@ async def chat_stream_generator(
                     retrieved_results = await rag_pipeline.search(
                         request.kb_id, request.message, top_k=DEFAULT_RAG_TOP_K
                     )
-                except Exception as e:
-                    yield format_sse_event("thought", {
-                        "type": "retrieval",
-                        "status": "error",
-                        "kb_id": request.kb_id,
-                        "query": request.message,
-                        "error": str(e)
-                    })
+                except Exception:
+                    logger.warning(
+                        "RAG retrieval failed for kb '%s'", request.kb_id, exc_info=True
+                    )
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "retrieval",
+                            "status": "error",
+                            "kb_id": request.kb_id,
+                            "query": request.message,
+                            "error": "Retrieval failed",
+                        },
+                    )
                     retrieved_results = []
 
             top_results = [
                 {
                     "text": r["text"][:EXCERPT_LIMIT] + "..."
-                    if len(r["text"]) > EXCERPT_LIMIT else r["text"],
+                    if len(r["text"]) > EXCERPT_LIMIT
+                    else r["text"],
                     "doc_id": r["metadata"].get("doc_id", ""),
-                    "score": r["score"]
+                    "score": r["score"],
                 }
                 for r in retrieved_results[:3]
             ]
 
-            yield format_sse_event("thought", {
-                "type": "retrieval",
-                "status": "complete",
-                "kb_id": request.kb_id,
-                "query": request.message,
-                "results_count": len(retrieved_results),
-                "top_results": top_results
-            })
+            yield format_sse_event(
+                "thought",
+                {
+                    "type": "retrieval",
+                    "status": "complete",
+                    "kb_id": request.kb_id,
+                    "query": request.message,
+                    "results_count": len(retrieved_results),
+                    "top_results": top_results,
+                },
+            )
 
             if retrieved_results:
                 sources = [
@@ -232,7 +251,7 @@ async def chat_stream_generator(
                         "doc_id": r["metadata"].get("doc_id", ""),
                         "chunk_index": r["metadata"].get("chunk_index", 0),
                         "score": r["score"],
-                        "text": build_excerpt(r["text"])
+                        "text": build_excerpt(r["text"]),
                     }
                     for r in retrieved_results
                 ]
@@ -240,38 +259,41 @@ async def chat_stream_generator(
 
         # Step 2: Stream LLM tokens
         async with asyncio.timeout(LLM_STREAM_TIMEOUT):
-            async for token in chat_completion_stream(messages, temperature=0.7):
+            async for token in chat_completion_stream(
+                messages,
+                model=request.model,
+                temperature=0.7,
+                user_id=user_id,
+            ):
                 yield format_sse_event("token", {"content": token})
 
     except TimeoutError:
         has_error = True
         error_message = f"LLM response timed out ({LLM_STREAM_TIMEOUT}s)"
         logger.warning("Chat LLM stream timed out after %ds", LLM_STREAM_TIMEOUT)
-        yield format_sse_event("token", {"content": f"\n[Error: {error_message}]"})
+        yield format_sse_event("error", {"message": error_message})
 
-    except Exception as e:
+    except Exception:
+        logger.warning("Chat stream failed", exc_info=True)
         has_error = True
-        error_message = str(e)
-        yield format_sse_event("token", {"content": f"\n[Error: {str(e)}]"})
+        error_message = "Chat generation failed"
+        yield format_sse_event("error", {"message": error_message})
 
     # Step 3: Done event
     if has_error:
-        yield format_sse_event("done", {
-            "status": "error",
-            "message": error_message
-        })
+        yield format_sse_event("done", {"status": "error", "message": error_message})
     else:
-        yield format_sse_event("done", {
-            "status": "success",
-            "message": "Chat completed successfully"
-        })
+        yield format_sse_event(
+            "done", {"status": "success", "message": "Chat completed successfully"}
+        )
 
 
 async def stream_with_save(
     request: ChatRequest,
     session: SessionHistory,
-    messages_for_llm: List[dict],
-    retrieved_results: List[dict]
+    messages_for_llm: List[dict[str, Any]],
+    retrieved_results: List[dict[str, Any]],
+    user_id: int | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Stream response and save to session history.
@@ -287,7 +309,12 @@ async def stream_with_save(
     """
     assistant_content = ""
 
-    async for chunk in chat_stream_generator(request, messages_for_llm, retrieved_results):
+    async for chunk in chat_stream_generator(
+        request,
+        messages_for_llm,
+        retrieved_results,
+        user_id=user_id,
+    ):
         if chunk.startswith("event: token"):
             try:
                 lines = chunk.strip().split("\n")
@@ -304,14 +331,17 @@ async def stream_with_save(
         assistant_message = ChatMessage(
             role="assistant",
             content=assistant_content,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
         session.messages.append(assistant_message)
         save_session(session)
 
 
 async def workflow_stream_generator(
-    request: ChatRequest, session: SessionHistory, user: User
+    request: ChatRequest,
+    session: SessionHistory,
+    user: User,
+    conversation_history: Optional[List[dict[str, str]]] = None,
 ) -> AsyncGenerator[str, None]:
     """
     Generate SSE stream for workflow execution.
@@ -326,7 +356,9 @@ async def workflow_stream_generator(
     """
     if not request.workflow_id:
         yield format_sse_event("error", {"message": "Workflow ID is required"})
-        yield format_sse_event("done", {"status": "error", "message": "Workflow ID is required"})
+        yield format_sse_event(
+            "done", {"status": "error", "message": "Workflow ID is required"}
+        )
         return
 
     try:
@@ -341,23 +373,34 @@ async def workflow_stream_generator(
 
     try:
         async with asyncio.timeout(WORKFLOW_TIMEOUT):
-            async for event in engine.execute(request.message):
+            async for event in engine.execute(
+                request.message,
+                user_id=user.id,
+                model=request.model,
+                conversation_history=conversation_history,
+            ):
                 event_type = event.get("type")
 
                 if event_type == "workflow_start":
-                    yield format_sse_event("thought", {
-                        "type": "workflow",
-                        "status": "start",
-                        "workflow_name": event.get("workflow_name")
-                    })
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "workflow",
+                            "status": "start",
+                            "workflow_name": event.get("workflow_name"),
+                        },
+                    )
 
                 elif event_type == "node_start":
-                    yield format_sse_event("thought", {
-                        "type": "node",
-                        "status": "start",
-                        "node_id": event.get("node_id"),
-                        "node_type": event.get("node_type")
-                    })
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "node",
+                            "status": "start",
+                            "node_id": event.get("node_id"),
+                            "node_type": event.get("node_type"),
+                        },
+                    )
 
                 elif event_type == "token":
                     content = event.get("content", "")
@@ -366,20 +409,31 @@ async def workflow_stream_generator(
 
                 elif event_type == "thought":
                     payload = {"type": event.get("type_detail", "info")}
-                    payload.update({k: v for k, v in event.items() if k not in ("type", "type_detail")})
+                    payload.update(
+                        {
+                            k: v
+                            for k, v in event.items()
+                            if k not in ("type", "type_detail")
+                        }
+                    )
                     yield format_sse_event("thought", payload)
 
                 elif event_type == "node_complete":
-                    yield format_sse_event("thought", {
-                        "type": "node",
-                        "status": "complete",
-                        "node_id": event.get("node_id")
-                    })
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "node",
+                            "status": "complete",
+                            "node_id": event.get("node_id"),
+                        },
+                    )
 
                 elif event_type in ("node_error", "workflow_error"):
                     message = event.get("error", "Unknown workflow error")
                     yield format_sse_event("error", {"message": message})
-                    yield format_sse_event("done", {"status": "error", "message": message})
+                    yield format_sse_event(
+                        "done", {"status": "error", "message": message}
+                    )
                     return
 
                 elif event_type == "workflow_complete":
@@ -387,16 +441,17 @@ async def workflow_stream_generator(
                     assistant_message = ChatMessage(
                         role="assistant",
                         content=str(final_output),
-                        timestamp=datetime.now(timezone.utc)
+                        timestamp=datetime.now(timezone.utc),
                     )
                     session.messages.append(assistant_message)
                     save_session(session)
-                    yield format_sse_event("done", {
-                        "status": "success",
-                        "message": "Workflow completed"
-                    })
+                    yield format_sse_event(
+                        "done", {"status": "success", "message": "Workflow completed"}
+                    )
                     return
     except TimeoutError:
         logger.warning("Workflow execution timed out after %ds", WORKFLOW_TIMEOUT)
-        yield format_sse_event("error", {"message": f"Workflow execution timed out ({WORKFLOW_TIMEOUT}s)"})
+        yield format_sse_event(
+            "error", {"message": f"Workflow execution timed out ({WORKFLOW_TIMEOUT}s)"}
+        )
         yield format_sse_event("done", {"status": "error", "message": "Timeout"})

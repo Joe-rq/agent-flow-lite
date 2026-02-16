@@ -52,7 +52,6 @@ def execution_context():
 
 
 class TestLLMNodeSkillLoading:
-
     @pytest.mark.asyncio
     async def test_llm_node_without_skill(self, execution_context):
         node = {
@@ -60,15 +59,17 @@ class TestLLMNodeSkillLoading:
             "type": "llm",
             "data": {
                 "systemPrompt": "You are a helpful assistant.",
-                "temperature": 0.7
-            }
+                "temperature": 0.7,
+            },
         }
 
         def get_input(node_id, ctx):
             return "Hello, world!"
 
         events = []
-        with patch('app.core.workflow.workflow_nodes.chat_completion_stream') as mock_stream:
+        with patch(
+            "app.core.workflow.workflow_nodes.chat_completion_stream"
+        ) as mock_stream:
             mock_stream.return_value = AsyncMock()
             mock_stream.return_value.__aiter__.return_value = iter(["Hello", "!"])
 
@@ -89,15 +90,17 @@ class TestLLMNodeSkillLoading:
         assert complete_events[0]["output"] == "Hello!"
 
     @pytest.mark.asyncio
-    async def test_llm_node_with_skill_loading(self, temp_skills_dir, execution_context):
+    async def test_llm_node_with_skill_loading(
+        self, temp_skills_dir, execution_context
+    ):
         node = {
             "id": "llm-1",
             "type": "llm",
             "data": {
                 "skillName": "test-skill",
                 "systemPrompt": "This should be overridden",
-                "temperature": 0.9
-            }
+                "temperature": 0.9,
+            },
         }
 
         def get_input(node_id, ctx):
@@ -105,7 +108,7 @@ class TestLLMNodeSkillLoading:
 
         events = []
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
 
@@ -114,7 +117,9 @@ class TestLLMNodeSkillLoading:
             mock_skill.model = SkillModelConfig(temperature=0.3, max_tokens=1000)
             mock_loader.get_skill.return_value = mock_skill
 
-            with patch('app.core.workflow.workflow_nodes.chat_completion_stream') as mock_stream:
+            with patch(
+                "app.core.workflow.workflow_nodes.chat_completion_stream"
+            ) as mock_stream:
                 mock_stream.return_value = AsyncMock()
                 mock_stream.return_value.__aiter__.return_value = iter(["Result"])
 
@@ -123,7 +128,9 @@ class TestLLMNodeSkillLoading:
 
         assert events[0]["type"] == "node_start"
 
-        skill_loaded_events = [e for e in events if e.get("type_detail") == "skill_loaded"]
+        skill_loaded_events = [
+            e for e in events if e.get("type_detail") == "skill_loaded"
+        ]
         assert len(skill_loaded_events) == 1
         assert skill_loaded_events[0]["skill_name"] == "test-skill"
         assert skill_loaded_events[0]["has_prompt"] is True
@@ -139,8 +146,8 @@ class TestLLMNodeSkillLoading:
             "type": "llm",
             "data": {
                 "skillName": "non-existent-skill",
-                "systemPrompt": "Fallback prompt"
-            }
+                "systemPrompt": "Fallback prompt",
+            },
         }
 
         def get_input(node_id, ctx):
@@ -148,7 +155,7 @@ class TestLLMNodeSkillLoading:
 
         events = []
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
             mock_loader.get_skill.side_effect = Exception("Skill not found")
@@ -170,8 +177,8 @@ class TestLLMNodeSkillLoading:
             "data": {
                 "skillName": "test-skill",
                 "systemPrompt": "Original prompt that should be overridden",
-                "temperature": 0.5
-            }
+                "temperature": 0.5,
+            },
         }
 
         def get_input(node_id, ctx):
@@ -179,7 +186,7 @@ class TestLLMNodeSkillLoading:
 
         captured_messages = None
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
 
@@ -188,12 +195,15 @@ class TestLLMNodeSkillLoading:
             mock_skill.model = None
             mock_loader.get_skill.return_value = mock_skill
 
-            async def capture_messages(messages, temperature):
+            async def capture_messages(messages, **kwargs):
                 nonlocal captured_messages
                 captured_messages = messages
                 yield "Result"
 
-            with patch('app.core.workflow.workflow_nodes.chat_completion_stream', side_effect=capture_messages):
+            with patch(
+                "app.core.workflow.workflow_nodes.chat_completion_stream",
+                side_effect=capture_messages,
+            ):
                 events = []
                 async for event in execute_llm_node(node, execution_context, get_input):
                     events.append(event)
@@ -209,8 +219,8 @@ class TestLLMNodeSkillLoading:
             "data": {
                 "skillName": "test-skill",
                 "systemPrompt": "Test prompt",
-                "temperature": 0.9
-            }
+                "temperature": 0.9,
+            },
         }
 
         def get_input(node_id, ctx):
@@ -218,7 +228,7 @@ class TestLLMNodeSkillLoading:
 
         captured_temperature = None
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
 
@@ -227,12 +237,15 @@ class TestLLMNodeSkillLoading:
             mock_skill.model = SkillModelConfig(temperature=0.2, max_tokens=1000)
             mock_loader.get_skill.return_value = mock_skill
 
-            async def capture_temperature(messages, temperature):
+            async def capture_temperature(messages, **kwargs):
                 nonlocal captured_temperature
-                captured_temperature = temperature
+                captured_temperature = kwargs.get("temperature")
                 yield "Result"
 
-            with patch('app.core.workflow.workflow_nodes.chat_completion_stream', side_effect=capture_temperature):
+            with patch(
+                "app.core.workflow.workflow_nodes.chat_completion_stream",
+                side_effect=capture_temperature,
+            ):
                 events = []
                 async for event in execute_llm_node(node, execution_context, get_input):
                     events.append(event)
@@ -247,8 +260,8 @@ class TestLLMNodeSkillLoading:
             "data": {
                 "skillName": "test-skill",
                 "systemPrompt": "Test prompt",
-                "temperature": 0.8
-            }
+                "temperature": 0.8,
+            },
         }
 
         def get_input(node_id, ctx):
@@ -256,7 +269,7 @@ class TestLLMNodeSkillLoading:
 
         captured_temperature = None
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
 
@@ -265,12 +278,15 @@ class TestLLMNodeSkillLoading:
             mock_skill.model = None
             mock_loader.get_skill.return_value = mock_skill
 
-            async def capture_temperature(messages, temperature):
+            async def capture_temperature(messages, **kwargs):
                 nonlocal captured_temperature
-                captured_temperature = temperature
+                captured_temperature = kwargs.get("temperature")
                 yield "Result"
 
-            with patch('app.core.workflow.workflow_nodes.chat_completion_stream', side_effect=capture_temperature):
+            with patch(
+                "app.core.workflow.workflow_nodes.chat_completion_stream",
+                side_effect=capture_temperature,
+            ):
                 events = []
                 async for event in execute_llm_node(node, execution_context, get_input):
                     events.append(event)
@@ -278,14 +294,16 @@ class TestLLMNodeSkillLoading:
         assert captured_temperature == 0.8
 
     @pytest.mark.asyncio
-    async def test_llm_node_skill_prompt_with_template_variables(self, execution_context):
+    async def test_llm_node_skill_prompt_with_template_variables(
+        self, execution_context
+    ):
         node = {
             "id": "llm-1",
             "type": "llm",
             "data": {
                 "skillName": "test-skill",
-                "systemPrompt": "Prompt with {{variable}}"
-            }
+                "systemPrompt": "Prompt with {{variable}}",
+            },
         }
 
         execution_context.variables["variable"] = "resolved_value"
@@ -295,7 +313,7 @@ class TestLLMNodeSkillLoading:
 
         captured_messages = None
 
-        with patch('app.core.workflow.workflow_nodes.SkillLoader') as mock_loader_class:
+        with patch("app.core.workflow.workflow_nodes.SkillLoader") as mock_loader_class:
             mock_loader = MagicMock()
             mock_loader_class.return_value = mock_loader
 
@@ -304,12 +322,15 @@ class TestLLMNodeSkillLoading:
             mock_skill.model = None
             mock_loader.get_skill.return_value = mock_skill
 
-            async def capture_messages(messages, temperature):
+            async def capture_messages(messages, **kwargs):
                 nonlocal captured_messages
                 captured_messages = messages
                 yield "Result"
 
-            with patch('app.core.workflow.workflow_nodes.chat_completion_stream', side_effect=capture_messages):
+            with patch(
+                "app.core.workflow.workflow_nodes.chat_completion_stream",
+                side_effect=capture_messages,
+            ):
                 events = []
                 async for event in execute_llm_node(node, execution_context, get_input):
                     events.append(event)
@@ -325,23 +346,81 @@ class TestLLMNodeSkillLoading:
             "data": {
                 "skillName": "",
                 "systemPrompt": "You are a helpful assistant.",
-                "temperature": 0.7
-            }
+                "temperature": 0.7,
+            },
         }
 
         def get_input(node_id, ctx):
             return "Hello, world!"
 
         events = []
-        with patch('app.core.workflow.workflow_nodes.chat_completion_stream') as mock_stream:
+        with patch(
+            "app.core.workflow.workflow_nodes.chat_completion_stream"
+        ) as mock_stream:
             mock_stream.return_value = AsyncMock()
             mock_stream.return_value.__aiter__.return_value = iter(["Hello"])
 
             async for event in execute_llm_node(node, execution_context, get_input):
                 events.append(event)
 
-        skill_loaded_events = [e for e in events if e.get("type_detail") == "skill_loaded"]
+        skill_loaded_events = [
+            e for e in events if e.get("type_detail") == "skill_loaded"
+        ]
         assert len(skill_loaded_events) == 0
 
+        complete_events = [e for e in events if e["type"] == "node_complete"]
+        assert len(complete_events) == 1
+
+    @pytest.mark.asyncio
+    async def test_llm_node_supports_model_and_chat_history(self):
+        execution_context = ExecutionContext(
+            initial_input="test",
+            user_id=42,
+            model="openai:gpt-4o-mini",
+            conversation_history=[
+                {"role": "user", "content": "历史问题"},
+                {"role": "assistant", "content": "历史回答"},
+            ],
+        )
+
+        node = {
+            "id": "llm-1",
+            "type": "llm",
+            "data": {
+                "model": "qwen:qwen-plus",
+                "inheritChatHistory": True,
+                "systemPrompt": "You are a helper",
+                "temperature": 0.6,
+            },
+        }
+
+        def get_input(node_id, ctx):
+            return "当前问题"
+
+        captured_messages = None
+        captured_model = None
+        captured_user_id = None
+
+        async def capture_stream(messages, **kwargs):
+            nonlocal captured_messages, captured_model, captured_user_id
+            captured_messages = messages
+            captured_model = kwargs.get("model")
+            captured_user_id = kwargs.get("user_id")
+            yield "ok"
+
+        with patch(
+            "app.core.workflow.workflow_nodes.chat_completion_stream",
+            side_effect=capture_stream,
+        ):
+            events = []
+            async for event in execute_llm_node(node, execution_context, get_input):
+                events.append(event)
+
+        assert captured_messages is not None
+        assert captured_messages[1]["content"] == "历史问题"
+        assert captured_messages[2]["content"] == "历史回答"
+        assert captured_messages[-1]["content"] == "当前问题"
+        assert captured_model == "qwen:qwen-plus"
+        assert captured_user_id == 42
         complete_events = [e for e in events if e["type"] == "node_complete"]
         assert len(complete_events) == 1

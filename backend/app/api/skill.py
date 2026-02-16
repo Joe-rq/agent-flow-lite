@@ -9,14 +9,20 @@ Provides RESTful endpoints for managing skills:
 - DELETE /api/v1/skills/{name} - Delete skill
 - POST /api/v1/skills/{name}/run - Execute skill with SSE streaming
 """
+
+import logging
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.core.config import settings
 from app.core.paths import SKILLS_DIR
-from app.core.skill.skill_executor import SkillExecutor, format_sse_event, get_skill_executor
+from app.core.skill.skill_executor import (
+    SkillExecutor,
+    format_sse_event,
+    get_skill_executor,
+)
 from app.core.skill.skill_loader import SkillLoader, SkillValidationError
 from app.models.skill import (
     SkillCreateRequest,
@@ -27,7 +33,10 @@ from app.models.skill import (
     SkillUpdateRequest,
 )
 from app.core.auth import User, get_current_user
+from app.middleware.rate_limit import limiter
 from app.models.user import UserRole
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 
@@ -63,9 +72,10 @@ async def list_skills(user: User = Depends(get_current_user)) -> SkillListRespon
         skills = skill_loader.list_skills(user_id=user_id_filter)
         return SkillListResponse(skills=skills, total=len(skills))
     except Exception as exc:
+        logger.warning("Failed to list skills", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list skills: {str(exc)}",
+            detail="Failed to list skills",
         ) from exc
 
 
@@ -81,14 +91,17 @@ async def get_skill(name: str, user: User = Depends(get_current_user)) -> SkillD
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
+        logger.warning("Failed to get skill '%s'", name, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get skill: {str(exc)}",
+            detail="Failed to get skill",
         ) from exc
 
 
 @router.post("", response_model=SkillDetail, status_code=status.HTTP_201_CREATED)
-async def create_skill(data: SkillCreateRequest, user: User = Depends(get_current_user)) -> SkillDetail:
+async def create_skill(
+    data: SkillCreateRequest, user: User = Depends(get_current_user)
+) -> SkillDetail:
     """
     Create a new skill.
 
@@ -103,14 +116,17 @@ async def create_skill(data: SkillCreateRequest, user: User = Depends(get_curren
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
+        logger.warning("Failed to create skill '%s'", data.name, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create skill: {str(exc)}",
+            detail="Failed to create skill",
         ) from exc
 
 
 @router.put("/{name}", response_model=SkillDetail)
-async def update_skill(name: str, data: SkillUpdateRequest, user: User = Depends(get_current_user)) -> SkillDetail:
+async def update_skill(
+    name: str, data: SkillUpdateRequest, user: User = Depends(get_current_user)
+) -> SkillDetail:
     """
     Update an existing skill's SKILL.md content.
 
@@ -125,9 +141,10 @@ async def update_skill(name: str, data: SkillUpdateRequest, user: User = Depends
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
+        logger.warning("Failed to update skill '%s'", name, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update skill: {str(exc)}",
+            detail="Failed to update skill",
         ) from exc
 
 
@@ -145,9 +162,10 @@ async def delete_skill(name: str, user: User = Depends(get_current_user)) -> Non
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
+        logger.warning("Failed to delete skill '%s'", name, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete skill: {str(exc)}",
+            detail="Failed to delete skill",
         ) from exc
 
 
@@ -155,21 +173,28 @@ async def _execute_skill_stream(
     skill: SkillDetail,
     inputs: dict[str, str],
     executor: SkillExecutor,
+    user_id: int | None,
 ) -> AsyncGenerator[str, None]:
     """Execute skill and yield SSE events."""
     try:
-        async for event in executor.execute(skill, inputs):
+        async for event in executor.execute(skill, inputs, user_id=user_id):
             yield event
     except Exception as exc:
+        logger.warning("Skill execution stream failed", exc_info=True)
         # Yield error event if execution fails
-        yield format_sse_event("done", {
-            "status": "error",
-            "message": f"Skill execution failed: {str(exc)}"
-        })
+        yield format_sse_event(
+            "done", {"status": "error", "message": "Skill execution failed"}
+        )
 
 
 @router.post("/{name}/run")
-async def run_skill(name: str, data: SkillRunRequest, user: User = Depends(get_current_user)) -> StreamingResponse:
+@limiter.limit("10/minute")
+async def run_skill(
+    request: Request,
+    name: str,
+    data: SkillRunRequest,
+    user: User = Depends(get_current_user),
+) -> StreamingResponse:
     """
     Execute a skill with the provided inputs.
 
@@ -188,9 +213,10 @@ async def run_skill(name: str, data: SkillRunRequest, user: User = Depends(get_c
     except SkillValidationError as exc:
         raise _handle_validation_error(exc) from exc
     except Exception as exc:
+        logger.warning("Failed to load skill '%s' for execution", name, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to load skill: {str(exc)}",
+            detail="Failed to load skill",
         ) from exc
 
     # Get skill executor
@@ -198,7 +224,7 @@ async def run_skill(name: str, data: SkillRunRequest, user: User = Depends(get_c
 
     # Return SSE streaming response
     return StreamingResponse(
-        _execute_skill_stream(skill, data.inputs, executor),
+        _execute_skill_stream(skill, data.inputs, executor, user.id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

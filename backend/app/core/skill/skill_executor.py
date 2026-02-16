@@ -6,7 +6,9 @@ This module provides the SkillExecutor class for executing skills with:
 - Optional RAG retrieval if knowledge_base is configured
 - SSE streaming of thought/token/citation/done events
 """
+
 import json
+import logging
 import re
 from typing import AsyncGenerator, Dict, List, Optional, Any
 
@@ -14,6 +16,8 @@ from app.core.llm import chat_completion_stream
 from app.core.rag import get_rag_pipeline
 from app.models.skill import SkillInput
 from app.utils.sse import format_sse_event
+
+logger = logging.getLogger(__name__)
 
 
 class SkillExecutor:
@@ -29,9 +33,7 @@ class SkillExecutor:
         return self._rag_pipeline
 
     def validate_inputs(
-        self,
-        skill_inputs: List[SkillInput],
-        provided_inputs: Dict[str, str]
+        self, skill_inputs: List[SkillInput], provided_inputs: Dict[str, str]
     ) -> None:
         """
         Validate that all required inputs are provided.
@@ -59,7 +61,7 @@ class SkillExecutor:
         self,
         prompt: str,
         skill_inputs: List[SkillInput],
-        provided_inputs: Dict[str, str]
+        provided_inputs: Dict[str, str],
     ) -> str:
         """
         Single-pass variable substitution using {{variable}} syntax.
@@ -85,6 +87,9 @@ class SkillExecutor:
                 name = input_def.name
                 default = input_def.default
 
+            if not isinstance(name, str) or not name:
+                continue
+
             if name in provided_inputs:
                 variable_values[name] = provided_inputs[name]
             else:
@@ -92,7 +97,7 @@ class SkillExecutor:
 
         # Single-pass regex substitution
         # Match {{variable_name}} - variable names are alphanumeric with underscores/hyphens
-        def replace_match(match: re.Match) -> str:
+        def replace_match(match: re.Match[str]) -> str:
             var_name = match.group(1).strip()
             return variable_values.get(var_name, "")
 
@@ -104,7 +109,8 @@ class SkillExecutor:
     async def execute(
         self,
         skill: Any,
-        inputs: Dict[str, str]
+        inputs: Dict[str, str],
+        user_id: int | str | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Execute a skill with the provided inputs.
@@ -124,60 +130,58 @@ class SkillExecutor:
         """
         try:
             # Extract skill properties
-            skill_inputs = getattr(skill, 'inputs', []) or []
+            skill_inputs = getattr(skill, "inputs", []) or []
             if isinstance(skill, dict):
-                skill_inputs = skill.get('inputs', [])
+                skill_inputs = skill.get("inputs", [])
 
-            prompt = getattr(skill, 'prompt', '') or ''
+            prompt = getattr(skill, "prompt", "") or ""
             if isinstance(skill, dict):
-                prompt = skill.get('prompt', '')
+                prompt = skill.get("prompt", "")
 
-            knowledge_base = getattr(skill, 'knowledge_base', None)
+            knowledge_base = getattr(skill, "knowledge_base", None)
             if isinstance(skill, dict):
-                knowledge_base = skill.get('knowledge_base')
+                knowledge_base = skill.get("knowledge_base")
 
-            model_config = getattr(skill, 'model', None) or {}
+            model_config = getattr(skill, "model", None) or {}
             if isinstance(skill, dict):
-                model_config = skill.get('model', {})
+                model_config = skill.get("model", {})
 
             # Step 1: Validate required inputs
-            yield format_sse_event("thought", {
-                "type": "validation",
-                "status": "start"
-            })
+            yield format_sse_event("thought", {"type": "validation", "status": "start"})
 
             try:
                 self.validate_inputs(skill_inputs, inputs)
-                yield format_sse_event("thought", {
-                    "type": "validation",
-                    "status": "complete",
-                    "message": "All required inputs provided"
-                })
+                yield format_sse_event(
+                    "thought",
+                    {
+                        "type": "validation",
+                        "status": "complete",
+                        "message": "All required inputs provided",
+                    },
+                )
             except ValueError as e:
-                yield format_sse_event("thought", {
-                    "type": "validation",
-                    "status": "error",
-                    "error": str(e)
-                })
-                yield format_sse_event("done", {
-                    "status": "error",
-                    "message": str(e)
-                })
+                yield format_sse_event(
+                    "thought",
+                    {"type": "validation", "status": "error", "error": str(e)},
+                )
+                yield format_sse_event("done", {"status": "error", "message": str(e)})
                 return
 
             # Step 2: Variable substitution
-            yield format_sse_event("thought", {
-                "type": "substitution",
-                "status": "start"
-            })
+            yield format_sse_event(
+                "thought", {"type": "substitution", "status": "start"}
+            )
 
             substituted_prompt = self.substitute_variables(prompt, skill_inputs, inputs)
 
-            yield format_sse_event("thought", {
-                "type": "substitution",
-                "status": "complete",
-                "message": "Variables substituted"
-            })
+            yield format_sse_event(
+                "thought",
+                {
+                    "type": "substitution",
+                    "status": "complete",
+                    "message": "Variables substituted",
+                },
+            )
 
             # Step 3: RAG retrieval if knowledge_base is configured
             retrieved_results: List[Dict[str, Any]] = []
@@ -185,23 +189,29 @@ class SkillExecutor:
             error_message = ""
 
             if knowledge_base:
-                yield format_sse_event("thought", {
-                    "type": "retrieval",
-                    "status": "start",
-                    "kb_id": knowledge_base
-                })
+                yield format_sse_event(
+                    "thought",
+                    {"type": "retrieval", "status": "start", "kb_id": knowledge_base},
+                )
 
-                yield format_sse_event("thought", {
-                    "type": "retrieval",
-                    "status": "searching",
-                    "kb_id": knowledge_base,
-                    "query": substituted_prompt[:200]  # First 200 chars as query
-                })
+                yield format_sse_event(
+                    "thought",
+                    {
+                        "type": "retrieval",
+                        "status": "searching",
+                        "kb_id": knowledge_base,
+                        "query": substituted_prompt[:200],  # First 200 chars as query
+                    },
+                )
 
                 try:
                     rag_pipeline = self._get_rag_pipeline()
                     # Use the first 500 chars of prompt as query for RAG
-                    query = substituted_prompt[:500] if len(substituted_prompt) > 500 else substituted_prompt
+                    query = (
+                        substituted_prompt[:500]
+                        if len(substituted_prompt) > 500
+                        else substituted_prompt
+                    )
                     retrieved_results = await rag_pipeline.search(
                         knowledge_base, query, top_k=5
                     )
@@ -209,20 +219,25 @@ class SkillExecutor:
                     # Format top results for thought event
                     top_results = [
                         {
-                            "text": r["text"][:200] + "..." if len(r["text"]) > 200 else r["text"],
+                            "text": r["text"][:200] + "..."
+                            if len(r["text"]) > 200
+                            else r["text"],
                             "doc_id": r["metadata"].get("doc_id", ""),
-                            "score": r["score"]
+                            "score": r["score"],
                         }
                         for r in retrieved_results[:3]
                     ]
 
-                    yield format_sse_event("thought", {
-                        "type": "retrieval",
-                        "status": "complete",
-                        "kb_id": knowledge_base,
-                        "results_count": len(retrieved_results),
-                        "top_results": top_results
-                    })
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "retrieval",
+                            "status": "complete",
+                            "kb_id": knowledge_base,
+                            "results_count": len(retrieved_results),
+                            "top_results": top_results,
+                        },
+                    )
 
                     # Emit citation event if results found
                     if retrieved_results:
@@ -231,19 +246,29 @@ class SkillExecutor:
                                 "doc_id": r["metadata"].get("doc_id", ""),
                                 "chunk_index": r["metadata"].get("chunk_index", 0),
                                 "score": r["score"],
-                                "text": r["text"][:200] + "..." if len(r["text"]) > 200 else r["text"]
+                                "text": r["text"][:200] + "..."
+                                if len(r["text"]) > 200
+                                else r["text"],
                             }
                             for r in retrieved_results
                         ]
                         yield format_sse_event("citation", {"sources": sources})
 
-                except Exception as e:
-                    yield format_sse_event("thought", {
-                        "type": "retrieval",
-                        "status": "error",
-                        "kb_id": knowledge_base,
-                        "error": str(e)
-                    })
+                except Exception:
+                    logger.warning(
+                        "Skill retrieval failed for knowledge base '%s'",
+                        knowledge_base,
+                        exc_info=True,
+                    )
+                    yield format_sse_event(
+                        "thought",
+                        {
+                            "type": "retrieval",
+                            "status": "error",
+                            "kb_id": knowledge_base,
+                            "error": "Retrieval failed",
+                        },
+                    )
                     # Continue without RAG context if retrieval fails
                     retrieved_results = []
 
@@ -269,44 +294,58 @@ class SkillExecutor:
             messages.append({"role": "user", "content": substituted_prompt})
 
             # Step 5: Stream LLM tokens
-            yield format_sse_event("thought", {
-                "type": "generation",
-                "status": "start"
-            })
+            yield format_sse_event("thought", {"type": "generation", "status": "start"})
 
-            temperature = model_config.get("temperature", 0.7) if isinstance(model_config, dict) else 0.7
+            temperature = (
+                model_config.get("temperature", 0.7)
+                if isinstance(model_config, dict)
+                else 0.7
+            )
 
             try:
-                async for token in chat_completion_stream(messages, temperature=temperature):
+                async for token in chat_completion_stream(
+                    messages,
+                    temperature=temperature,
+                    user_id=user_id,
+                ):
                     yield format_sse_event("token", {"content": token})
-            except Exception as e:
+            except Exception:
+                logger.warning(
+                    "LLM streaming failed during skill execution", exc_info=True
+                )
                 has_error = True
-                error_message = str(e)
-                yield format_sse_event("token", {"content": f"\n[Error: {str(e)}]"})
+                error_message = "Generation failed"
+                yield format_sse_event("error", {"message": error_message})
 
             # Step 6: Done event
             if has_error:
-                yield format_sse_event("done", {
-                    "status": "error",
-                    "message": error_message
-                })
+                yield format_sse_event(
+                    "done", {"status": "error", "message": error_message}
+                )
             else:
-                yield format_sse_event("done", {
-                    "status": "success",
-                    "message": "Skill execution completed successfully"
-                })
+                yield format_sse_event(
+                    "done",
+                    {
+                        "status": "success",
+                        "message": "Skill execution completed successfully",
+                    },
+                )
 
-        except Exception as e:
+        except Exception:
             # Catch-all for unexpected errors
-            yield format_sse_event("thought", {
-                "type": "error",
-                "status": "error",
-                "error": str(e)
-            })
-            yield format_sse_event("done", {
-                "status": "error",
-                "message": f"Skill execution failed: {str(e)}"
-            })
+            logger.warning("Skill execution failed unexpectedly", exc_info=True)
+            yield format_sse_event(
+                "thought",
+                {
+                    "type": "error",
+                    "status": "error",
+                    "error": "Skill execution failed",
+                },
+            )
+            yield format_sse_event(
+                "done",
+                {"status": "error", "message": "Skill execution failed"},
+            )
 
 
 # Global executor instance

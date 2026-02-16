@@ -1,6 +1,10 @@
 """Knowledge base API endpoints for document management."""
+
+import logging
+import asyncio
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from fastapi import (
     APIRouter,
@@ -9,12 +13,14 @@ from fastapi import (
     File,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
 from fastapi.responses import JSONResponse
 
 from app.core.auth import User, get_current_user
+from app.core.audit import audit_log
 from app.core.chroma_client import get_chroma_client
 from app.core.knowledge.processor import (
     InvalidKBIdError,
@@ -47,6 +53,8 @@ from app.models.document import (
     KnowledgeBaseListResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge"])
 
 
@@ -61,6 +69,7 @@ def _check_kb_id(kb_id: str) -> None:
 
 @router.post("/{kb_id}/upload")
 async def upload_document(
+    request: Request,
     kb_id: str,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
@@ -77,16 +86,29 @@ async def upload_document(
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB.",
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)}MB.",
         )
 
-    doc_id, task_id, _path, metadata = create_document_record(kb_id, file.filename, content)
+    doc_id, task_id, _path, metadata = create_document_record(
+        kb_id, file.filename, content
+    )
     background_tasks.add_task(process_document_task, kb_id, doc_id, task_id)
 
+    audit_log(
+        request=request,
+        user_id=user.id,
+        action="document_upload",
+        resource_id=f"{kb_id}:{doc_id}",
+    )
+
     return DocumentResponse(
-        id=doc_id, kb_id=kb_id, filename=file.filename,
-        status=DocumentStatus.PROCESSING, file_size=len(content),
-        created_at=datetime.fromisoformat(metadata["created_at"]), task_id=task_id,
+        id=doc_id,
+        kb_id=kb_id,
+        filename=file.filename,
+        status=DocumentStatus.PROCESSING,
+        file_size=len(content),
+        created_at=datetime.fromisoformat(metadata["created_at"]),
+        task_id=task_id,
     )
 
 
@@ -102,14 +124,27 @@ async def list_documents(
 
 @router.delete("/{kb_id}/documents/{doc_id}")
 async def delete_document(
-    kb_id: str, doc_id: str, user: User = Depends(get_current_user)
+    request: Request,
+    kb_id: str,
+    doc_id: str,
+    user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Delete a document from a knowledge base."""
     _check_kb_id(kb_id)
     try:
-        delete_document_files(kb_id, doc_id)
+        await delete_document_files(kb_id, doc_id)
     except KeyError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found."
+        )
+
+    audit_log(
+        request=request,
+        user_id=user.id,
+        action="document_delete",
+        resource_id=f"{kb_id}:{doc_id}",
+    )
+
     return JSONResponse(
         content={"message": "Document deleted successfully.", "doc_id": doc_id},
         status_code=status.HTTP_200_OK,
@@ -118,7 +153,9 @@ async def delete_document(
 
 @router.post("/{kb_id}/process/{doc_id}")
 async def process_document(
-    kb_id: str, doc_id: str, background_tasks: BackgroundTasks,
+    kb_id: str,
+    doc_id: str,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
 ) -> JSONResponse:
     """Process a document: parse, chunk, embed, and store to ChromaDB."""
@@ -127,7 +164,9 @@ async def process_document(
     if task_id is None:
         if code == 404:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        return JSONResponse(content={"message": message, "doc_id": doc_id}, status_code=code)
+        return JSONResponse(
+            content={"message": message, "doc_id": doc_id}, status_code=code
+        )
 
     background_tasks.add_task(process_document_task, kb_id, doc_id, task_id)
     return JSONResponse(
@@ -137,7 +176,9 @@ async def process_document(
 
 
 @router.get("/tasks/{task_id}")
-async def get_task_status(task_id: str, user: User = Depends(get_current_user)) -> dict:
+async def get_task_status(
+    task_id: str, user: User = Depends(get_current_user)
+) -> dict[str, Any]:
     cleanup_old_tasks()
     if task_id not in processing_tasks:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -150,15 +191,23 @@ async def search_documents(
     query: str = Query(..., description="Search query"),
     top_k: int = Query(5, description="Number of top results to return", ge=1, le=20),
     user: User = Depends(get_current_user),
-) -> dict:
+) -> dict[str, Any]:
     """Search for relevant chunks in a knowledge base."""
     _check_kb_id(kb_id)
     if not query.strip():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Query cannot be empty.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Query cannot be empty."
+        )
     try:
         rag_pipeline = get_rag_pipeline()
         results = await rag_pipeline.search(kb_id, query, top_k=top_k)
-        return {"kb_id": kb_id, "query": query, "top_k": top_k, "results": results, "total": len(results)}
+        return {
+            "kb_id": kb_id,
+            "query": query,
+            "top_k": top_k,
+            "results": results,
+            "total": len(results),
+        }
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except EmbeddingDimensionMismatchError:
@@ -168,41 +217,75 @@ async def search_documents(
             "Rebuild the knowledge base index and re-upload documents.",
         )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Search failed: {str(e)}")
+        logger.warning("Search failed for kb '%s'", kb_id, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Search failed. Please try again later.",
+        )
 
 
 @router.get("/{kb_id}/info")
-async def get_knowledge_base_info(kb_id: str, user: User = Depends(get_current_user)) -> dict:
+async def get_knowledge_base_info(
+    kb_id: str, user: User = Depends(get_current_user)
+) -> dict[str, Any]:
     _check_kb_id(kb_id)
     chroma_client = get_chroma_client()
-    info = chroma_client.get_collection_info(kb_id)
+    info = await asyncio.to_thread(chroma_client.get_collection_info, kb_id)
     doc_count = len(load_documents_metadata(kb_id))
     return {
-        "kb_id": kb_id, "collection_name": info["name"],
-        "document_count": doc_count, "vector_count": info["count"],
+        "kb_id": kb_id,
+        "collection_name": info["name"],
+        "document_count": doc_count,
+        "vector_count": info["count"],
         "collection_exists": info["count"] >= 0,
     }
 
 
 @router.get("", response_model=KnowledgeBaseListResponse)
-async def list_knowledge_bases(user: User = Depends(get_current_user)) -> KnowledgeBaseListResponse:
+async def list_knowledge_bases(
+    user: User = Depends(get_current_user),
+) -> KnowledgeBaseListResponse:
     items = build_kb_list()
     return KnowledgeBaseListResponse(items=items, total=len(items))
 
 
 @router.post("", response_model=KnowledgeBase, status_code=201)
 async def create_knowledge_base(
-    data: KnowledgeBaseCreate, user: User = Depends(get_current_user)
+    request: Request,
+    data: KnowledgeBaseCreate,
+    user: User = Depends(get_current_user),
 ) -> KnowledgeBase:
-    return create_kb(data.name)
+    kb = await create_kb(data.name)
+    audit_log(
+        request=request,
+        user_id=user.id,
+        action="knowledge_base_create",
+        resource_id=kb.id,
+    )
+    return kb
 
 
 @router.delete("/{kb_id}", status_code=204)
-async def delete_knowledge_base(kb_id: str, user: User = Depends(get_current_user)) -> None:
+async def delete_knowledge_base(
+    request: Request,
+    kb_id: str,
+    user: User = Depends(get_current_user),
+) -> None:
     project_root = Path(__file__).parent.parent.parent
     try:
-        delete_kb(kb_id, project_root)
-    except InvalidKBIdError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except KBNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        await delete_kb(kb_id, project_root)
+    except InvalidKBIdError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid kb_id format"
+        )
+    except KBNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found"
+        )
+
+    audit_log(
+        request=request,
+        user_id=user.id,
+        action="knowledge_base_delete",
+        resource_id=kb_id,
+    )

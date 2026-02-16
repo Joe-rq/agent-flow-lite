@@ -1,13 +1,16 @@
 """
 ChromaDB client wrapper for knowledge base storage.
 """
+
 import logging
 import os
 from functools import lru_cache
 from pathlib import Path
+from collections.abc import Mapping
 from typing import Optional
 
 import chromadb
+from chromadb.api.types import Metadata
 from chromadb.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -37,7 +40,7 @@ class ChromaClient:
             settings=Settings(
                 anonymized_telemetry=False,
                 allow_reset=True,
-            )
+            ),
         )
 
     def get_or_create_collection(self, kb_id: str) -> chromadb.Collection:
@@ -53,7 +56,13 @@ class ChromaClient:
             ChromaDB collection for the knowledge base
         """
         collection_name = f"kb_{kb_id}"
-        return self._client.get_or_create_collection(name=collection_name)
+        try:
+            return self._client.get_or_create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": "cosine"},
+            )
+        except TypeError:
+            return self._client.get_or_create_collection(name=collection_name)
 
     def delete_collection(self, kb_id: str) -> bool:
         """
@@ -73,6 +82,9 @@ class ChromaClient:
             # Collection doesn't exist or other error
             if "does not exist" in str(e).lower() or "not found" in str(e).lower():
                 return False
+            logger.warning(
+                "Failed to delete collection '%s'", collection_name, exc_info=True
+            )
             raise
 
     def collection_exists(self, kb_id: str) -> bool:
@@ -97,7 +109,7 @@ class ChromaClient:
         kb_id: str,
         document_id: str,
         content: str,
-        metadata: Optional[dict] = None
+        metadata: Mapping[str, str | int | float | bool | None] | None = None,
     ) -> None:
         """
         Add a document to a knowledge base collection.
@@ -111,13 +123,15 @@ class ChromaClient:
         collection = self.get_or_create_collection(kb_id)
 
         # Prepare metadata
-        doc_metadata = metadata or {}
+        doc_metadata: dict[str, str | int | float | bool | None] = (
+            dict(metadata) if metadata else {}
+        )
         doc_metadata["document_id"] = document_id
 
         collection.add(
             documents=[content],
             ids=[document_id],
-            metadatas=[doc_metadata]
+            metadatas=[doc_metadata],
         )
 
     def delete_document(self, kb_id: str, document_id: str) -> bool:
@@ -141,7 +155,7 @@ class ChromaClient:
             logger.error("Error deleting document %s: %s", document_id, e)
             return False
 
-    def get_collection_info(self, kb_id: str) -> dict:
+    def get_collection_info(self, kb_id: str) -> dict[str, object]:
         """
         Get information about a knowledge base collection.
 
@@ -156,14 +170,10 @@ class ChromaClient:
             return {
                 "name": collection.name,
                 "count": collection.count(),
-                "metadata": collection.metadata
+                "metadata": collection.metadata,
             }
         except ValueError:
-            return {
-                "name": f"kb_{kb_id}",
-                "count": 0,
-                "metadata": None
-            }
+            return {"name": f"kb_{kb_id}", "count": 0, "metadata": None}
 
 
 @lru_cache(maxsize=1)

@@ -4,9 +4,13 @@ Business logic extracted from the knowledge API layer: background document
 processing, KB CRUD orchestration, and helpers that compose multiple
 store-level operations.
 """
+
+import logging
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from app.core.chroma_client import get_chroma_client
 from app.core.knowledge.store import (
@@ -27,10 +31,13 @@ from app.core.knowledge.store import (
 from app.core.rag import get_rag_pipeline
 from app.models.document import DocumentResponse, DocumentStatus, KnowledgeBase
 
+logger = logging.getLogger(__name__)
+
 
 # ---------------------------------------------------------------------------
 # Document-level operations
 # ---------------------------------------------------------------------------
+
 
 async def process_document_task(
     kb_id: str, doc_id: str, task_id: str | None = None
@@ -59,6 +66,12 @@ async def process_document_task(
             if task_id and task_id in processing_tasks:
                 update_task(task_id, {"status": "failed", "error": error_msg})
     except Exception as e:
+        logger.warning(
+            "Document processing failed for doc '%s' in kb '%s'",
+            doc_id,
+            kb_id,
+            exc_info=True,
+        )
         update_document_status(kb_id, doc_id, DocumentStatus.FAILED, str(e))
         if task_id and task_id in processing_tasks:
             update_task(task_id, {"status": "failed", "error": str(e)})
@@ -66,7 +79,7 @@ async def process_document_task(
 
 def create_document_record(
     kb_id: str, filename: str, content: bytes
-) -> tuple[str, str, Path, dict]:
+) -> tuple[str, str, Path, dict[str, Any]]:
     """Save an uploaded file and create its metadata record.
 
     Returns (doc_id, task_id, file_path, metadata_dict).
@@ -95,16 +108,16 @@ def create_document_record(
     all_metadata[doc_id] = metadata
     save_documents_metadata(kb_id, all_metadata)
 
-    chroma_client = get_chroma_client()
-    chroma_client.get_or_create_collection(kb_id)
-
-    add_task(task_id, {
-        "status": "pending",
-        "progress": 0,
-        "doc_id": doc_id,
-        "kb_id": kb_id,
-        "started_at": timestamp.isoformat(),
-    })
+    add_task(
+        task_id,
+        {
+            "status": "pending",
+            "progress": 0,
+            "doc_id": doc_id,
+            "kb_id": kb_id,
+            "started_at": timestamp.isoformat(),
+        },
+    )
 
     return doc_id, task_id, file_path, metadata
 
@@ -127,7 +140,7 @@ def build_document_responses(kb_id: str) -> list[DocumentResponse]:
     return documents
 
 
-def delete_document_files(kb_id: str, doc_id: str) -> dict:
+async def delete_document_files(kb_id: str, doc_id: str) -> dict[str, Any]:
     """Delete a document's file, metadata entry, and chroma vectors.
 
     Returns the removed metadata dict, or raises KeyError if not found.
@@ -146,7 +159,7 @@ def delete_document_files(kb_id: str, doc_id: str) -> dict:
 
     save_documents_metadata(kb_id, all_metadata)
     chroma_client = get_chroma_client()
-    chroma_client.delete_document(kb_id, doc_id)
+    await asyncio.to_thread(chroma_client.delete_document, kb_id, doc_id)
     return doc_data
 
 
@@ -167,19 +180,23 @@ def start_document_processing(kb_id: str, doc_id: str) -> tuple[str | None, str,
         return None, "Document has already been processed.", 200
 
     task_id = str(uuid.uuid4())
-    add_task(task_id, {
-        "status": "pending",
-        "progress": 0,
-        "doc_id": doc_id,
-        "kb_id": kb_id,
-        "started_at": datetime.now(timezone.utc).isoformat(),
-    })
+    add_task(
+        task_id,
+        {
+            "status": "pending",
+            "progress": 0,
+            "doc_id": doc_id,
+            "kb_id": kb_id,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
     return task_id, "Document processing started.", 202
 
 
 # ---------------------------------------------------------------------------
 # Knowledge-base-level operations
 # ---------------------------------------------------------------------------
+
 
 def build_kb_list() -> list[KnowledgeBase]:
     """Build a sorted list of KnowledgeBase models."""
@@ -189,15 +206,19 @@ def build_kb_list() -> list[KnowledgeBase]:
         created_at = datetime.fromisoformat(
             kb_data.get("created_at", datetime.now(timezone.utc).isoformat())
         )
-        items.append(KnowledgeBase(
-            id=kb_id, name=kb_data.get("name", kb_id),
-            document_count=get_kb_document_count(kb_id), created_at=created_at,
-        ))
+        items.append(
+            KnowledgeBase(
+                id=kb_id,
+                name=kb_data.get("name", kb_id),
+                document_count=get_kb_document_count(kb_id),
+                created_at=created_at,
+            )
+        )
     items.sort(key=lambda x: x.created_at, reverse=True)
     return items
 
 
-def create_kb(name: str) -> KnowledgeBase:
+async def create_kb(name: str) -> KnowledgeBase:
     """Create a new knowledge base (metadata + chroma collection)."""
     kb_id = str(uuid.uuid4())
     timestamp = datetime.now(timezone.utc)
@@ -205,7 +226,7 @@ def create_kb(name: str) -> KnowledgeBase:
     metadata[kb_id] = {"id": kb_id, "name": name, "created_at": timestamp.isoformat()}
     save_kb_metadata(metadata)
     chroma_client = get_chroma_client()
-    chroma_client.get_or_create_collection(kb_id)
+    await asyncio.to_thread(chroma_client.get_or_create_collection, kb_id)
     return KnowledgeBase(id=kb_id, name=name, document_count=0, created_at=timestamp)
 
 
@@ -217,7 +238,7 @@ class InvalidKBIdError(Exception):
     """Raised when a knowledge base ID has invalid format or path."""
 
 
-def delete_kb(kb_id: str, project_root: Path) -> None:
+async def delete_kb(kb_id: str, project_root: Path) -> None:
     """Delete a knowledge base: chroma, files, and metadata.
 
     Raises InvalidKBIdError for bad format or path traversal.
@@ -231,7 +252,7 @@ def delete_kb(kb_id: str, project_root: Path) -> None:
         raise KBNotFoundError(f"Knowledge base '{kb_id}' not found")
 
     chroma_client = get_chroma_client()
-    chroma_client.delete_collection(kb_id)
+    await asyncio.to_thread(chroma_client.delete_collection, kb_id)
 
     upload_dir, metadata_dir = get_kb_directories(kb_id)
     try:

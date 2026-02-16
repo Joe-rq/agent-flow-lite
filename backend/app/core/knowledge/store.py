@@ -1,10 +1,12 @@
 """Knowledge base storage, path utilities, and task tracking."""
+
 import json
 import re
 import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from filelock import FileLock
 
@@ -12,10 +14,10 @@ from app.models.document import DocumentStatus
 
 _TASK_RETENTION_SECONDS = 30 * 60
 
-ALLOWED_EXTENSIONS = {".txt", ".md"}
+ALLOWED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-processing_tasks: dict[str, dict] = {}
+processing_tasks: dict[str, dict[str, Any]] = {}
 
 
 def _get_project_root() -> Path:
@@ -27,11 +29,12 @@ def _get_project_root() -> Path:
 # KB metadata persistence
 # ---------------------------------------------------------------------------
 
+
 def _get_kb_metadata_file() -> Path:
     return _get_project_root() / "data" / "kb_metadata.json"
 
 
-def load_kb_metadata() -> dict:
+def load_kb_metadata() -> dict[str, Any]:
     """Load knowledge base metadata from JSON file."""
     metadata_file = _get_kb_metadata_file()
     lock = FileLock(str(metadata_file) + ".lock")
@@ -45,7 +48,7 @@ def load_kb_metadata() -> dict:
             return {}
 
 
-def save_kb_metadata(metadata: dict) -> None:
+def save_kb_metadata(metadata: dict[str, Any]) -> None:
     """Save knowledge base metadata to JSON file."""
     metadata_file = _get_kb_metadata_file()
     metadata_file.parent.mkdir(parents=True, exist_ok=True)
@@ -59,11 +62,12 @@ def save_kb_metadata(metadata: dict) -> None:
 # Task persistence
 # ---------------------------------------------------------------------------
 
+
 def _get_tasks_file() -> Path:
     return _get_project_root() / "data" / "processing_tasks.json"
 
 
-def load_tasks() -> dict[str, dict]:
+def load_tasks() -> dict[str, dict[str, Any]]:
     """Load tasks from persistence file."""
     tasks_file = _get_tasks_file()
     lock = FileLock(str(tasks_file) + ".lock")
@@ -77,7 +81,7 @@ def load_tasks() -> dict[str, dict]:
             return {}
 
 
-def save_tasks(tasks: dict[str, dict]) -> None:
+def save_tasks(tasks: dict[str, dict[str, Any]]) -> None:
     """Save tasks to persistence file."""
     tasks_file = _get_tasks_file()
     tasks_file.parent.mkdir(parents=True, exist_ok=True)
@@ -109,14 +113,14 @@ def cleanup_old_tasks() -> None:
     save_tasks(processing_tasks)
 
 
-def add_task(task_id: str, task_data: dict) -> None:
+def add_task(task_id: str, task_data: dict[str, Any]) -> None:
     """Add a task to the processing tasks and persist."""
     global processing_tasks
     processing_tasks[task_id] = task_data
     save_tasks(processing_tasks)
 
 
-def update_task(task_id: str, updates: dict) -> None:
+def update_task(task_id: str, updates: dict[str, Any]) -> None:
     """Update a task with new data and persist."""
     global processing_tasks
     if task_id in processing_tasks:
@@ -139,6 +143,7 @@ processing_tasks = load_tasks()
 # ---------------------------------------------------------------------------
 # File and document metadata helpers
 # ---------------------------------------------------------------------------
+
 
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed."""
@@ -180,7 +185,7 @@ def get_metadata_path(kb_id: str) -> Path:
     return metadata_dir / "documents.json"
 
 
-def load_documents_metadata(kb_id: str) -> dict:
+def load_documents_metadata(kb_id: str) -> dict[str, Any]:
     """Load document metadata from JSON file."""
     metadata_path = get_metadata_path(kb_id)
     lock = FileLock(str(metadata_path) + ".lock")
@@ -194,7 +199,7 @@ def load_documents_metadata(kb_id: str) -> dict:
             return {}
 
 
-def save_documents_metadata(kb_id: str, metadata: dict) -> None:
+def save_documents_metadata(kb_id: str, metadata: dict[str, Any]) -> None:
     """Save document metadata to JSON file."""
     metadata_path = get_metadata_path(kb_id)
     lock = FileLock(str(metadata_path) + ".lock")
@@ -227,6 +232,7 @@ def get_kb_document_count(kb_id: str) -> int:
 # ---------------------------------------------------------------------------
 # KB directory management
 # ---------------------------------------------------------------------------
+
 
 def validate_kb_id(kb_id: str) -> bool:
     """Validate knowledge base ID format."""
