@@ -47,6 +47,11 @@ const router = createRouter({
       name: 'skill-edit',
       component: () => import('../views/SkillEditor.vue'),
     },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: () => import('../views/SettingsView.vue'),
+    },
   ],
 })
 

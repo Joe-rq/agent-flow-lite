@@ -47,6 +47,18 @@ export const fieldHints: FieldHints = {
       hint: '选择技能后，输入参数将自动从上游节点映射',
     },
   },
+  http: {
+    url: {
+      placeholder: 'https://api.example.com/search?q={{start.output}}',
+      hint: '仅支持 http/https，支持 {{节点ID.output}} 变量插值',
+    },
+  },
+  code: {
+    code: {
+      placeholder: 'import json\nprint(json.dumps({"result": "ok"}))',
+      hint: '仅限可信环境，stdout 内容会作为节点输出',
+    },
+  },
 }
 
 // ── 节点完整示例 ──────────────────────────────────────────────
@@ -130,6 +142,32 @@ export const nodeExamples: Record<string, NodeExample> = {
       '技能的输入参数会自动从上游节点映射',
       '也可手动指定每个参数的来源节点',
       '下游通过 {{skill-1.output}} 获取技能执行结果',
+    ],
+  },
+  http: {
+    title: 'HTTP 节点',
+    description: '向外部 API 发起请求，支持响应路径提取。',
+    fields: [
+      { label: '方法 + URL', value: 'GET https://api.example.com?q={{start.output}}' },
+      { label: '响应提取', value: 'data.items.0.title' },
+    ],
+    tips: [
+      '仅在管理员开启 ENABLE_HTTP_NODE 时可执行',
+      'URL 会经过 SSRF 安全校验，内网地址会被阻断',
+      '响应体最大 1MB，建议尽量提取需要的字段',
+    ],
+  },
+  code: {
+    title: '代码节点',
+    description: '执行受限 Python 代码，stdout 作为节点输出。',
+    fields: [
+      { label: '输入变量', value: '通过环境变量 WORKFLOW_INPUT 读取上游输入' },
+      { label: '输出', value: 'print(...) 的内容写入下游节点' },
+    ],
+    tips: [
+      '仅在管理员开启 ENABLE_CODE_NODE 时可执行',
+      '默认 30 秒超时，内存上限默认 256MB',
+      '该能力不提供强安全隔离，仅适用于可信环境',
     ],
   },
 }

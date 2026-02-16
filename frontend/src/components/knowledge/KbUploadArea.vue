@@ -13,7 +13,7 @@
       <input
         ref="fileInputRef"
         type="file"
-        accept=".txt,.md"
+        accept=".txt,.md,.pdf,.docx"
         multiple
         style="display: none"
         @change="$emit('file-select', $event)"
@@ -23,7 +23,7 @@
         <p class="upload-text">
           <span class="highlight">点击选择文件</span> 或拖拽文件到此处
         </p>
-        <p class="upload-hint">支持 .txt, .md 格式</p>
+        <p class="upload-hint">支持 .txt, .md, .pdf, .docx 格式</p>
       </div>
     </div>
 

@@ -1,8 +1,8 @@
 <template>
-  <div class="node llm-node">
+  <div class="node http-node">
     <div class="node-header">
-      <span class="node-icon">🤖</span>
-      <span class="node-title">LLM</span>
+      <span class="node-icon">🌐</span>
+      <span class="node-title">HTTP</span>
     </div>
     <div class="node-body">
       <span class="node-desc">{{ displayText }}</span>
@@ -11,27 +11,24 @@
 </template>
 
 <script setup lang="ts">
-// Node component - Handle and Position imported for future use
 import { computed } from 'vue'
 
 interface Props {
   data?: {
-    skillName?: string
-    model?: string
-    systemPrompt?: string
+    method?: string
+    url?: string
   }
 }
 
 const props = defineProps<Props>()
 
 const displayText = computed(() => {
-  if (props.data?.skillName) {
-    return `Skill: ${props.data.skillName}`
+  const method = (props.data?.method || 'GET').toUpperCase()
+  const url = props.data?.url || ''
+  if (url) {
+    return `${method} ${url}`
   }
-  if (props.data?.model) {
-    return `Model: ${props.data.model}`
-  }
-  return 'AI 模型调用'
+  return `${method} request`
 })
 </script>
 
@@ -42,11 +39,11 @@ export default {
 </script>
 
 <style scoped>
-.llm-node {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+.http-node {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   border-radius: 8px;
   padding: 12px 16px;
-  min-width: 140px;
+  min-width: 160px;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
@@ -74,6 +71,11 @@ export default {
 }
 
 .node-desc {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

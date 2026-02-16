@@ -14,7 +14,7 @@
     <h3 class="drawer-title">添加节点</h3>
     <div class="drawer-content">
       <div
-        v-for="node in nodeTypes"
+        v-for="node in visibleNodeTypes"
         :key="node.type"
         class="drawer-node-item"
         draggable="true"
@@ -29,18 +29,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const nodeTypes = [
   { type: 'start', icon: '▶', label: '开始节点' },
   { type: 'llm', icon: '🤖', label: 'LLM 节点' },
   { type: 'knowledge', icon: '📚', label: '知识库节点' },
   { type: 'condition', icon: '⚡', label: '条件节点' },
   { type: 'skill', icon: '🎯', label: '技能节点' },
+  { type: 'http', icon: '🌐', label: 'HTTP 节点' },
+  { type: 'code', icon: '🧪', label: '代码节点' },
   { type: 'end', icon: '⏹', label: '结束节点' },
 ]
 
-defineProps<{
+const props = withDefaults(defineProps<{
   showDrawer: boolean
-}>()
+  enabledNodeTypes?: string[]
+}>(), {
+  enabledNodeTypes: () => ['start', 'llm', 'knowledge', 'condition', 'skill', 'end'],
+})
+
+const visibleNodeTypes = computed(() => {
+  const allowed = new Set(props.enabledNodeTypes)
+  return nodeTypes.filter((item) => allowed.has(item.type))
+})
 
 defineEmits<{
   'add-node': [type: string]

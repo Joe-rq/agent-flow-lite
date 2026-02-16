@@ -14,6 +14,33 @@
       <small class="form-hint">选择技能将自动加载其提示词和模型配置</small>
     </div>
 
+    <div class="form-group">
+      <label>模型</label>
+      <select
+        :value="config.model || ''"
+        class="form-select"
+        @change="updateField('model', ($event.target as HTMLSelectElement).value)"
+      >
+        <option value="">跟随默认模型</option>
+        <option v-for="item in models" :key="item.id" :value="item.id">
+          {{ item.provider }} / {{ item.model }}
+        </option>
+      </select>
+      <small class="form-hint">未选择时使用系统默认模型</small>
+    </div>
+
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input
+          :checked="!!config.inheritChatHistory"
+          type="checkbox"
+          @change="updateField('inheritChatHistory', ($event.target as HTMLInputElement).checked)"
+        />
+        继承会话历史
+      </label>
+      <small class="form-hint">开启后，节点会携带当前会话历史上下文执行</small>
+    </div>
+
     <!-- 系统提示词 -->
     <div class="form-group">
       <label>系统提示词</label>
@@ -52,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import type { NodeConfig, Skill } from '@/composables/workflow/useNodeConfig'
+import type { AvailableModel, NodeConfig, Skill } from '@/composables/workflow/useNodeConfig'
 import { fieldHints } from './nodeHelpData'
 
 const hints = fieldHints.llm
@@ -60,6 +87,7 @@ const hints = fieldHints.llm
 const props = defineProps<{
   config: NodeConfig
   skills: Skill[]
+  models: AvailableModel[]
 }>()
 
 const emit = defineEmits<{

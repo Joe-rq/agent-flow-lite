@@ -1,8 +1,8 @@
 <template>
-  <div class="node llm-node">
+  <div class="node code-node">
     <div class="node-header">
-      <span class="node-icon">🤖</span>
-      <span class="node-title">LLM</span>
+      <span class="node-icon">🧪</span>
+      <span class="node-title">Code</span>
     </div>
     <div class="node-body">
       <span class="node-desc">{{ displayText }}</span>
@@ -11,27 +11,22 @@
 </template>
 
 <script setup lang="ts">
-// Node component - Handle and Position imported for future use
 import { computed } from 'vue'
 
 interface Props {
   data?: {
-    skillName?: string
-    model?: string
-    systemPrompt?: string
+    code?: string
+    timeoutSeconds?: number
   }
 }
 
 const props = defineProps<Props>()
 
 const displayText = computed(() => {
-  if (props.data?.skillName) {
-    return `Skill: ${props.data.skillName}`
+  if (props.data?.code?.trim()) {
+    return `Timeout: ${props.data.timeoutSeconds ?? 30}s`
   }
-  if (props.data?.model) {
-    return `Model: ${props.data.model}`
-  }
-  return 'AI 模型调用'
+  return 'Python execution'
 })
 </script>
 
@@ -42,8 +37,8 @@ export default {
 </script>
 
 <style scoped>
-.llm-node {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+.code-node {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border-radius: 8px;
   padding: 12px 16px;
   min-width: 140px;
@@ -74,6 +69,6 @@ export default {
 }
 
 .node-desc {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
 }
 </style>

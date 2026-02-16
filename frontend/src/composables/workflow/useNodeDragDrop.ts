@@ -7,6 +7,8 @@ const LABEL_MAP: Record<string, string> = {
   end: '结束',
   condition: '条件',
   skill: '技能',
+  http: 'HTTP',
+  code: '代码',
 }
 
 interface NodePosition {

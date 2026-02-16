@@ -70,6 +70,10 @@ async function handleLogout() {
             <span class="nav-icon">🧩</span>
             <span class="nav-text">技能管理</span>
           </RouterLink>
+          <RouterLink to="/settings" :title="sidebarCollapsed ? '设置' : ''">
+            <span class="nav-icon">🛠️</span>
+            <span class="nav-text">设置</span>
+          </RouterLink>
           <RouterLink
             v-if="authStore.isAdmin"
             to="/admin"

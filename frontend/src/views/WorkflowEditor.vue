@@ -15,6 +15,12 @@
         <Button variant="danger" size="sm" @click="deleteWorkflow" :disabled="!currentWorkflowId">
           删除工作流
         </Button>
+        <Button variant="secondary" size="sm" @click="openExportDialog" :disabled="!currentWorkflowId">
+          导出 JSON
+        </Button>
+        <Button variant="secondary" size="sm" @click="openImportDialog">
+          导入 JSON
+        </Button>
         <Button variant="secondary" size="sm" @click="autoLayout">⚡ 自动布局</Button>
       </div>
     </div>
@@ -57,9 +63,19 @@
           <Handle type="target" :position="Position.Left" />
           <Handle type="source" :position="Position.Right" />
         </template>
+        <template #node-http="props">
+          <HttpNode v-bind="props" />
+          <Handle type="target" :position="Position.Left" />
+          <Handle type="source" :position="Position.Right" />
+        </template>
+        <template #node-code="props">
+          <CodeNode v-bind="props" />
+          <Handle type="target" :position="Position.Left" />
+          <Handle type="source" :position="Position.Right" />
+        </template>
       </VueFlow>
       <NodeDrawer
-        :show-drawer="drawerOpen" @toggle="drawerOpen = !drawerOpen"
+        :show-drawer="drawerOpen" :enabled-node-types="enabledNodeTypes" @toggle="drawerOpen = !drawerOpen"
         @add-node="addNodeFromPanel" @drag-start="onDragStart"
       />
     </div>
@@ -76,6 +92,18 @@
     @update:run-input="runInput = $event"
     @execute="executeWorkflow" @close="closeRunDialog"
   />
+  <WorkflowImportExportDialog
+    :visible="showImportExportDialog"
+    :mode="importExportMode"
+    :export-data="exportData"
+    :is-exporting="isExporting"
+    :export-error="exportError"
+    :is-importing="isImporting"
+    :import-error="importError"
+    @close="closeImportExportDialog"
+    @import="importWorkflow"
+    @import-template="importWorkflow"
+  />
   <NodeConfigPanel
     :visible="configPanelVisible" :node-id="selectedNodeId"
     :node-type="selectedNodeType" :node-data="selectedNodeData"
@@ -85,7 +113,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import axios from 'axios'
 import { VueFlow, useVueFlow, Handle, Position } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -94,12 +123,15 @@ import LLMNode from '../components/nodes/LLMNode.vue'
 import KnowledgeNode from '../components/nodes/KnowledgeNode.vue'
 import EndNode from '../components/nodes/EndNode.vue'
 import ConditionNode from '../components/nodes/ConditionNode.vue'
+import HttpNode from '../components/nodes/HttpNode.vue'
+import CodeNode from '../components/nodes/CodeNode.vue'
 import SkillNode from '../components/nodes/SkillNode.vue'
 import NodeConfigPanel from '../components/NodeConfigPanel.vue'
 import Button from '@/components/ui/Button.vue'
 import NodeDrawer from '@/components/workflow/NodeDrawer.vue'
 import WorkflowLoadDialog from '@/components/workflow/WorkflowLoadDialog.vue'
 import WorkflowRunDialog from '@/components/workflow/WorkflowRunDialog.vue'
+import WorkflowImportExportDialog from '@/components/workflow/WorkflowImportExportDialog.vue'
 import { useWorkflowCrud } from '@/composables/workflow/useWorkflowCrud'
 import { useWorkflowExecution } from '@/composables/workflow/useWorkflowExecution'
 import { useNodeDragDrop } from '@/composables/workflow/useNodeDragDrop'
@@ -115,6 +147,10 @@ const { addNodes, project, toObject, setNodes, setEdges } = flow
 const {
   isSaving, showLoadDialog, workflows, currentWorkflowId, currentWorkflowName,
   saveWorkflow, loadWorkflows, deleteWorkflow, loadWorkflow,
+  showImportExportDialog, importExportMode, exportData,
+  isExporting, exportError, isImporting, importError,
+  openExportDialog, openImportDialog, closeImportExportDialog,
+  importWorkflow,
 } = useWorkflowCrud(toObject, setNodes, setEdges)
 
 const {
@@ -131,9 +167,43 @@ const {
 } = useEditorActions(flow)
 
 const drawerOpen = ref(true)
+const featureFlags = ref<Record<string, boolean>>({})
+
+const enabledNodeTypes = computed(() => {
+  const base = ['start', 'llm', 'knowledge', 'condition', 'skill', 'end']
+  if (featureFlags.value.ENABLE_HTTP_NODE) {
+    base.splice(base.length - 1, 0, 'http')
+  }
+  if (featureFlags.value.ENABLE_CODE_NODE) {
+    base.splice(base.length - 1, 0, 'code')
+  }
+  return base
+})
+
+async function loadFeatureFlags() {
+  try {
+    const response = await axios.get('/api/v1/settings/feature-flags')
+    const items = Array.isArray(response.data?.items) ? response.data.items : []
+    const nextFlags: Record<string, boolean> = {}
+    for (const item of items) {
+      if (typeof item?.key === 'string') {
+        nextFlags[item.key] = Boolean(item.enabled)
+      }
+    }
+    featureFlags.value = nextFlags
+  } catch (error) {
+    console.error('加载功能开关失败:', error)
+    featureFlags.value = {}
+  }
+}
+
 const elements = ref([
   { id: '1', type: 'start', label: '开始', position: { x: 100, y: 100 } },
 ])
+
+onMounted(() => {
+  loadFeatureFlags()
+})
 </script>
 
 <style scoped src="./WorkflowEditor.css"></style>

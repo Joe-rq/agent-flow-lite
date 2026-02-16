@@ -20,6 +20,11 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
 
   let pollInterval: number | null = null
 
+  function isSupportedFile(fileName: string): boolean {
+    const lower = fileName.toLowerCase()
+    return lower.endsWith('.txt') || lower.endsWith('.md') || lower.endsWith('.pdf') || lower.endsWith('.docx')
+  }
+
   function getStatusText(status: UploadTask['status']): string {
     const map: Record<string, string> = {
       pending: '等待中', uploading: '上传中', processing: '处理中',
@@ -104,7 +109,14 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
 
   function handleFileSelect(event: Event) {
     const target = event.target as HTMLInputElement
-    if (target.files) handleFiles(Array.from(target.files))
+    if (target.files) {
+      const files = Array.from(target.files)
+      const validFiles = files.filter((f) => isSupportedFile(f.name))
+      if (validFiles.length !== files.length) {
+        showError('仅支持 .txt、.md、.pdf、.docx 文件')
+      }
+      handleFiles(validFiles)
+    }
     target.value = ''
   }
 
@@ -112,7 +124,7 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
     isDragging.value = false
     const files = event.dataTransfer?.files
     if (files) {
-      handleFiles(Array.from(files).filter(f => f.name.endsWith('.txt') || f.name.endsWith('.md')))
+      handleFiles(Array.from(files).filter((f) => isSupportedFile(f.name)))
     }
   }
 

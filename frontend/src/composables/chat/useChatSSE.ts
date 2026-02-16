@@ -15,6 +15,7 @@ interface UseChatSSEOptions {
 }
 
 const SSE_TIMEOUT_MS = 180_000
+const DEFAULT_MODEL_STORAGE_KEY = 'agent-flow.default-model'
 
 async function readErrorDetail(response: Response): Promise<string> {
   try {
@@ -58,11 +59,13 @@ export function useChatSSE(options: UseChatSSEOptions) {
   }
 
   function buildChatPayload(sessionId: string, message: string) {
+    const model = window.localStorage.getItem(DEFAULT_MODEL_STORAGE_KEY) || undefined
     return {
       session_id: sessionId,
       message: message,
       workflow_id: selectedWorkflowId.value || undefined,
       kb_id: selectedKbId.value || undefined,
+      model,
     }
   }
 

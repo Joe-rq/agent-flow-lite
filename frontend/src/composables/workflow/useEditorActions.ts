@@ -57,7 +57,7 @@ export function useEditorActions(flow: any) {
 
   function autoLayout() {
     const xPos: Record<string, number> = {
-      start: 100, llm: 350, knowledge: 600, skill: 600, condition: 850, end: 1100,
+      start: 100, llm: 320, knowledge: 540, skill: 540, http: 760, code: 760, condition: 980, end: 1200,
     }
     const idx: Record<string, number> = {}
     const updated = flow.getNodes.value.map((node: { type?: string; position: { x: number; y: number } }) => {
