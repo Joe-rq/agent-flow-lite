@@ -5,9 +5,10 @@ import hmac
 import importlib
 import os
 import sqlite3
-from pathlib import Path
 
 from fastapi import FastAPI, Request
+
+from app.core.database import DATA_DIR
 
 _slowapi = importlib.import_module("slowapi")
 _slowapi_errors = importlib.import_module("slowapi.errors")
@@ -21,7 +22,7 @@ get_remote_address = _slowapi_util.get_remote_address
 _rate_limit_exceeded_handler = _slowapi._rate_limit_exceeded_handler
 
 _HMAC_KEY = os.urandom(32)
-_DB_PATH = Path(__file__).parent.parent / "data" / "app.db"
+_DB_PATH = DATA_DIR / "app.db"
 _token_user_cache: dict[str, int] = {}
 _CACHE_MAX = 2048
 
