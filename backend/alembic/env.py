@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.database import Base, DATABASE_URL
 
+from app.models import session as _session_models
 from app.models import setting as _setting_models
 from app.models import user as _user_models
+from app.models import workflow_db as _workflow_models
 
-del _setting_models, _user_models
+del _session_models, _setting_models, _user_models, _workflow_models
 
 config = context.config
 

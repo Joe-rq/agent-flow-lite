@@ -6,6 +6,10 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -32,6 +36,12 @@ logger = logging.getLogger(__name__)
 TOKEN_CLEANUP_INTERVAL = 6 * 3600  # 6 hours
 
 
+def _run_alembic_upgrade() -> None:
+    cfg = Config(str(Path(__file__).with_name("alembic.ini")))
+    cfg.set_main_option("script_location", str(Path(__file__).with_name("alembic")))
+    command.upgrade(cfg, "head")
+
+
 async def _periodic_token_cleanup() -> None:
     """Periodically delete expired authentication tokens."""
     while True:
@@ -49,6 +59,7 @@ async def _periodic_token_cleanup() -> None:
 async def lifespan(_app: FastAPI):
     """Application lifespan context manager"""
     # Startup: Initialize resources
+    await asyncio.to_thread(_run_alembic_upgrade)
     await init_db()
     run_safety_checks()
     cleanup_task = asyncio.create_task(_periodic_token_cleanup())
