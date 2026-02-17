@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -33,11 +32,6 @@ def test_parse_workflow_nodes_rejects_unknown_types() -> None:
 async def test_create_workflow_rejects_unknown_node_types(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    @contextmanager
-    def _fake_locked_workflows():
-        yield {"workflows": {}}
-
-    monkeypatch.setattr(workflow_api, "locked_workflows", _fake_locked_workflows)
     monkeypatch.setattr(workflow_api, "audit_log", lambda **kwargs: None)
 
     workflow_data = WorkflowCreate(

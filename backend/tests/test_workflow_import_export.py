@@ -1,42 +1,31 @@
 import json
-from pathlib import Path
-from typing import Any
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
-from filelock import FileLock
+from sqlalchemy import delete, select
 
 from app.api import workflow as workflow_api
+from app.core.database import AsyncSessionLocal, init_db
 from app.models.workflow import GraphData
-
-
-def _write_workflows(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+from app.models.workflow_db import WorkflowDB
 
 
 @pytest.fixture()
-def isolated_workflow_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    data_dir = tmp_path / "data"
-    workflow_file = data_dir / "workflows.json"
-    lock = FileLock(str(workflow_file) + ".lock")
-
-    monkeypatch.setattr(workflow_api, "DATA_DIR", data_dir)
-    monkeypatch.setattr(workflow_api, "WORKFLOW_FILE", workflow_file)
-    monkeypatch.setattr(workflow_api, "_workflow_lock", lock)
+async def isolated_workflow_store(monkeypatch: pytest.MonkeyPatch) -> None:
+    await init_db()
+    async with AsyncSessionLocal() as db:
+        await db.execute(delete(WorkflowDB))
+        await db.commit()
     monkeypatch.setattr(workflow_api, "audit_log", lambda **kwargs: None)
-
-    return workflow_file
 
 
 @pytest.mark.asyncio
 async def test_export_then_import_roundtrip_creates_new_workflow_id(
-    isolated_workflow_store: Path,
+    isolated_workflow_store: None,
 ) -> None:
-    original_id = "wf-orig"
-    now = "2026-02-01T00:00:00+00:00"
+    now = datetime(2026, 2, 1, tzinfo=timezone.utc)
     graph = {
         "nodes": [
             {"id": "start-1", "type": "start", "data": {}},
@@ -44,49 +33,52 @@ async def test_export_then_import_roundtrip_creates_new_workflow_id(
         ],
         "edges": [],
     }
-    _write_workflows(
-        isolated_workflow_store,
-        {
-            "workflows": {
-                original_id: {
-                    "name": "Demo",
-                    "description": "Roundtrip",
-                    "graph_data": graph,
-                    "created_at": now,
-                    "updated_at": now,
-                }
-            }
-        },
-    )
+
+    async with AsyncSessionLocal() as db:
+        db.add(
+            WorkflowDB(
+                id="wf-orig",
+                user_id="1",
+                name="Demo",
+                description="Roundtrip",
+                graph_data_json=json.dumps(graph, ensure_ascii=False),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await db.commit()
 
     exported = await workflow_api.export_workflow(
-        workflow_id=original_id,
+        workflow_id="wf-orig",
         user=MagicMock(),
     )
     assert exported.version == workflow_api.EXPORT_VERSION
     assert exported.workflow.name == "Demo"
     assert exported.workflow.description == "Roundtrip"
 
+    request = MagicMock()
+    request.headers = {}
     imported = await workflow_api.import_workflow(
-        request=MagicMock(),
+        request=request,
         payload=workflow_api.WorkflowImportPayload(**exported.model_dump()),
         user=MagicMock(id=1),
     )
 
-    assert imported.id != original_id
+    assert imported.id != "wf-orig"
     assert imported.name == "Demo"
     assert imported.description == "Roundtrip"
     assert imported.graph_data.model_dump() == graph
 
-    with open(isolated_workflow_store, "r", encoding="utf-8") as f:
-        stored = json.load(f)
-    assert original_id in stored.get("workflows", {})
-    assert imported.id in stored.get("workflows", {})
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(WorkflowDB.id))
+        ids = {row[0] for row in result.all()}
+    assert "wf-orig" in ids
+    assert imported.id in ids
 
 
 @pytest.mark.asyncio
 async def test_import_rejects_unknown_node_type_with_4xx(
-    isolated_workflow_store: Path,
+    isolated_workflow_store: None,
 ) -> None:
     payload = workflow_api.WorkflowImportPayload(
         version=workflow_api.EXPORT_VERSION,
@@ -100,9 +92,11 @@ async def test_import_rejects_unknown_node_type_with_4xx(
         ),
     )
 
+    request = MagicMock()
+    request.headers = {}
     with pytest.raises(HTTPException) as exc:
         await workflow_api.import_workflow(
-            request=MagicMock(),
+            request=request,
             payload=payload,
             user=MagicMock(id=1),
         )
@@ -111,50 +105,49 @@ async def test_import_rejects_unknown_node_type_with_4xx(
 
 
 @pytest.mark.asyncio
-async def test_import_is_atomic_on_write_failure(
-    isolated_workflow_store: Path, monkeypatch: pytest.MonkeyPatch
+async def test_import_validation_failure_keeps_existing_data(
+    isolated_workflow_store: None,
 ) -> None:
-    now = "2026-02-01T00:00:00+00:00"
-    _write_workflows(
-        isolated_workflow_store,
-        {
-            "workflows": {
-                "wf-existing": {
-                    "name": "Existing",
-                    "description": None,
-                    "graph_data": {"nodes": [], "edges": []},
-                    "created_at": now,
-                    "updated_at": now,
-                }
-            }
-        },
-    )
+    now = datetime(2026, 2, 1, tzinfo=timezone.utc)
+    async with AsyncSessionLocal() as db:
+        db.add(
+            WorkflowDB(
+                id="wf-existing",
+                user_id="1",
+                name="Existing",
+                description=None,
+                graph_data_json=json.dumps(
+                    {"nodes": [], "edges": []}, ensure_ascii=False
+                ),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await db.commit()
 
-    before_bytes = isolated_workflow_store.read_bytes()
-
-    def _boom_replace(src, dst) -> None:
-        raise OSError("simulated replace failure")
-
-    monkeypatch.setattr(workflow_api.os, "replace", _boom_replace)
-
-    payload = workflow_api.WorkflowImportPayload(
+    bad_payload = workflow_api.WorkflowImportPayload(
         version=workflow_api.EXPORT_VERSION,
         workflow=workflow_api.WorkflowExportObject(
             name="Imported",
             description="x",
             graph_data=GraphData(
-                nodes=[{"id": "start-1", "type": "start", "data": {}}],
+                nodes=[{"id": "x", "type": "__unknown__", "data": {}}],
                 edges=[],
             ),
         ),
     )
 
-    with pytest.raises(HTTPException) as exc:
+    request = MagicMock()
+    request.headers = {}
+    with pytest.raises(HTTPException):
         await workflow_api.import_workflow(
-            request=MagicMock(),
-            payload=payload,
+            request=request,
+            payload=bad_payload,
             user=MagicMock(id=1),
         )
 
-    assert exc.value.status_code == 500
-    assert isolated_workflow_store.read_bytes() == before_bytes
+    async with AsyncSessionLocal() as db:
+        count = await db.execute(select(WorkflowDB))
+        rows = count.scalars().all()
+    assert len(rows) == 1
+    assert rows[0].id == "wf-existing"
