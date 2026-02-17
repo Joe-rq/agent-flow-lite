@@ -7,8 +7,10 @@ import os
 import sqlite3
 
 from fastapi import FastAPI, Request
+from sqlalchemy import text as sa_text
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.core.database import DATA_DIR
+from app.core.database import DATA_DIR, AsyncSessionLocal
 
 _slowapi = importlib.import_module("slowapi")
 _slowapi_errors = importlib.import_module("slowapi.errors")
@@ -27,7 +29,32 @@ _token_user_cache: dict[str, int] = {}
 _CACHE_MAX = 2048
 
 
-def _lookup_user_id(token: str) -> int | None:
+def _cache_put(token: str, user_id: int) -> None:
+    if len(_token_user_cache) >= _CACHE_MAX:
+        _token_user_cache.clear()
+    _token_user_cache[token] = user_id
+
+
+async def _async_lookup_user_id(token: str) -> int | None:
+    cached = _token_user_cache.get(token)
+    if cached is not None:
+        return cached
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                sa_text("SELECT user_id FROM auth_tokens WHERE token = :t"),
+                {"t": token},
+            )
+            row = result.fetchone()
+            if row:
+                _cache_put(token, row[0])
+                return row[0]
+    except Exception:
+        pass
+    return None
+
+
+def _sync_lookup_user_id(token: str) -> int | None:
     cached = _token_user_cache.get(token)
     if cached is not None:
         return cached
@@ -37,21 +64,48 @@ def _lookup_user_id(token: str) -> int | None:
                 "SELECT user_id FROM auth_tokens WHERE token = ?", (token,)
             ).fetchone()
         if row:
-            if len(_token_user_cache) >= _CACHE_MAX:
-                _token_user_cache.clear()
-            _token_user_cache[token] = row[0]
+            _cache_put(token, row[0])
             return row[0]
     except Exception:
         pass
     return None
 
 
+class UserResolveMiddleware:
+    """Pure ASGI middleware: resolves Bearer token -> user_id before rate limiting.
+
+    Added after SlowAPI (LIFO), so it runs first. Stores result in
+    scope["state"]["rate_limit_user_id"] for get_rate_limit_key to read.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            for name, value in scope.get("headers", []):
+                if name == b"authorization":
+                    auth = value.decode("latin-1")
+                    if auth.startswith("Bearer "):
+                        token = auth[7:].strip()
+                        if token:
+                            user_id = await _async_lookup_user_id(token)
+                            if user_id is not None:
+                                scope.setdefault("state", {})["rate_limit_user_id"] = user_id
+                    break
+        await self.app(scope, receive, send)
+
+
 def get_rate_limit_key(request: Request) -> str:
+    user_id = getattr(request.state, "rate_limit_user_id", None)
+    if user_id is not None:
+        return f"user:{user_id}"
+
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header[7:].strip()
         if token:
-            user_id = _lookup_user_id(token)
+            user_id = _sync_lookup_user_id(token)
             if user_id is not None:
                 return f"user:{user_id}"
             digest = hmac.new(_HMAC_KEY, token.encode(), hashlib.sha256).hexdigest()
@@ -78,3 +132,4 @@ def setup_rate_limiting(app: FastAPI) -> None:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, rate_limit_exception_handler)
     app.add_middleware(SlowAPIASGIMiddleware)
+    app.add_middleware(UserResolveMiddleware)
