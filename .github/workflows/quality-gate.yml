@@ -250,7 +250,12 @@ jobs:
 
       - name: Run all tests
         working-directory: backend
-        run: uv run pytest -q
+        run: uv run pytest --cov=app --cov-report=term-missing
+
+      - name: Coverage summary
+        if: always()
+        working-directory: backend
+        run: uv run python -m coverage report -m || true
 
       - name: Upload test results
         if: always()

@@ -46,3 +46,9 @@ python_files = ["test_*.py"]
 pythonpath = ["."]
 addopts = "-q"
 asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
