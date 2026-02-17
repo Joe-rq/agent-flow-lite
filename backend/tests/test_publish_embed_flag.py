@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import text
+from starlette.requests import Request
 
 from httpx import AsyncClient
 from typing import cast
@@ -12,6 +14,7 @@ from typing import cast
 import app.api.publish as publish_api
 import app.core.publish_embed as publish_embed
 from app.core.database import AsyncSessionLocal, init_db
+from app.models.user import User
 from main import create_app
 
 
@@ -102,3 +105,81 @@ class TestPublishEmbedFlag:
 
         resp = await client.get(f"/api/v1/publish/embed/{record.token}")
         assert resp.status_code == 403
+
+
+def _fake_request() -> Request:
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/",
+        "headers": [],
+        "query_string": b"",
+        "scheme": "http",
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 12345),
+    }
+    return Request(scope)
+
+
+@pytest.mark.asyncio
+async def test_publish_embed_returns_404_when_workflow_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def _missing(_workflow_id: str):
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    monkeypatch.setattr(publish_api.workflow_api, "get_workflow_for_internal", _missing)
+
+    request = _fake_request()
+    user = User(id=1, email="owner@example.com")
+    payload = publish_api.PublishEmbedRequest(workflow_id="wf-missing")
+
+    with pytest.raises(HTTPException) as exc:
+        await publish_api.publish_embed(request=request, payload=payload, user=user)
+
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_view_embed_rejects_too_large_input(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Record:
+        workflow_id = "wf-1"
+
+    monkeypatch.setattr(publish_api, "get_valid_embed_record", lambda _token: _Record())
+
+    request = _fake_request()
+    with pytest.raises(HTTPException) as exc:
+        await publish_api.view_embed(
+            request=request,
+            token="ok-token",
+            input="x" * (publish_api.MAX_INPUT_CHARS + 1),
+        )
+
+    assert exc.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_view_embed_success_renders_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Record:
+        workflow_id = "wf-1"
+
+    async def _execute_once(*, workflow_id: str, input_text: str) -> str:
+        _ = workflow_id
+        return f"echo:{input_text}"
+
+    monkeypatch.setattr(publish_api, "get_valid_embed_record", lambda _token: _Record())
+    monkeypatch.setattr(publish_api, "_execute_workflow_once", _execute_once)
+
+    request = _fake_request()
+    resp = await publish_api.view_embed(
+        request=request, token="ok-token", input="hello"
+    )
+
+    assert resp.status_code == 200
+    body = bytes(resp.body).decode("utf-8")
+    assert "<h2>Output</h2>" in body
+    assert "echo:hello" in body
