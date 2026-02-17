@@ -1,104 +1,154 @@
 """
-Chat session management for persistent conversation history.
+Chat session management with database storage.
 
-This module provides session CRUD operations including load, save, list,
-and delete functionality with file-based storage and ownership checks.
+Provides async session CRUD operations using SQLAlchemy,
+replacing the previous file-based JSON + filelock approach.
 """
+
 import json
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
-from filelock import FileLock
+from sqlalchemy import select, delete as sa_delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import User
+from app.core.database import AsyncSessionLocal
+from app.models.chat import ChatMessage, SessionHistory
+from app.models.session import ChatSessionDB
 from app.models.user import UserRole
-from app.models.chat import SessionHistory
 
 logger = logging.getLogger(__name__)
 
-# Constants
 EXCERPT_LIMIT = 200
-SESSIONS_DIR = Path(__file__).parent.parent.parent / "data" / "sessions"
-SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def get_session_path(session_id: str) -> Path:
-    """
-    Get the file path for a session.
-
-    Args:
-        session_id: Session identifier (must be validated by pattern constraint first)
-
-    Returns:
-        Path object for the session file
-
-    Raises:
-        ValueError: If session_id attempts path traversal
-    """
-    session_file = SESSIONS_DIR / f"{session_id}.json"
-    try:
-        # Containment check: ensure resolved path stays within SESSIONS_DIR
-        session_file.resolve().relative_to(SESSIONS_DIR.resolve())
-    except ValueError:
-        # Fail-closed behavior: reject any path traversal attempt
-        raise ValueError(f"Invalid session_id: {session_id}") from None
-    return session_file
 
 
 def check_session_ownership(session: SessionHistory, user: User) -> bool:
-    """
-    Check if a user owns a session or is an admin.
-
-    Args:
-        session: The session to check
-        user: The current authenticated user
-
-    Returns:
-        True if user owns the session or is admin, False otherwise
-    """
-    # Admin can access any session
+    """Check if a user owns a session or is an admin."""
     if user.role == UserRole.ADMIN:
         return True
-
-    # If session has no user_id, treat as orphaned - allow access for backward compatibility
-    # but ideally should be migrated
     if session.user_id is None:
         return True
-
-    # Check if user owns the session
     return session.user_id == str(user.id)
 
 
-def load_session(session_id: str) -> Optional[SessionHistory]:
-    """Load session history from JSON file."""
-    session_path = get_session_path(session_id)
-    lock = FileLock(str(session_path) + ".lock")
-    with lock:
-        if not session_path.exists():
-            return None
-        try:
-            with open(session_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Parse timestamps back to datetime objects
-                for msg in data.get("messages", []):
-                    if msg.get("timestamp"):
-                        msg["timestamp"] = datetime.fromisoformat(msg["timestamp"])
-                if data.get("created_at"):
-                    data["created_at"] = datetime.fromisoformat(data["created_at"])
-                if data.get("updated_at"):
-                    data["updated_at"] = datetime.fromisoformat(data["updated_at"])
-                return SessionHistory(**data)
-        except (json.JSONDecodeError, IOError, ValueError):
-            return None
+def _db_to_pydantic(row: ChatSessionDB) -> SessionHistory:
+    """Convert ORM row to Pydantic SessionHistory."""
+    messages_raw = json.loads(row.messages_json) if row.messages_json else []
+    messages = []
+    for m in messages_raw:
+        if isinstance(m, dict):
+            if m.get("timestamp") and isinstance(m["timestamp"], str):
+                m["timestamp"] = datetime.fromisoformat(m["timestamp"])
+            messages.append(ChatMessage(**m))
+    return SessionHistory(
+        session_id=row.session_id,
+        messages=messages,
+        created_at=row.created_at or datetime.now(timezone.utc),
+        updated_at=row.updated_at,
+        kb_id=row.kb_id,
+        workflow_id=row.workflow_id,
+        user_id=row.user_id,
+    )
 
 
-def save_session(session: SessionHistory) -> None:
-    """Save session history to JSON file."""
-    session_path = get_session_path(session.session_id)
-    session.updated_at = datetime.now(timezone.utc)
-    lock = FileLock(str(session_path) + ".lock")
-    with lock:
-        with open(session_path, "w", encoding="utf-8") as f:
-            json.dump(session.model_dump(mode="json"), f, ensure_ascii=False, indent=2)
+async def load_session(session_id: str) -> Optional[SessionHistory]:
+    """Load session from database."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(ChatSessionDB).where(ChatSessionDB.session_id == session_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return _db_to_pydantic(row)
+
+
+async def save_session(session: SessionHistory) -> None:
+    """Save session to database (upsert)."""
+    now = datetime.now(timezone.utc)
+    session.updated_at = now
+    messages_json = json.dumps(
+        session.model_dump(mode="json")["messages"], ensure_ascii=False
+    )
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(ChatSessionDB).where(ChatSessionDB.session_id == session.session_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            row = ChatSessionDB(
+                session_id=session.session_id,
+                user_id=session.user_id,
+                kb_id=session.kb_id,
+                workflow_id=session.workflow_id,
+                messages_json=messages_json,
+                created_at=session.created_at,
+                updated_at=now,
+            )
+            db.add(row)
+        else:
+            row.messages_json = messages_json
+            row.updated_at = now
+            row.kb_id = session.kb_id
+            row.workflow_id = session.workflow_id
+            if session.user_id is not None:
+                row.user_id = session.user_id
+        await db.commit()
+
+
+async def list_user_sessions(user: User) -> list[dict[str, object]]:
+    """List sessions for a user (admin sees all)."""
+    async with AsyncSessionLocal() as db:
+        query = select(ChatSessionDB)
+        if user.role != UserRole.ADMIN:
+            user_id_str = str(user.id)
+            query = query.where(
+                (ChatSessionDB.user_id == user_id_str)
+                | (ChatSessionDB.user_id.is_(None))
+            )
+        result = await db.execute(query)
+        rows = result.scalars().all()
+
+    sessions = []
+    for row in rows:
+        sh = _db_to_pydantic(row)
+        title = ""
+        for msg in sh.messages:
+            if msg.role == "user":
+                title = msg.content
+                break
+        sessions.append(
+            {
+                "session_id": sh.session_id,
+                "title": title,
+                "created_at": sh.created_at.isoformat(),
+                "updated_at": (
+                    sh.updated_at.isoformat()
+                    if sh.updated_at
+                    else sh.created_at.isoformat()
+                ),
+                "message_count": len(sh.messages),
+                "kb_id": sh.kb_id,
+                "workflow_id": sh.workflow_id,
+                "user_id": sh.user_id,
+            }
+        )
+    sessions.sort(key=lambda s: s["updated_at"], reverse=True)
+    return sessions
+
+
+async def delete_session_by_id(session_id: str) -> bool:
+    """Delete a session from the database. Returns True if deleted."""
+    async with AsyncSessionLocal() as db:
+        existing = await db.execute(
+            select(ChatSessionDB.id).where(ChatSessionDB.session_id == session_id)
+        )
+        if existing.first() is None:
+            return False
+        await db.execute(
+            sa_delete(ChatSessionDB).where(ChatSessionDB.session_id == session_id)
+        )
+        await db.commit()
+        return True

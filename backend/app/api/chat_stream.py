@@ -134,7 +134,7 @@ async def skill_stream_generator(
                 timestamp=datetime.now(timezone.utc),
             )
             session.messages.append(assistant_message)
-            save_session(session)
+            await save_session(session)
 
     except TimeoutError:
         logger.warning("Skill execution timed out after %ds", LLM_STREAM_TIMEOUT)
@@ -334,7 +334,7 @@ async def stream_with_save(
             timestamp=datetime.now(timezone.utc),
         )
         session.messages.append(assistant_message)
-        save_session(session)
+        await save_session(session)
 
 
 async def workflow_stream_generator(
@@ -444,7 +444,7 @@ async def workflow_stream_generator(
                         timestamp=datetime.now(timezone.utc),
                     )
                     session.messages.append(assistant_message)
-                    save_session(session)
+                    await save_session(session)
                     yield format_sse_event(
                         "done", {"status": "success", "message": "Workflow completed"}
                     )

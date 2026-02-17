@@ -55,7 +55,7 @@ class PublishEmbedResponse(BaseModel):
 
 
 async def _execute_workflow_once(*, workflow_id: str, input_text: str) -> str:
-    workflow = _get_workflow_by_id(workflow_id)
+    workflow = await workflow_api.get_workflow_for_internal(workflow_id)
 
     engine = WorkflowEngine(workflow)
     final_output = None
@@ -118,7 +118,7 @@ async def publish_embed(
     payload: PublishEmbedRequest,
     user: Annotated[User, Depends(get_current_user)],
 ) -> PublishEmbedResponse:
-    workflow = _get_workflow_by_id(payload.workflow_id)
+    workflow = await workflow_api.get_workflow_for_internal(payload.workflow_id)
     _validate_graph_data_or_422(workflow.graph_data)
 
     record = create_embed_token(workflow_id=payload.workflow_id, created_by=user.id)
@@ -138,32 +138,6 @@ async def publish_embed(
         token=record.token,
         expires_at=record.expires_at_iso(),
     )
-
-
-def _get_workflow_by_id(workflow_id: str) -> Workflow:
-    data_obj = cast(object, workflow_api.load_workflows_readonly())
-    workflows_map: dict[str, object] = {}
-    if isinstance(data_obj, dict):
-        raw = cast(dict[object, object], data_obj)
-        data_map: dict[str, object] = {
-            k: v for k, v in raw.items() if isinstance(k, str)
-        }
-        workflows_obj = data_map.get("workflows")
-        if isinstance(workflows_obj, dict):
-            raw_wf = cast(dict[object, object], workflows_obj)
-            workflows_map = {k: v for k, v in raw_wf.items() if isinstance(k, str)}
-
-    if workflow_id not in workflows_map:
-        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
-
-    stored = workflows_map[workflow_id]
-    if not isinstance(stored, dict):
-        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
-    stored_raw = cast(dict[object, object], stored)
-    stored_map: dict[str, object] = {
-        k: v for k, v in stored_raw.items() if isinstance(k, str)
-    }
-    return workflow_api.workflow_to_model(workflow_id, stored_map)
 
 
 def _validate_graph_data_or_422(graph_data: GraphData) -> None:

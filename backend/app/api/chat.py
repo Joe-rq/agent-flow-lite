@@ -26,11 +26,11 @@ from app.models.user import UserRole
 from app.core.rag import get_rag_pipeline
 from app.middleware.rate_limit import limiter
 from app.api.chat_session import (
-    SESSIONS_DIR,
     save_session,
     load_session,
     check_session_ownership,
-    get_session_path,
+    list_user_sessions,
+    delete_session_by_id,
 )
 from app.api.chat_stream import (
     workflow_stream_generator,
@@ -122,7 +122,7 @@ async def chat_completions(
         )
 
     # Load or create session
-    session = load_session(payload.session_id)
+    session = await load_session(payload.session_id)
     user_id_str = str(user.id)
     if session is None:
         from app.models.chat import SessionHistory
@@ -281,43 +281,7 @@ async def list_sessions(
     user: User = Depends(get_current_user),
 ) -> dict[str, list[dict[str, Any]]]:
     """List chat sessions for the current user."""
-    sessions = []
-    user_id_str = str(user.id)
-
-    for path in SESSIONS_DIR.glob("*.json"):
-        session_id = path.stem
-        session = load_session(session_id)
-        if not session:
-            continue
-
-        # Filter by ownership (admin sees all)
-        if user.role != UserRole.ADMIN:
-            if session.user_id is not None and session.user_id != user_id_str:
-                continue
-
-        title = ""
-        for msg in session.messages:
-            if msg.role == "user":
-                title = msg.content
-                break
-        sessions.append(
-            {
-                "session_id": session.session_id,
-                "title": title,
-                "created_at": session.created_at.isoformat(),
-                "updated_at": (
-                    session.updated_at.isoformat()
-                    if session.updated_at
-                    else session.created_at.isoformat()
-                ),
-                "message_count": len(session.messages),
-                "kb_id": session.kb_id,
-                "workflow_id": session.workflow_id,
-                "user_id": session.user_id,
-            }
-        )
-
-    sessions.sort(key=lambda s: s["updated_at"], reverse=True)
+    sessions = await list_user_sessions(user)
     return {"sessions": sessions}
 
 
@@ -327,7 +291,7 @@ async def get_session_history(
 ) -> dict[str, Any]:
     """Get chat history for a session."""
     try:
-        session = load_session(session_id)
+        session = await load_session(session_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -370,7 +334,7 @@ async def delete_session(
 ) -> dict[str, str]:
     """Delete a chat session and its history."""
     try:
-        session = load_session(session_id)
+        session = await load_session(session_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -388,22 +352,13 @@ async def delete_session(
             detail="You do not have permission to delete this session",
         )
 
-    try:
-        session_path = get_session_path(session_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid session_id: {session_id}",
-        )
-    try:
-        session_path.unlink()
-        return {
-            "status": "success",
-            "message": f"Session '{session_id}' deleted successfully",
-        }
-    except OSError as e:
-        logger.warning("Failed to delete session '%s'", session_id, exc_info=True)
+    deleted = await delete_session_by_id(session_id)
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete session.",
         )
+    return {
+        "status": "success",
+        "message": f"Session '{session_id}' deleted successfully",
+    }

@@ -3,19 +3,17 @@ Workflow CRUD API endpoints
 """
 
 import json
-import os
 import uuid
 from collections.abc import AsyncGenerator
-from contextlib import contextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
-from filelock import FileLock
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import select
 
+from app.core.database import AsyncSessionLocal
 from app.models.workflow import (
     GraphData,
     Workflow,
@@ -24,6 +22,7 @@ from app.models.workflow import (
     WorkflowUpdate,
     parse_workflow_nodes,
 )
+from app.models.workflow_db import WorkflowDB
 from app.core.audit import audit_log
 from app.core.auth import User, get_current_user
 from app.middleware.rate_limit import limiter
@@ -32,10 +31,6 @@ from app.utils.sse import format_sse_event
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
 EXPORT_VERSION = 1
-
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
-WORKFLOW_FILE = DATA_DIR / "workflows.json"
-_workflow_lock = FileLock(str(WORKFLOW_FILE) + ".lock")
 
 
 class WorkflowExecuteRequest(BaseModel):
@@ -71,59 +66,19 @@ def ensure_utc_datetime(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def ensure_data_dir() -> None:
-    """Ensure data directory exists"""
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+def _row_to_workflow_model(row: WorkflowDB) -> Workflow:
+    graph_data = json.loads(row.graph_data_json) if row.graph_data_json else {}
+    created_at = ensure_utc_datetime(row.created_at)
+    updated_at = ensure_utc_datetime(row.updated_at)
 
-
-def _atomic_write_workflow_file(data: dict[str, Any]) -> None:
-    ensure_data_dir()
-    tmp_path = WORKFLOW_FILE.with_name(WORKFLOW_FILE.name + f".tmp.{uuid.uuid4().hex}")
-    try:
-        with open(tmp_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, WORKFLOW_FILE)
-    finally:
-        try:
-            if tmp_path.exists():
-                tmp_path.unlink()
-        except OSError:
-            pass
-
-
-@contextmanager
-def locked_workflows():
-    """Atomic read-modify-write for workflows.json under a single lock."""
-    ensure_data_dir()
-    with _workflow_lock:
-        if not WORKFLOW_FILE.exists():
-            data = {"workflows": {}}
-        else:
-            try:
-                with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                data = {"workflows": {}}
-
-        yield data
-
-        with open(WORKFLOW_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def load_workflows_readonly() -> dict[str, Any]:
-    """Read-only load (for GET endpoints that don't write back)."""
-    ensure_data_dir()
-    with _workflow_lock:
-        if not WORKFLOW_FILE.exists():
-            return {"workflows": {}}
-        try:
-            with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            return {"workflows": {}}
+    return Workflow(
+        id=row.id,
+        name=row.name,
+        description=row.description,
+        graph_data=GraphData(**graph_data) if graph_data else GraphData(),
+        created_at=created_at,
+        updated_at=updated_at,
+    )
 
 
 def workflow_to_model(workflow_id: str, data: dict[str, Any]) -> Workflow:
@@ -145,6 +100,17 @@ def workflow_to_model(workflow_id: str, data: dict[str, Any]) -> Workflow:
     )
 
 
+async def _get_workflow_row_by_id(workflow_id: str) -> WorkflowDB:
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+        )
+        row = result.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+    return row
+
+
 def _validate_graph_data_or_422(graph_data: GraphData) -> None:
     try:
         parse_workflow_nodes(graph_data.nodes)
@@ -152,29 +118,20 @@ def _validate_graph_data_or_422(graph_data: GraphData) -> None:
         raise HTTPException(status_code=422, detail=exc.errors()) from exc
 
 
-def _get_workflow_by_id(workflow_id: str) -> Workflow:
-    """Internal helper to load a single workflow (no auth dependency)."""
-    data = load_workflows_readonly()
-    workflows = data.get("workflows", {})
-    if workflow_id not in workflows:
-        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
-    return workflow_to_model(workflow_id, workflows[workflow_id])
+async def _get_workflow_by_id(workflow_id: str) -> Workflow:
+    row = await _get_workflow_row_by_id(workflow_id)
+    return _row_to_workflow_model(row)
 
 
-def _get_stored_workflow_dict(workflow_id: str) -> dict[str, Any]:
-    data = load_workflows_readonly()
-    workflows = data.get("workflows", {})
-    stored = workflows.get(workflow_id)
-    if not isinstance(stored, dict):
-        raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
-    return stored
+async def get_workflow_for_internal(workflow_id: str) -> Workflow:
+    return await _get_workflow_by_id(workflow_id)
 
 
 @router.get("/{workflow_id}/export", response_model=WorkflowExportPayload)
 async def export_workflow(
     workflow_id: str, user: User = Depends(get_current_user)
 ) -> WorkflowExportPayload:
-    workflow = _get_workflow_by_id(workflow_id)
+    workflow = await _get_workflow_by_id(workflow_id)
     _ = user
     return WorkflowExportPayload(
         version=EXPORT_VERSION,
@@ -219,27 +176,22 @@ async def import_workflow(
     if template_name:
         new_workflow["template_name"] = template_name
 
-    ensure_data_dir()
-    with _workflow_lock:
-        if not WORKFLOW_FILE.exists():
-            data: dict[str, Any] = {"workflows": {}}
-        else:
-            try:
-                with open(WORKFLOW_FILE, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                data = {"workflows": {}}
-
-        workflows = data.setdefault("workflows", {})
-        workflows[workflow_id] = new_workflow
-
-        try:
-            _atomic_write_workflow_file(data)
-        except Exception as exc:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to persist imported workflow",
-            ) from exc
+    async with AsyncSessionLocal() as db:
+        db.add(
+            WorkflowDB(
+                id=workflow_id,
+                user_id=str(user.id),
+                name=payload.workflow.name,
+                description=payload.workflow.description,
+                graph_data_json=json.dumps(
+                    payload.workflow.graph_data.model_dump(), ensure_ascii=False
+                ),
+                template_name=template_name,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await db.commit()
 
     audit_log(
         request=request,
@@ -249,18 +201,19 @@ async def import_workflow(
         extra={"template_name": template_name} if template_name else None,
     )
 
-    return workflow_to_model(workflow_id, new_workflow)
+    row = await _get_workflow_row_by_id(workflow_id)
+    return _row_to_workflow_model(row)
 
 
 @router.get("", response_model=WorkflowList)
 async def list_workflows(user: User = Depends(get_current_user)) -> WorkflowList:
     """List all workflows"""
-    data = load_workflows_readonly()
-    workflows_data = data.get("workflows", {})
+    _ = user
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(WorkflowDB))
+        rows = result.scalars().all()
 
-    workflows = [
-        workflow_to_model(wf_id, wf_data) for wf_id, wf_data in workflows_data.items()
-    ]
+    workflows = [_row_to_workflow_model(row) for row in rows]
     workflows.sort(key=lambda w: w.created_at, reverse=True)
 
     return WorkflowList(items=workflows, total=len(workflows))
@@ -286,9 +239,21 @@ async def create_workflow(
         "updated_at": now.isoformat(),
     }
 
-    with locked_workflows() as data:
-        workflows = data.setdefault("workflows", {})
-        workflows[workflow_id] = new_workflow
+    async with AsyncSessionLocal() as db:
+        db.add(
+            WorkflowDB(
+                id=workflow_id,
+                user_id=str(user.id),
+                name=workflow_data.name,
+                description=workflow_data.description,
+                graph_data_json=json.dumps(
+                    workflow_data.graph_data.model_dump(), ensure_ascii=False
+                ),
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        await db.commit()
 
     audit_log(
         request=request,
@@ -297,7 +262,8 @@ async def create_workflow(
         resource_id=workflow_id,
     )
 
-    return workflow_to_model(workflow_id, new_workflow)
+    row = await _get_workflow_row_by_id(workflow_id)
+    return _row_to_workflow_model(row)
 
 
 @router.get("/{workflow_id}", response_model=Workflow)
@@ -305,7 +271,9 @@ async def get_workflow(
     workflow_id: str, user: User = Depends(get_current_user)
 ) -> Workflow:
     """Get a workflow by ID"""
-    return _get_workflow_by_id(workflow_id)
+    _ = user
+    row = await _get_workflow_row_by_id(workflow_id)
+    return _row_to_workflow_model(row)
 
 
 @router.put("/{workflow_id}", response_model=Workflow)
@@ -318,23 +286,29 @@ async def update_workflow(
     if update_data.graph_data is not None:
         _validate_graph_data_or_422(update_data.graph_data)
 
-    with locked_workflows() as data:
-        workflows = data.get("workflows", {})
-        if workflow_id not in workflows:
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
             raise HTTPException(
                 status_code=404, detail=f"Workflow {workflow_id} not found"
             )
 
-        existing = workflows[workflow_id]
         if update_data.name is not None:
-            existing["name"] = update_data.name
+            row.name = update_data.name
         if update_data.description is not None:
-            existing["description"] = update_data.description
+            row.description = update_data.description
         if update_data.graph_data is not None:
-            existing["graph_data"] = update_data.graph_data.model_dump()
-        existing["updated_at"] = datetime.now(timezone.utc).isoformat()
+            row.graph_data_json = json.dumps(
+                update_data.graph_data.model_dump(), ensure_ascii=False
+            )
+        row.updated_at = datetime.now(timezone.utc)
+        await db.commit()
 
-    return workflow_to_model(workflow_id, existing)
+    refreshed = await _get_workflow_row_by_id(workflow_id)
+    return _row_to_workflow_model(refreshed)
 
 
 @router.delete("/{workflow_id}", status_code=204)
@@ -344,13 +318,17 @@ async def delete_workflow(
     user: User = Depends(get_current_user),
 ) -> None:
     """Delete a workflow"""
-    with locked_workflows() as data:
-        workflows = data.get("workflows", {})
-        if workflow_id not in workflows:
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
             raise HTTPException(
                 status_code=404, detail=f"Workflow {workflow_id} not found"
             )
-        del workflows[workflow_id]
+        await db.delete(row)
+        await db.commit()
 
     audit_log(
         request=request,
@@ -368,15 +346,15 @@ async def execute_workflow(
     input_data: WorkflowExecuteRequest,
     user: User = Depends(get_current_user),
 ) -> StreamingResponse:
-    stored_workflow = _get_stored_workflow_dict(workflow_id)
-    template_name_obj = stored_workflow.get("template_name")
+    row = await _get_workflow_row_by_id(workflow_id)
+    template_name_obj = row.template_name
     template_name = (
         template_name_obj.strip()[:200] if isinstance(template_name_obj, str) else None
     )
     if template_name == "":
         template_name = None
 
-    workflow = workflow_to_model(workflow_id, stored_workflow)
+    workflow = _row_to_workflow_model(row)
     _validate_graph_data_or_422(workflow.graph_data)
 
     audit_log(
