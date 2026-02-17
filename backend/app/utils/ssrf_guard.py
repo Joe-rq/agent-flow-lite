@@ -4,6 +4,8 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 
+import httpx
+
 BLOCKED_NETWORKS = [
     ipaddress.ip_network("0.0.0.0/8"),
     ipaddress.ip_network("10.0.0.0/8"),
@@ -68,3 +70,24 @@ def ensure_url_safe(url: str, allow_domains: list[str] | None = None) -> str:
         if _is_blocked_ip(address):
             raise ValueError("Target host resolves to blocked IP")
     return url
+
+
+class SSRFSafeTransport(httpx.AsyncHTTPTransport):
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        hostname = request.url.host
+        port = request.url.port or (443 if request.url.scheme == b"https" else 80)
+        if hostname:
+            addresses = _resolve_addresses(hostname, port)
+            for addr in addresses:
+                if _is_blocked_ip(addr):
+                    raise ValueError(
+                        f"SSRF blocked: {hostname} resolves to internal IP"
+                    )
+        return await super().handle_async_request(request)
+
+
+def create_ssrf_safe_client(**kwargs: object) -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        transport=SSRFSafeTransport(),
+        **kwargs,
+    )

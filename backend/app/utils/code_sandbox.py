@@ -9,15 +9,26 @@ from dataclasses import dataclass
 from pathlib import Path
 
 BANNED_MODULES = {
+    "os",
     "socket",
     "subprocess",
     "ctypes",
     "shutil",
 }
 
-BANNED_CALLS = {
-    ("os", "system"),
-    ("os", "popen"),
+BANNED_BUILTINS = {
+    "exec",
+    "eval",
+    "__import__",
+    "compile",
+    "open",
+    "getattr",
+    "setattr",
+    "delattr",
+    "globals",
+    "locals",
+    "vars",
+    "breakpoint",
 }
 
 
@@ -48,11 +59,13 @@ def validate_python_code(code: str) -> None:
             module = (node.module or "").split(".")[0]
             if module in BANNED_MODULES:
                 raise ValueError(f"Import not allowed: {module}")
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            owner = node.func.value
-            attr = node.func.attr
-            if isinstance(owner, ast.Name) and (owner.id, attr) in BANNED_CALLS:
-                raise ValueError(f"Call not allowed: {owner.id}.{attr}")
+        if isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Name) and func.id in BANNED_BUILTINS:
+                raise ValueError(f"Builtin not allowed: {func.id}")
+            if isinstance(func, ast.Attribute):
+                if isinstance(func.value, ast.Name) and func.value.id == "__builtins__":
+                    raise ValueError(f"Builtin access not allowed: __builtins__.{func.attr}")
 
 
 def _build_env(user_env: dict[str, str]) -> dict[str, str]:

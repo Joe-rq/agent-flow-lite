@@ -20,7 +20,7 @@ from app.core.skill.skill_executor import get_skill_executor
 from app.core.skill.skill_loader import SkillLoader
 from app.core.workflow.workflow_context import ExecutionContext, safe_eval
 from app.utils.code_sandbox import execute_python
-from app.utils.ssrf_guard import ensure_url_safe
+from app.utils.ssrf_guard import create_ssrf_safe_client, ensure_url_safe
 
 logger = logging.getLogger(__name__)
 
@@ -433,7 +433,7 @@ async def execute_http_node(
         text_payload = ctx.resolve_template(request_body)
 
     try:
-        async with httpx.AsyncClient(
+        async with create_ssrf_safe_client(
             follow_redirects=False,
             trust_env=False,
             timeout=timeout_seconds,

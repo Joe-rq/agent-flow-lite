@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import importlib
+import os
 
 from fastapi import FastAPI, Request
 
@@ -15,17 +18,16 @@ SlowAPIASGIMiddleware = _slowapi_middleware.SlowAPIASGIMiddleware
 get_remote_address = _slowapi_util.get_remote_address
 _rate_limit_exceeded_handler = _slowapi._rate_limit_exceeded_handler
 
+_HMAC_KEY = os.urandom(32)
+
 
 def get_rate_limit_key(request: Request) -> str:
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header[7:].strip()
         if token:
-            return f"user:{token}"
-
-    forwarded_for = request.headers.get("X-Forwarded-For", "")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
+            digest = hmac.new(_HMAC_KEY, token.encode(), hashlib.sha256).hexdigest()
+            return f"user:{digest}"
 
     return get_remote_address(request)
 

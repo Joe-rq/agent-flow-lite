@@ -21,6 +21,7 @@ from app.api.skill import router as skill_router
 from app.api.workflow import router as workflow_router
 from app.core.auth import cleanup_expired_tokens
 from app.core.database import AsyncSessionLocal, init_db
+from app.core.safety_check import run_safety_checks
 from app.middleware.rate_limit import setup_rate_limiting
 
 # Load environment variables
@@ -49,6 +50,7 @@ async def lifespan(_app: FastAPI):
     """Application lifespan context manager"""
     # Startup: Initialize resources
     await init_db()
+    run_safety_checks()
     cleanup_task = asyncio.create_task(_periodic_token_cleanup())
     yield
     # Shutdown: Cleanup resources
