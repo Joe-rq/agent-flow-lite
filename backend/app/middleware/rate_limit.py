@@ -4,6 +4,8 @@ import hashlib
 import hmac
 import importlib
 import os
+import sqlite3
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 
@@ -19,6 +21,28 @@ get_remote_address = _slowapi_util.get_remote_address
 _rate_limit_exceeded_handler = _slowapi._rate_limit_exceeded_handler
 
 _HMAC_KEY = os.urandom(32)
+_DB_PATH = Path(__file__).parent.parent / "data" / "app.db"
+_token_user_cache: dict[str, int] = {}
+_CACHE_MAX = 2048
+
+
+def _lookup_user_id(token: str) -> int | None:
+    cached = _token_user_cache.get(token)
+    if cached is not None:
+        return cached
+    try:
+        with sqlite3.connect(str(_DB_PATH), timeout=1) as conn:
+            row = conn.execute(
+                "SELECT user_id FROM auth_tokens WHERE token = ?", (token,)
+            ).fetchone()
+        if row:
+            if len(_token_user_cache) >= _CACHE_MAX:
+                _token_user_cache.clear()
+            _token_user_cache[token] = row[0]
+            return row[0]
+    except Exception:
+        pass
+    return None
 
 
 def get_rate_limit_key(request: Request) -> str:
@@ -26,8 +50,11 @@ def get_rate_limit_key(request: Request) -> str:
     if auth_header.startswith("Bearer "):
         token = auth_header[7:].strip()
         if token:
+            user_id = _lookup_user_id(token)
+            if user_id is not None:
+                return f"user:{user_id}"
             digest = hmac.new(_HMAC_KEY, token.encode(), hashlib.sha256).hexdigest()
-            return f"user:{digest}"
+            return f"token:{digest}"
 
     return get_remote_address(request)
 

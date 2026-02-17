@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -75,7 +76,7 @@ def ensure_url_safe(url: str, allow_domains: list[str] | None = None) -> str:
 class SSRFSafeTransport(httpx.AsyncHTTPTransport):
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         hostname = request.url.host
-        port = request.url.port or (443 if request.url.scheme == b"https" else 80)
+        port = request.url.port or (443 if request.url.scheme == "https" else 80)
         if hostname:
             addresses = _resolve_addresses(hostname, port)
             for addr in addresses:
@@ -86,7 +87,7 @@ class SSRFSafeTransport(httpx.AsyncHTTPTransport):
         return await super().handle_async_request(request)
 
 
-def create_ssrf_safe_client(**kwargs: object) -> httpx.AsyncClient:
+def create_ssrf_safe_client(**kwargs: Any) -> httpx.AsyncClient:
     return httpx.AsyncClient(
         transport=SSRFSafeTransport(),
         **kwargs,

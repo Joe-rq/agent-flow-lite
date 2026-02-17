@@ -32,6 +32,18 @@ class TestBannedImports:
         with pytest.raises(ValueError):
             validate_python_code("import socket")
 
+    def test_import_importlib(self) -> None:
+        with pytest.raises(ValueError):
+            validate_python_code("import importlib")
+
+    def test_from_importlib_import(self) -> None:
+        with pytest.raises(ValueError):
+            validate_python_code("from importlib import import_module")
+
+    def test_importlib_import_module(self) -> None:
+        with pytest.raises(ValueError):
+            validate_python_code("import importlib\nimportlib.import_module('os')")
+
 
 class TestBannedBuiltins:
     def test_eval_call(self) -> None:
@@ -87,6 +99,14 @@ class TestEscapeVectors:
     def test_builtins_attr_access(self) -> None:
         with pytest.raises(ValueError):
             validate_python_code("__builtins__.__import__('os')")
+
+    def test_builtins_subscript_access(self) -> None:
+        with pytest.raises(ValueError):
+            validate_python_code("__builtins__['__import__']('os')")
+
+    def test_builtins_subscript_bare(self) -> None:
+        with pytest.raises(ValueError):
+            validate_python_code("x = __builtins__['open']")
 
     def test_nested_import_in_exec(self) -> None:
         with pytest.raises(ValueError):

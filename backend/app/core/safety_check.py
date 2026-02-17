@@ -12,6 +12,8 @@ _SANDBOX_ESCAPE_PROBES = [
     "__import__('os')",
     "eval('1+1')",
     "exec('x=1')",
+    "import importlib",
+    "__builtins__['__import__']('os')",
 ]
 
 

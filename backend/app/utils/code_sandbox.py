@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 BANNED_MODULES = {
+    "importlib",
     "os",
     "socket",
     "subprocess",
@@ -66,6 +67,9 @@ def validate_python_code(code: str) -> None:
             if isinstance(func, ast.Attribute):
                 if isinstance(func.value, ast.Name) and func.value.id == "__builtins__":
                     raise ValueError(f"Builtin access not allowed: __builtins__.{func.attr}")
+        if isinstance(node, ast.Subscript):
+            if isinstance(node.value, ast.Name) and node.value.id == "__builtins__":
+                raise ValueError("Builtin access not allowed: __builtins__[...]")
 
 
 def _build_env(user_env: dict[str, str]) -> dict[str, str]:
