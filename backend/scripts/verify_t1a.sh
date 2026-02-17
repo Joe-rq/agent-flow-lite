@@ -75,15 +75,15 @@ fi
 
 # 5. 幂等性：再跑一次，COUNT 不变
 echo "[5/5] 幂等性检查..."
-uv run python scripts/migrate_sessions_to_db.py
-DB_COUNT2=$(uv run python -c "
+DB_COUNT1=$(uv run python -c "
 import sqlite3
 conn = sqlite3.connect('data/app.db')
 count = conn.execute('SELECT COUNT(*) FROM chat_sessions').fetchone()[0]
 conn.close()
 print(count)
 ")
-DB_COUNT1=$(uv run python -c "
+uv run python scripts/migrate_sessions_to_db.py
+DB_COUNT2=$(uv run python -c "
 import sqlite3
 conn = sqlite3.connect('data/app.db')
 count = conn.execute('SELECT COUNT(*) FROM chat_sessions').fetchone()[0]

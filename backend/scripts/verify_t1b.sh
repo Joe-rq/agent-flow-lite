@@ -108,7 +108,6 @@ fi
 
 # 5. 幂等性
 echo "[5/5] 幂等性检查..."
-uv run python scripts/migrate_workflows_to_db.py
 DB_COUNT1=$(uv run python -c "
 import sqlite3
 conn = sqlite3.connect('data/app.db')
@@ -116,6 +115,7 @@ count = conn.execute('SELECT COUNT(*) FROM workflows').fetchone()[0]
 conn.close()
 print(count)
 ")
+uv run python scripts/migrate_workflows_to_db.py
 DB_COUNT2=$(uv run python -c "
 import sqlite3
 conn = sqlite3.connect('data/app.db')
