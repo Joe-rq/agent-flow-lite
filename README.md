@@ -1,6 +1,10 @@
 # Agent Flow Lite
 
-一个轻量级、高还原度的 AI 智能体编排平台，支持可视化工作流编排、RAG 知识检索、Skill 技能系统和智能对话。
+面向个人开发者和小团队的单机全栈 AI Agent 编排平台。零外部服务依赖（无需 Redis / PostgreSQL / 消息队列），SQLite + 文件存储，clone 后 5 分钟内完成本地部署。
+
+**核心能力**：可视化工作流编排、RAG 知识检索、SSE 流式对话、基于 SKILL.md 的技能系统。
+
+**SKILL.md 是什么？** 每个技能就是一个 Markdown 文件——YAML frontmatter 声明输入变量，正文即 Prompt 模板。纯文本、Git 友好、可跨项目复用。这是 Dify / LangFlow / FlowiseAI 等平台没有的能力：技能定义不锁在数据库里，而是作为文件随代码版本管理。
 
 ![Vue 3](https://img.shields.io/badge/Vue%203-4FC08D?logo=vuedotjs&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
