@@ -11,8 +11,9 @@ from app.models import session as _session_models
 from app.models import setting as _setting_models
 from app.models import user as _user_models
 from app.models import workflow_db as _workflow_models
+from app.models import workflow_execution_db as _workflow_execution_models
 
-del _session_models, _setting_models, _user_models, _workflow_models
+del _session_models, _setting_models, _user_models, _workflow_models, _workflow_execution_models
 
 config = context.config
 

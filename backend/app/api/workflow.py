@@ -401,3 +401,96 @@ async def execute_workflow(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.get("/executions/{execution_id}")
+async def get_execution_status(
+    execution_id: str,
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Get workflow execution status and checkpoint data."""
+    from app.models.workflow_execution_db import WorkflowExecutionDB
+
+    _ = user
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(WorkflowExecutionDB).where(
+                WorkflowExecutionDB.id == execution_id
+            )
+        )
+        row = result.scalar_one_or_none()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Execution {execution_id} not found",
+        )
+
+    return {
+        "id": row.id,
+        "workflow_id": row.workflow_id,
+        "user_id": row.user_id,
+        "status": row.status,
+        "initial_input": row.initial_input,
+        "model": row.model,
+        "executed_nodes": json.loads(row.executed_nodes_json),
+        "queue": json.loads(row.queue_json),
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@router.post("/executions/{execution_id}/resume")
+@limiter.limit("10/minute")
+async def resume_execution(
+    request: Request,
+    execution_id: str,
+    user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """Resume a paused or failed workflow execution."""
+    from app.core.workflow.workflow_engine import WorkflowEngine
+    from app.models.workflow_execution_db import WorkflowExecutionDB
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(WorkflowExecutionDB).where(
+                WorkflowExecutionDB.id == execution_id
+            )
+        )
+        row = result.scalar_one_or_none()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Execution {execution_id} not found",
+        )
+
+    if row.status == "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="Execution already completed",
+        )
+
+    audit_log(
+        request=request,
+        user_id=user.id,
+        action="workflow_resume",
+        resource_id=execution_id,
+    )
+
+    async def generate() -> AsyncGenerator[str, None]:
+        async for event in WorkflowEngine.resume(execution_id):
+            event_type = event.get("type", "unknown")
+            payload = {k: v for k, v in event.items() if k != "type"}
+            yield format_sse_event(event_type, payload)
+        yield format_sse_event("done", {"status": "complete"})
+
+    return StreamingResponse(
+        with_heartbeat(generate()),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

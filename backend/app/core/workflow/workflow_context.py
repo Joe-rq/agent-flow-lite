@@ -65,6 +65,29 @@ class ExecutionContext:
 
         return TEMPLATE_PATTERN.sub(replace_var, template)
 
+    def to_checkpoint(self) -> dict[str, Any]:
+        """Serialize context state to a JSON-safe dict for persistence."""
+        return {
+            "step_outputs": self.step_outputs,
+            "variables": self.variables,
+            "conversation_history": self.conversation_history,
+        }
+
+    @classmethod
+    def from_checkpoint(
+        cls,
+        data: dict[str, Any],
+        initial_input: str,
+        user_id: int | None = None,
+        model: str | None = None,
+    ) -> ExecutionContext:
+        """Restore context from a checkpoint dict."""
+        ctx = cls(initial_input, user_id=user_id, model=model)
+        ctx.step_outputs = data.get("step_outputs", {})
+        ctx.variables = data.get("variables", {"input": initial_input})
+        ctx.conversation_history = data.get("conversation_history", [])
+        return ctx
+
     def resolve_expression(self, expression: str) -> str:
         def replace_var(match: re.Match[str]) -> str:
             value = self.get_variable(match.group(1))

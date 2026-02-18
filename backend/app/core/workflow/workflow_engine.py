@@ -4,7 +4,11 @@ Workflow execution engine.
 
 from __future__ import annotations
 
+import json
+import logging
+import uuid
 from collections import deque
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Optional
 
 from app.core.workflow.workflow_context import ExecutionContext
@@ -19,6 +23,8 @@ from app.core.workflow.workflow_nodes import (
     execute_start_node,
 )
 from app.models.workflow import Workflow
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowEngine:
@@ -115,17 +121,107 @@ class WorkflowEngine:
         async for event in executor(node):
             yield event
 
+    async def _save_checkpoint(
+        self,
+        execution_id: str,
+        ctx: ExecutionContext,
+        executed_nodes: set[str],
+        queue: deque[str],
+        status: str = "running",
+    ) -> None:
+        """Persist current execution state to the database."""
+        from app.core.database import AsyncSessionLocal
+        from sqlalchemy import select
+        from app.models.workflow_execution_db import WorkflowExecutionDB
+
+        checkpoint = ctx.to_checkpoint()
+        now = datetime.now(timezone.utc)
+
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(WorkflowExecutionDB).where(
+                    WorkflowExecutionDB.id == execution_id
+                )
+            )
+            row = result.scalar_one_or_none()
+            if row is None:
+                return
+            row.step_outputs_json = json.dumps(
+                checkpoint["step_outputs"], ensure_ascii=False
+            )
+            row.variables_json = json.dumps(
+                checkpoint["variables"], ensure_ascii=False
+            )
+            row.executed_nodes_json = json.dumps(list(executed_nodes))
+            row.queue_json = json.dumps(list(queue))
+            row.status = status
+            row.updated_at = now
+            await db.commit()
+
+    async def _create_execution_record(
+        self,
+        execution_id: str,
+        initial_input: str,
+        user_id: int | None,
+        model: str | None,
+    ) -> None:
+        """Create initial execution record in the database."""
+        from app.core.database import AsyncSessionLocal
+        from app.models.workflow_execution_db import WorkflowExecutionDB
+
+        now = datetime.now(timezone.utc)
+        async with AsyncSessionLocal() as db:
+            db.add(
+                WorkflowExecutionDB(
+                    id=execution_id,
+                    workflow_id=self.workflow.id,
+                    user_id=str(user_id) if user_id is not None else None,
+                    status="running",
+                    initial_input=initial_input,
+                    model=model,
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            await db.commit()
+
+    async def _update_execution_status(
+        self, execution_id: str, status: str
+    ) -> None:
+        """Update execution status in the database."""
+        from app.core.database import AsyncSessionLocal
+        from sqlalchemy import select
+        from app.models.workflow_execution_db import WorkflowExecutionDB
+
+        now = datetime.now(timezone.utc)
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(WorkflowExecutionDB).where(
+                    WorkflowExecutionDB.id == execution_id
+                )
+            )
+            row = result.scalar_one_or_none()
+            if row is not None:
+                row.status = status
+                row.updated_at = now
+                await db.commit()
+
     async def execute(
         self,
         initial_input: str,
         user_id: int | None = None,
         model: str | None = None,
         conversation_history: list[dict[str, str]] | None = None,
+        execution_id: str | None = None,
     ) -> AsyncGenerator[dict[str, Any], None]:
+        if execution_id is None:
+            execution_id = str(uuid.uuid4())
+
         yield {
             "type": "workflow_start",
             "workflow_id": self.workflow.id,
             "workflow_name": self.workflow.name,
+            "execution_id": execution_id,
         }
 
         start_nodes = [
@@ -141,6 +237,10 @@ class WorkflowEngine:
             yield {"type": "workflow_error", "error": "Workflow contains a cycle"}
             return
 
+        await self._create_execution_record(
+            execution_id, initial_input, user_id, model
+        )
+
         ctx = ExecutionContext(
             initial_input,
             user_id=user_id,
@@ -150,31 +250,139 @@ class WorkflowEngine:
         queue = deque(start_nodes)
         executed: set[str] = set()
 
-        while queue:
-            node_id = queue.popleft()
-            if node_id in executed:
-                continue
+        async for event in self._run_bfs(execution_id, ctx, queue, executed):
+            yield event
 
-            async for event in self._execute_node(node_id, ctx):
-                yield event
-                if event.get("type") == "node_error":
-                    yield {"type": "workflow_error", "error": event.get("error")}
-                    return
-                if event.get("type") == "workflow_complete":
-                    return
+    async def _run_bfs(
+        self,
+        execution_id: str,
+        ctx: ExecutionContext,
+        queue: deque[str],
+        executed: set[str],
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """Run the BFS traversal loop with checkpoint persistence."""
+        try:
+            while queue:
+                node_id = queue.popleft()
+                if node_id in executed:
+                    continue
 
-            executed.add(node_id)
-            self.last_executed_id = node_id
-            node_type = self.nodes[node_id].get("type")
-            branch = None
-            if node_type == "condition":
-                branch = "true" if ctx.variables.get(f"{node_id}.__branch") else "false"
+                async for event in self._execute_node(node_id, ctx):
+                    yield event
+                    if event.get("type") == "node_error":
+                        await self._save_checkpoint(
+                            execution_id, ctx, executed, queue, status="failed"
+                        )
+                        yield {"type": "workflow_error", "error": event.get("error")}
+                        return
+                    if event.get("type") == "workflow_complete":
+                        await self._update_execution_status(
+                            execution_id, "completed"
+                        )
+                        return
 
-            for next_id in self._get_next_nodes(node_id, branch):
-                if next_id not in executed:
-                    queue.append(next_id)
+                executed.add(node_id)
+                self.last_executed_id = node_id
+                node_type = self.nodes[node_id].get("type")
+                branch = None
+                if node_type == "condition":
+                    branch = (
+                        "true"
+                        if ctx.variables.get(f"{node_id}.__branch")
+                        else "false"
+                    )
 
-        final_output = None
-        if self.last_executed_id:
-            final_output = ctx.step_outputs.get(self.last_executed_id)
-        yield {"type": "workflow_complete", "final_output": final_output}
+                for next_id in self._get_next_nodes(node_id, branch):
+                    if next_id not in executed:
+                        queue.append(next_id)
+
+                await self._save_checkpoint(
+                    execution_id, ctx, executed, queue
+                )
+
+            final_output = None
+            if self.last_executed_id:
+                final_output = ctx.step_outputs.get(self.last_executed_id)
+            await self._update_execution_status(execution_id, "completed")
+            yield {"type": "workflow_complete", "final_output": final_output}
+        except Exception:
+            await self._update_execution_status(execution_id, "failed")
+            raise
+
+    @classmethod
+    async def resume(
+        cls, execution_id: str
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        """Resume a previously checkpointed execution."""
+        from app.core.database import AsyncSessionLocal
+        from sqlalchemy import select
+        from app.models.workflow_execution_db import WorkflowExecutionDB
+        from app.models.workflow_db import WorkflowDB
+
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(WorkflowExecutionDB).where(
+                    WorkflowExecutionDB.id == execution_id
+                )
+            )
+            exec_row = result.scalar_one_or_none()
+
+        if exec_row is None:
+            yield {
+                "type": "workflow_error",
+                "error": f"Execution {execution_id} not found",
+            }
+            return
+
+        if exec_row.status == "completed":
+            yield {
+                "type": "workflow_error",
+                "error": "Execution already completed",
+            }
+            return
+
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(WorkflowDB).where(WorkflowDB.id == exec_row.workflow_id)
+            )
+            wf_row = result.scalar_one_or_none()
+
+        if wf_row is None:
+            yield {
+                "type": "workflow_error",
+                "error": f"Workflow {exec_row.workflow_id} not found",
+            }
+            return
+
+        from app.api.workflow import _row_to_workflow_model
+
+        workflow = _row_to_workflow_model(wf_row)
+        engine = cls(workflow)
+
+        checkpoint_data = {
+            "step_outputs": json.loads(exec_row.step_outputs_json),
+            "variables": json.loads(exec_row.variables_json),
+            "conversation_history": [],
+        }
+        user_id = int(exec_row.user_id) if exec_row.user_id else None
+        ctx = ExecutionContext.from_checkpoint(
+            checkpoint_data,
+            initial_input=exec_row.initial_input or "",
+            user_id=user_id,
+            model=exec_row.model,
+        )
+        executed = set(json.loads(exec_row.executed_nodes_json))
+        queue = deque(json.loads(exec_row.queue_json))
+
+        await engine._update_execution_status(execution_id, "running")
+
+        yield {
+            "type": "workflow_start",
+            "workflow_id": workflow.id,
+            "workflow_name": workflow.name,
+            "execution_id": execution_id,
+            "resumed": True,
+        }
+
+        async for event in engine._run_bfs(execution_id, ctx, queue, executed):
+            yield event
