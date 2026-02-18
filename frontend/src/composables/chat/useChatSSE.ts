@@ -1,6 +1,7 @@
 import { ref, nextTick, type Ref, type ComputedRef } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { createSSEParser } from '@/utils/sse-parser'
+import { useToast } from '@/composables/useToast'
 import type { CitationSource, Message, Session } from './types'
 import { handleSSEEventDispatch } from './sseEventHandlers'
 
@@ -48,6 +49,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
   const isStreaming = ref(false)
   const currentThought = ref('')
   const authStore = useAuthStore()
+  const { showToast } = useToast()
   let abortController: AbortController | null = null
 
   function scrollToBottom() {
@@ -177,7 +179,7 @@ export function useChatSSE(options: UseChatSSEOptions) {
       }
       isStreaming.value = false
       currentThought.value = ''
-      alert('\u53D1\u9001\u6D88\u606F\u5931\u8D25: ' + (err.message || '\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8FDE\u63A5'))
+      showToast('发送消息失败: ' + (err.message || '请检查网络连接'))
     }
 
     session.updatedAt = Date.now()

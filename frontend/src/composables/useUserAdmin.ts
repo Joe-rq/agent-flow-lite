@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
 import { API_BASE } from '@/utils/constants'
+import { useToast } from '@/composables/useToast'
 import type { User } from '@/types'
 
 export function useUserAdmin() {
@@ -8,6 +9,8 @@ export function useUserAdmin() {
   const searchQuery = ref('')
   const isLoading = ref(false)
   const currentUser = ref<User | null>(null)
+
+  const { showToast } = useToast()
 
   // Confirm dialog state
   const showConfirmDialog = ref(false)
@@ -31,7 +34,7 @@ export function useUserAdmin() {
   }
 
   function showError(message: string) {
-    alert(message)
+    showToast(message)
   }
 
   async function loadCurrentUser() {

@@ -1,10 +1,12 @@
 import { ref, computed } from 'vue'
 import type { Connection } from '@vue-flow/core'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useEditorActions(flow: any) {
   const configPanelVisible = ref(false)
   const selectedNodeId = ref<string | null>(null)
+  const { confirmDialog } = useConfirmDialog()
 
   const selectedNodeType = computed(() => {
     if (!selectedNodeId.value) return null
@@ -33,12 +35,12 @@ export function useEditorActions(flow: any) {
     configPanelVisible.value = true
   }
 
-  function onEdgeClick(event: { edge: { id: string } }) {
-    if (confirm('确定要删除这条连线吗？')) flow.removeEdges([event.edge.id])
+  async function onEdgeClick(event: { edge: { id: string } }) {
+    if (await confirmDialog('确定要删除这条连线吗？')) flow.removeEdges([event.edge.id])
   }
 
-  function deleteNode(nodeId: string) {
-    if (confirm('确定要删除此节点吗？')) {
+  async function deleteNode(nodeId: string) {
+    if (await confirmDialog('确定要删除此节点吗？')) {
       flow.removeNodes([nodeId])
       closeConfigPanel()
     }

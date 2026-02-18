@@ -2,11 +2,13 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { API_BASE } from '@/utils/constants'
+import { useToast } from '@/composables/useToast'
 import type { SkillInput } from '@/types'
 
 export function useSkillForm() {
   const route = useRoute()
   const router = useRouter()
+  const { showToast } = useToast()
   const skillNameParam = computed(() => route.params.name as string | undefined)
   const isNew = computed(() => !skillNameParam.value || skillNameParam.value === 'new')
 
@@ -115,7 +117,7 @@ export function useSkillForm() {
       skillPrompt.value = skill.prompt || ''
     } catch (error) {
       console.error('加载技能失败:', error)
-      alert('加载技能失败')
+      showToast('加载技能失败')
       router.push('/skills')
     }
   }

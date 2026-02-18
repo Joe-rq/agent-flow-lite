@@ -120,6 +120,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import Button from '@/components/ui/Button.vue'
 import { getTemplateBySlug, type TemplateSlug } from '@/composables/workflow/workflowTemplates'
+import { useToast } from '@/composables/useToast'
 
 interface ExportPayload {
   version: number
@@ -165,6 +166,8 @@ const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const exportTextarea = ref<HTMLTextAreaElement | null>(null)
 const copied = ref(false)
+
+const { showToast } = useToast()
 
 const exportDataJson = computed(() => {
   if (!props.exportData) return ''
@@ -254,7 +257,7 @@ function doImport() {
     data = JSON.parse(importJson.value)
   } catch (e) {
     // Validation happens in parent, but we can pre-check
-    alert('JSON 格式无效，请检查输入')
+    showToast('JSON 格式无效，请检查输入', 'warning')
     return
   }
   emit('import', data)

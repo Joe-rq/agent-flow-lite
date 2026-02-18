@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { createSSEParser } from '@/utils/sse-parser'
 import { API_BASE } from '@/utils/constants'
+import { useToast } from '@/composables/useToast'
 import type { Skill } from '@/types'
 
 const SSE_TIMEOUT_MS = 180_000
@@ -32,6 +33,7 @@ export function useSkillRunner() {
   const currentThought = ref('')
 
   const authStore = useAuthStore()
+  const { showToast } = useToast()
   let abortController: AbortController | null = null
 
   function openRunModal(skill: Skill) {
@@ -91,7 +93,7 @@ export function useSkillRunner() {
       (input) => input.required && !runInputs.value[input.name]?.trim(),
     )
     if (missingInputs?.length) {
-      alert(`请填写必填项: ${missingInputs.map((i) => i.name).join(', ')}`)
+      showToast(`请填写必填项: ${missingInputs.map((i) => i.name).join(', ')}`, 'warning')
       return
     }
 

@@ -2,6 +2,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import axios from 'axios'
 import { API_BASE } from '@/utils/constants'
+import { useToast } from '@/composables/useToast'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import type { KnowledgeBase, Document, UploadTask, SearchResult } from '@/types'
 
 export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
@@ -19,6 +21,9 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
   const searchError = ref('')
 
   let pollInterval: number | null = null
+
+  const { showToast } = useToast()
+  const { confirmDialog } = useConfirmDialog()
 
   function isSupportedFile(fileName: string): boolean {
     const lower = fileName.toLowerCase()
@@ -41,7 +46,7 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
   }
 
   function showError(message: string) {
-    alert(message)
+    showToast(message)
   }
 
   async function loadKnowledgeBases() {
@@ -89,7 +94,7 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
   }
 
   async function deleteKnowledgeBase(kbId: string, kbName: string) {
-    if (!confirm(`确定要删除知识库「${kbName}」吗？所有文档和向量数据将被永久删除。`)) return
+    if (!(await confirmDialog(`确定要删除知识库「${kbName}」吗？所有文档和向量数据将被永久删除。`))) return
     try {
       await axios.delete(`${API_BASE}/knowledge/${kbId}`)
       knowledgeBases.value = knowledgeBases.value.filter(kb => kb.id !== kbId)
@@ -98,7 +103,7 @@ export function useKnowledgeApi(fileInput: Ref<HTMLInputElement | null>) {
 
   async function deleteDocument(docId: string) {
     if (!selectedKB.value) return
-    if (!confirm('确定要删除这个文档吗？')) return
+    if (!(await confirmDialog('确定要删除这个文档吗？'))) return
     try {
       await axios.delete(`${API_BASE}/knowledge/${selectedKB.value.id}/documents/${docId}`)
       documents.value = documents.value.filter(doc => doc.id !== docId)

@@ -8,11 +8,29 @@ const mockGet = vi.fn()
 const mockDelete = vi.fn()
 const mockFetch = vi.fn()
 
+const mockShowToast = vi.fn()
+const mockConfirmDialog = vi.fn()
+
 vi.mock('axios', () => ({
   default: {
     get: (...args: unknown[]) => mockGet(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
   }
+}))
+
+vi.mock('@/composables/useToast', () => ({
+  useToast: () => ({
+    toasts: { value: [] },
+    showToast: mockShowToast,
+    removeToast: vi.fn(),
+  })
+}))
+
+vi.mock('@/composables/useConfirmDialog', () => ({
+  useConfirmDialog: () => ({
+    state: { value: { visible: false, title: '', message: '', resolve: null } },
+    confirmDialog: mockConfirmDialog,
+  })
 }))
 
 global.fetch = mockFetch
@@ -191,7 +209,6 @@ describe('SkillsView Skill List', () => {
 
   it('should handle API error when loading skills', async () => {
     mockGet.mockRejectedValueOnce(new Error('Network error'))
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
 
     mount(SkillsView, {
       global: {
@@ -201,8 +218,7 @@ describe('SkillsView Skill List', () => {
 
     await flushPromises()
 
-    expect(alertSpy).toHaveBeenCalledWith('加载技能列表失败')
-    alertSpy.mockRestore()
+    expect(mockShowToast).toHaveBeenCalledWith('加载技能列表失败')
   })
 })
 
@@ -290,7 +306,7 @@ describe('SkillsView Delete', () => {
     }
     mockGet.mockResolvedValueOnce({ data: mockSkills })
     mockDelete.mockResolvedValueOnce({ status: 200 })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockConfirmDialog.mockResolvedValue(true)
 
     const wrapper = mount(SkillsView, {
       global: {
@@ -302,6 +318,7 @@ describe('SkillsView Delete', () => {
 
     const deleteButton = wrapper.find('.btn-delete-skill')
     await deleteButton.trigger('click')
+    await flushPromises()
 
     expect(mockDelete).toHaveBeenCalledWith('/api/v1/skills/test-skill')
     await flushPromises()
@@ -320,7 +337,7 @@ describe('SkillsView Delete', () => {
       ]
     }
     mockGet.mockResolvedValueOnce({ data: mockSkills })
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    mockConfirmDialog.mockResolvedValue(false)
 
     const wrapper = mount(SkillsView, {
       global: {
@@ -332,6 +349,7 @@ describe('SkillsView Delete', () => {
 
     const deleteButton = wrapper.find('.btn-delete-skill')
     await deleteButton.trigger('click')
+    await flushPromises()
 
     expect(mockDelete).not.toHaveBeenCalled()
   })
@@ -351,8 +369,7 @@ describe('SkillsView Delete', () => {
     mockDelete.mockRejectedValueOnce({
       response: { data: { detail: 'Delete failed' } }
     })
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    mockConfirmDialog.mockResolvedValue(true)
 
     const wrapper = mount(SkillsView, {
       global: {
@@ -366,8 +383,7 @@ describe('SkillsView Delete', () => {
     await deleteButton.trigger('click')
     await flushPromises()
 
-    expect(alertSpy).toHaveBeenCalledWith('Delete failed')
-    alertSpy.mockRestore()
+    expect(mockShowToast).toHaveBeenCalledWith('Delete failed')
   })
 })
 
@@ -456,7 +472,6 @@ describe('SkillsView Run Modal', () => {
       ]
     }
     mockGet.mockResolvedValueOnce({ data: mockSkills })
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
 
     const wrapper = mount(SkillsView, {
       global: {
@@ -474,8 +489,7 @@ describe('SkillsView Run Modal', () => {
       await runConfirmButton.trigger('click')
     }
 
-    expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('请填写必填项'))
-    alertSpy.mockRestore()
+    expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('请填写必填项'), 'warning')
   })
 
   it('should set default values in run form', async () => {

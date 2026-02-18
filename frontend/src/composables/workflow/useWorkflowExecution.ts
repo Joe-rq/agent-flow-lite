@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue'
 import { useSSEStream } from '@/composables/useSSEStream'
+import { useToast } from '@/composables/useToast'
 import { API_BASE } from '@/utils/constants'
 
 export function useWorkflowExecution(currentWorkflowId: Ref<string | null>) {
@@ -8,9 +9,10 @@ export function useWorkflowExecution(currentWorkflowId: Ref<string | null>) {
   const runOutput = ref('')
   const runLogs = ref<string[]>([])
   const showRunDialog = ref(false)
+  const { showToast } = useToast()
 
   function showError(message: string) {
-    alert(message)
+    showToast(message)
   }
 
   function appendRunLog(message: string) {

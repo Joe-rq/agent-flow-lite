@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { API_BASE } from '@/utils/constants'
+import { useToast } from '@/composables/useToast'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
 export interface WorkflowItem {
   id: string
@@ -56,8 +58,11 @@ export function useWorkflowCrud(
   const isImporting = ref(false)
   const importError = ref<string | null>(null)
 
+  const { showToast } = useToast()
+  const { confirmDialog } = useConfirmDialog()
+
   function showError(message: string) {
-    alert(message)
+    showToast(message)
   }
 
   function getDefaultLabel(type: string): string {
@@ -123,7 +128,7 @@ export function useWorkflowCrud(
       showError('请先加载一个工作流')
       return
     }
-    if (!confirm(`确定要删除工作流「${currentWorkflowName.value}」吗？此操作不可恢复。`)) return
+    if (!(await confirmDialog(`确定要删除工作流「${currentWorkflowName.value}」吗？此操作不可恢复。`))) return
     try {
       await axios.delete(`${API_BASE}/workflows/${currentWorkflowId.value}`)
       showError('工作流删除成功！')

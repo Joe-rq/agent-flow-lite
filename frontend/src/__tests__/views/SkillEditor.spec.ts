@@ -8,12 +8,22 @@ const mockGet = vi.fn()
 const mockPost = vi.fn()
 const mockPut = vi.fn()
 
+const mockShowToast = vi.fn()
+
 vi.mock('axios', () => ({
   default: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
     put: (...args: unknown[]) => mockPut(...args),
   }
+}))
+
+vi.mock('@/composables/useToast', () => ({
+  useToast: () => ({
+    toasts: { value: [] },
+    showToast: mockShowToast,
+    removeToast: vi.fn(),
+  })
 }))
 
 function createTestRouter() {
@@ -894,7 +904,6 @@ describe('SkillEditor Load', () => {
   it('should redirect to skills list when load fails', async () => {
     mockGet.mockRejectedValueOnce(new Error('Not found'))
     const pushSpy = vi.spyOn(router, 'push')
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {})
 
     await router.push('/skills/nonexistent')
     await router.isReady()
@@ -907,10 +916,8 @@ describe('SkillEditor Load', () => {
 
     await flushPromises()
 
-    expect(alertSpy).toHaveBeenCalledWith('加载技能失败')
+    expect(mockShowToast).toHaveBeenCalledWith('加载技能失败')
     expect(pushSpy).toHaveBeenCalledWith('/skills')
-
-    alertSpy.mockRestore()
   })
 
   it('should disable name input when editing', async () => {

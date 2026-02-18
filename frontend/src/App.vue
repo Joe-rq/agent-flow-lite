@@ -3,6 +3,8 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 const sidebarCollapsed = ref(false)
 const route = useRoute()
@@ -89,6 +91,8 @@ async function handleLogout() {
         <RouterView />
       </main>
     </div>
+    <ToastContainer />
+    <ConfirmDialog />
   </div>
 </template>
 

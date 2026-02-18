@@ -1,11 +1,13 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import type { CitationSource, Session } from './types'
 
 export function useChatSession() {
   const sessions = ref<Session[]>([])
   const currentSessionId = ref<string>('')
   const activeCitation = ref<CitationSource | null>(null)
+  const { confirmDialog } = useConfirmDialog()
 
   const currentSession = computed(() => {
     return sessions.value.find((s) => s.id === currentSessionId.value)
@@ -38,7 +40,7 @@ export function useChatSession() {
   }
 
   async function deleteSession(sessionId: string) {
-    if (!confirm('\u786E\u5B9A\u8981\u5220\u9664\u6B64\u4F1A\u8BDD\u5417\uFF1F')) return
+    if (!(await confirmDialog('确定要删除此会话吗？'))) return
 
     const removeAndSwitch = () => {
       sessions.value = sessions.value.filter((s) => s.id !== sessionId)

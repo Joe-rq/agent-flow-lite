@@ -82,12 +82,16 @@ import axios from 'axios'
 import { formatDate } from '@/utils/format'
 import { API_BASE } from '@/utils/constants'
 import { useSkillRunner } from '@/composables/skills/useSkillRunner'
+import { useToast } from '@/composables/useToast'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import SkillRunDialog from '@/components/skills/SkillRunDialog.vue'
 import type { Skill, SkillApiItem } from '@/types'
 
 const router = useRouter()
 const skills = ref<Skill[]>([])
 const runner = useSkillRunner()
+const { showToast } = useToast()
+const { confirmDialog } = useConfirmDialog()
 
 async function loadSkills() {
   try {
@@ -104,7 +108,7 @@ async function loadSkills() {
     }))
   } catch (error) {
     console.error('加载技能列表失败:', error)
-    alert('加载技能列表失败')
+    showToast('加载技能列表失败')
   }
 }
 
@@ -117,7 +121,7 @@ function editSkill(name: string) {
 }
 
 async function deleteSkill(name: string) {
-  if (!confirm(`确定要删除技能「${name}」吗？`)) return
+  if (!(await confirmDialog(`确定要删除技能「${name}」吗？`))) return
 
   try {
     await axios.delete(`${API_BASE}/skills/${name}`)
@@ -125,7 +129,7 @@ async function deleteSkill(name: string) {
   } catch (error) {
     console.error('删除技能失败:', error)
     const err = error as { response?: { data?: { detail?: string } } }
-    alert(err.response?.data?.detail || '删除技能失败')
+    showToast(err.response?.data?.detail || '删除技能失败')
   }
 }
 
