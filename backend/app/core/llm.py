@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 TOKEN_USAGE_LOG = BACKEND_DATA_DIR / "token_usage.log"
 _token_usage_lock = Lock()
 
-SUPPORTED_PROVIDERS = ("deepseek", "openai", "qwen")
+SUPPORTED_PROVIDERS = ("deepseek", "openai", "qwen", "ollama")
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,13 @@ def _provider_configs() -> dict[str, ProviderConfig]:
             base_url=s.qwen_api_base,
             default_model=s.qwen_model,
             context_window=s.qwen_context_window,
+        ),
+        "ollama": ProviderConfig(
+            provider="ollama",
+            api_key=s.ollama_api_key,
+            base_url=s.ollama_api_base,
+            default_model=s.ollama_model,
+            context_window=s.ollama_context_window,
         ),
     }
 
@@ -133,7 +140,7 @@ def _first_provider_with_key(
 ) -> ProviderConfig | None:
     for provider in SUPPORTED_PROVIDERS:
         cfg = configs[provider]
-        if cfg.api_key.strip():
+        if cfg.api_key.strip() and cfg.default_model.strip():
             return cfg
     return None
 

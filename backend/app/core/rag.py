@@ -65,15 +65,14 @@ def _parse_dimension_mismatch(message: str) -> tuple[int | None, int | None]:
     return None, None
 
 
-class SiliconFlowEmbedding:
-    """SiliconFlow embedding client using OpenAI-compatible API."""
+class OpenAICompatibleEmbedding:
+    """Embedding client using any OpenAI-compatible API."""
 
-    def __init__(self, model: str = DEFAULT_EMBEDDING_MODEL):
-        s = settings()
+    def __init__(self, api_key: str, base_url: str, model: str):
         self.model = model
         self.client = AsyncOpenAI(
-            api_key=s.siliconflow_api_key,
-            base_url=s.siliconflow_api_base,
+            api_key=api_key,
+            base_url=base_url,
         )
 
     async def get_text_embedding(self, text: str) -> list[float]:
@@ -87,12 +86,60 @@ class SiliconFlowEmbedding:
         return [item.embedding for item in resp.data]
 
 
+# Backwards-compatible alias
+SiliconFlowEmbedding = OpenAICompatibleEmbedding
+
+_EMBEDDING_PROVIDERS = ("siliconflow", "openai", "ollama")
+
+
+def create_embedding_model(
+    provider: str | None = None,
+    model: str | None = None,
+) -> OpenAICompatibleEmbedding:
+    """Create an embedding client based on the configured provider.
+
+    Args:
+        provider: Override embedding provider (siliconflow/openai/ollama).
+                  Defaults to settings().embedding_provider.
+        model: Override embedding model name.
+               Defaults to the model configured for the chosen provider.
+    """
+    s = settings()
+    provider = (provider or s.embedding_provider).strip().lower()
+
+    if provider == "openai":
+        api_key = s.openai_api_key
+        base_url = s.openai_api_base
+        default_model = s.openai_embedding_model
+    elif provider == "ollama":
+        api_key = s.ollama_api_key
+        base_url = s.ollama_api_base
+        default_model = s.ollama_embedding_model
+    else:
+        # Default: siliconflow
+        api_key = s.siliconflow_api_key
+        base_url = s.siliconflow_api_base
+        default_model = s.embedding_model
+
+    resolved_model = (model or default_model).strip()
+    if not resolved_model:
+        raise ValueError(
+            f"Embedding model not configured for provider '{provider}'"
+        )
+
+    return OpenAICompatibleEmbedding(
+        api_key=api_key,
+        base_url=base_url,
+        model=resolved_model,
+    )
+
+
 class RAGPipeline:
     """RAG Pipeline for document processing and retrieval."""
 
     def __init__(self, embedding_model: str | None = None):
         self.embedding_model_name = embedding_model or DEFAULT_EMBEDDING_MODEL
-        self.embed_model = SiliconFlowEmbedding(model=self.embedding_model_name)
+        self.embed_model = create_embedding_model(model=self.embedding_model_name)
         self.chroma_client = get_chroma_client()
         self.node_parser = SentenceSplitter(
             chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     default_llm_provider: str = Field(
         default="deepseek",
-        description="Default LLM provider: deepseek/openai/qwen",
+        description="Default LLM provider: deepseek/openai/qwen/ollama",
     )
     default_llm_model: str = Field(
         default="",
@@ -74,6 +74,25 @@ class Settings(BaseSettings):
         ge=1024,
     )
 
+    # Ollama Configuration (local LLM)
+    ollama_api_key: str = Field(
+        default="ollama",
+        description="Ollama API key placeholder (Ollama does not require a real key)",
+    )
+    ollama_api_base: str = Field(
+        default="http://localhost:11434/v1",
+        description="Base URL for Ollama OpenAI-compatible API",
+    )
+    ollama_model: str = Field(
+        default="",
+        description="Ollama model name (empty = not configured, opt-in)",
+    )
+    ollama_context_window: int = Field(
+        default=8192,
+        description="Estimated Ollama context window tokens",
+        ge=1024,
+    )
+
     llm_context_ratio: float = Field(
         default=0.7,
         description="Max ratio of context window used by chat history",
@@ -105,6 +124,20 @@ class Settings(BaseSettings):
     )
     embedding_model: str = Field(
         default="BAAI/bge-m3", description="Embedding model name (SiliconFlow)"
+    )
+
+    # Embedding provider abstraction
+    embedding_provider: str = Field(
+        default="siliconflow",
+        description="Embedding provider: siliconflow/openai/ollama",
+    )
+    openai_embedding_model: str = Field(
+        default="text-embedding-3-small",
+        description="Embedding model name for OpenAI provider",
+    )
+    ollama_embedding_model: str = Field(
+        default="",
+        description="Embedding model name for Ollama provider (empty = not configured)",
     )
 
     # Application Configuration
