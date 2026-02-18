@@ -99,7 +99,11 @@ export function useSkillRunner() {
     runOutput.value = ''
     currentThought.value = ''
     abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    let timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    function resetTimeout() {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    }
 
     try {
       const headers: Record<string, string> = {
@@ -139,8 +143,10 @@ export function useSkillRunner() {
 
         sseParser.parse(chunk, {
           onEvent: (eventType, data) => {
+            resetTimeout()
             handleSSEEvent(eventType, data)
           },
+          onComment: () => resetTimeout(),
           onDone: () => {
             isRunning.value = false
             currentThought.value = ''

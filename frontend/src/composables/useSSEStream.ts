@@ -46,7 +46,11 @@ export function useSSEStream() {
     }
 
     abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    let timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    function resetTimeout() {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    }
     if (signal) {
       signal.addEventListener('abort', () => abortController?.abort(), { once: true })
     }
@@ -81,7 +85,8 @@ export function useSSEStream() {
 
         const chunk = decoder.decode(value, { stream: true })
         sseParser.parse(chunk, {
-          onEvent: (eventType, data) => onEvent(eventType, data),
+          onEvent: (eventType, data) => { resetTimeout(); onEvent(eventType, data) },
+          onComment: () => resetTimeout(),
           onDone: () => onDone?.(),
         })
       }

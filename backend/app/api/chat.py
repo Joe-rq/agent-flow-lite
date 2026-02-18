@@ -37,6 +37,7 @@ from app.api.chat_stream import (
     skill_stream_generator,
     stream_with_save,
 )
+from app.utils.sse import with_heartbeat
 from app.models.chat import ChatMessage, ChatRequest
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
@@ -173,12 +174,12 @@ async def chat_completions(
             reserved_tokens=0,
         )
         return StreamingResponse(
-            workflow_stream_generator(
+            with_heartbeat(workflow_stream_generator(
                 payload,
                 session,
                 user,
                 conversation_history=history_for_workflow,
-            ),
+            )),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -190,7 +191,7 @@ async def chat_completions(
     skill_name, remaining_text = parse_at_skill(payload.message)
     if skill_name:
         return StreamingResponse(
-            skill_stream_generator(skill_name, remaining_text, session, user),
+            with_heartbeat(skill_stream_generator(skill_name, remaining_text, session, user)),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -234,13 +235,13 @@ async def chat_completions(
     )
 
     return StreamingResponse(
-        stream_with_save(
+        with_heartbeat(stream_with_save(
             payload,
             session,
             messages_for_llm,
             retrieved_results,
             user_id=user.id,
-        ),
+        )),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

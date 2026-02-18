@@ -81,7 +81,11 @@ export function useChatSSE(options: UseChatSSEOptions) {
 
   async function connectSSE(sessionId: string, message: string) {
     abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    let timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    function resetTimeout() {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => abortController?.abort(), SSE_TIMEOUT_MS)
+    }
     const payload = buildChatPayload(sessionId, message)
     const response = await fetch('/api/v1/chat/completions', {
       method: 'POST',
@@ -117,8 +121,10 @@ export function useChatSSE(options: UseChatSSEOptions) {
       const chunk = decoder.decode(value, { stream: true })
       sseParser.parse(chunk, {
         onEvent: (eventType, eventData) => {
+          resetTimeout()
           handleSSEEvent(eventType, eventData, lastMessage)
         },
+        onComment: () => resetTimeout(),
         onDone: () => {
           isStreaming.value = false
           if (lastMessage) lastMessage.isStreaming = false

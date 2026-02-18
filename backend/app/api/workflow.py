@@ -26,7 +26,7 @@ from app.models.workflow_db import WorkflowDB
 from app.core.audit import audit_log
 from app.core.auth import User, get_current_user
 from app.middleware.rate_limit import limiter
-from app.utils.sse import format_sse_event
+from app.utils.sse import format_sse_event, with_heartbeat
 
 router = APIRouter(prefix="/api/v1/workflows", tags=["workflows"])
 
@@ -393,10 +393,11 @@ async def execute_workflow(
         yield format_sse_event("done", {"status": "complete"})
 
     return StreamingResponse(
-        generate(),
+        with_heartbeat(generate()),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         },
     )
