@@ -22,6 +22,17 @@
   --accent-purple-soft: rgba(124, 58, 237, 0.1);
   --accent-purple-glow: rgba(124, 58, 237, 0.3);
 
+  /* Semantic Colors - Danger/Success/Warning */
+  --color-danger: #ef4444;
+  --color-danger-dark: #dc2626;
+  --color-danger-darker: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-danger-glow: rgba(239, 68, 68, 0.4);
+  --color-success: #22c55e;
+  --color-success-soft: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
+
   /* Text Colors - Slate Dark */
   --text-primary: #0f172a;
   --text-secondary: #475569;

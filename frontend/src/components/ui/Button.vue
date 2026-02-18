@@ -113,14 +113,14 @@ function handleClick(event: MouseEvent) {
 
 /* Danger variant */
 .btn--danger {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, var(--color-danger, #ef4444), var(--color-danger-dark, #dc2626));
   color: white;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
 .btn--danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  background: linear-gradient(135deg, var(--color-danger-dark, #dc2626), var(--color-danger-darker, #b91c1c));
+  box-shadow: 0 4px 12px var(--color-danger-glow, rgba(239, 68, 68, 0.4)), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
   transform: translateY(-1px);
 }
 
