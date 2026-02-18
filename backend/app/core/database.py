@@ -35,6 +35,11 @@ Base = declarative_base()
 
 async def init_db() -> None:
     """Initialize database by creating all tables and running migrations."""
+    # Import all models so Base.metadata.create_all discovers every table.
+    import app.models.user  # noqa: F401
+    import app.models.workflow_db  # noqa: F401
+    import app.models.workflow_execution_db  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
