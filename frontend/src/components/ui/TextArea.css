@@ -40,7 +40,7 @@
 }
 
 .text-area--error .text-area__field:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px var(--color-danger-focus);
 }
 
 .text-area__error {
