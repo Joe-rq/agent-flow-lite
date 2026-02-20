@@ -5,27 +5,23 @@
     <!-- 技能选择 -->
     <div class="form-group">
       <label>加载技能 (可选)</label>
-      <select :value="config.skillName" class="form-select" @change="updateField('skillName', ($event.target as HTMLSelectElement).value); $emit('skill-change')">
-        <option value="">不使用技能</option>
-        <option v-for="skill in skills" :key="skill.name" :value="skill.name">
-          {{ skill.name }}
-        </option>
-      </select>
+      <SelectInput
+        :model-value="config.skillName"
+        :options="skills.map(skill => ({ value: skill.name, label: skill.name }))"
+        placeholder="不使用技能"
+        @update:model-value="updateField('skillName', $event); $emit('skill-change')"
+      />
       <small class="form-hint">选择技能将自动加载其提示词和模型配置</small>
     </div>
 
     <div class="form-group">
       <label>模型</label>
-      <select
-        :value="config.model || ''"
-        class="form-select"
-        @change="updateField('model', ($event.target as HTMLSelectElement).value)"
-      >
-        <option value="">跟随默认模型</option>
-        <option v-for="item in models" :key="item.id" :value="item.id">
-          {{ item.provider }} / {{ item.model }}
-        </option>
-      </select>
+      <SelectInput
+        :model-value="config.model || ''"
+        :options="models.map(item => ({ value: item.id, label: `${item.provider} / ${item.model}` }))"
+        placeholder="跟随默认模型"
+        @update:model-value="updateField('model', $event)"
+      />
       <small class="form-hint">未选择时使用系统默认模型</small>
     </div>
 
@@ -44,14 +40,13 @@
     <!-- 系统提示词 -->
     <div class="form-group">
       <label>系统提示词</label>
-      <textarea
-        :value="config.systemPrompt"
-        rows="6"
+      <TextArea
+        :model-value="config.systemPrompt ?? ''"
+        :rows="6"
         :placeholder="hints?.systemPrompt?.placeholder"
-        class="form-textarea"
         :disabled="!!config.skillName"
-        @input="updateField('systemPrompt', ($event.target as HTMLTextAreaElement).value)"
-      ></textarea>
+        @update:model-value="updateField('systemPrompt', $event)"
+      />
       <small v-if="config.skillName" class="form-hint">提示词由技能提供，不可编辑</small>
       <small v-else class="form-hint">{{ hints?.systemPrompt?.hint }}</small>
     </div>
@@ -80,6 +75,7 @@
 
 <script setup lang="ts">
 import type { AvailableModel, NodeConfig, Skill } from '@/composables/workflow/useNodeConfig'
+import { SelectInput, TextArea } from '@/components/ui'
 import { fieldHints } from './nodeHelpData'
 
 const hints = fieldHints.llm

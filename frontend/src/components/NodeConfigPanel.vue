@@ -19,11 +19,10 @@
         <h4>开始节点</h4>
         <div class="form-group">
           <label>输入变量定义</label>
-          <input
+          <TextInput
             v-model="config.inputVariable"
             type="text"
             :placeholder="hints.start?.inputVariable?.placeholder"
-            class="form-input"
           />
           <small class="form-hint">{{ hints.start?.inputVariable?.hint }}</small>
         </div>
@@ -44,12 +43,11 @@
         <h4>知识库节点</h4>
         <div class="form-group">
           <label>选择知识库</label>
-          <select v-model="config.knowledgeBaseId" class="form-select">
-            <option value="">请选择知识库</option>
-            <option v-for="kb in knowledgeBases" :key="kb.id" :value="kb.id">
-              {{ kb.name }}
-            </option>
-          </select>
+          <SelectInput
+            v-model="config.knowledgeBaseId"
+            :options="knowledgeBases.map(kb => ({ value: kb.id, label: kb.name }))"
+            placeholder="请选择知识库"
+          />
           <small class="form-hint">{{ hints.knowledge?.knowledgeBaseId?.hint }}</small>
         </div>
       </div>
@@ -59,11 +57,10 @@
         <h4>结束节点</h4>
         <div class="form-group">
           <label>输出变量</label>
-          <input
+          <TextInput
             v-model="config.outputVariable"
             type="text"
             :placeholder="hints.end?.outputVariable?.placeholder"
-            class="form-input"
           />
           <small class="form-hint">{{ hints.end?.outputVariable?.hint }}</small>
         </div>
@@ -74,12 +71,11 @@
         <h4>条件节点</h4>
         <div class="form-group">
           <label>条件表达式 (JavaScript)</label>
-          <textarea
+          <TextArea
             v-model="config.expression"
-            rows="4"
+            :rows="4"
             :placeholder="hints.condition?.expression?.placeholder"
-            class="form-textarea"
-          ></textarea>
+          />
           <small class="form-hint">{{ hints.condition?.expression?.hint }}</small>
         </div>
       </div>
@@ -100,33 +96,36 @@
         <h4>HTTP 节点</h4>
         <div class="form-group">
           <label>请求方法</label>
-          <select v-model="config.method" class="form-select">
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="DELETE">DELETE</option>
-          </select>
+          <SelectInput
+            v-model="config.method"
+            :options="[
+              { value: 'GET', label: 'GET' },
+              { value: 'POST', label: 'POST' },
+              { value: 'PUT', label: 'PUT' },
+              { value: 'DELETE', label: 'DELETE' },
+            ]"
+          />
         </div>
         <div class="form-group">
           <label>URL</label>
-          <input v-model="config.url" type="text" class="form-input" :placeholder="hints.http?.url?.placeholder" />
+          <TextInput v-model="config.url" type="text" :placeholder="hints.http?.url?.placeholder" />
           <small class="form-hint">{{ hints.http?.url?.hint }}</small>
         </div>
         <div class="form-group">
           <label>Headers (JSON)</label>
-          <textarea v-model="config.headers" rows="4" class="form-textarea" placeholder='例如：{"Authorization":"Bearer TOKEN"}'></textarea>
+          <TextArea v-model="config.headers" :rows="4" placeholder='例如：{"Authorization":"Bearer TOKEN"}' />
         </div>
         <div class="form-group">
           <label>Body (JSON 或文本)</label>
-          <textarea v-model="config.body" rows="5" class="form-textarea" placeholder='例如：{"query":"hello"}'></textarea>
+          <TextArea v-model="config.body" :rows="5" placeholder='例如：{"query":"hello"}' />
         </div>
         <div class="form-group">
           <label>响应提取路径</label>
-          <input v-model="config.responsePath" type="text" class="form-input" placeholder="data.result" />
+          <TextInput v-model="config.responsePath" type="text" placeholder="data.result" />
         </div>
         <div class="form-group">
           <label>超时秒数</label>
-          <input v-model.number="config.timeoutSeconds" type="number" min="1" max="30" class="form-input" />
+          <TextInput :model-value="config.timeoutSeconds ?? ''" type="number" min="1" max="30" @update:model-value="config.timeoutSeconds = Number($event)" />
         </div>
       </div>
 
@@ -135,20 +134,20 @@
         <h4>代码节点</h4>
         <div class="form-group">
           <label>Python 代码</label>
-          <textarea v-model="config.code" rows="10" class="form-textarea" :placeholder="hints.code?.code?.placeholder"></textarea>
+          <TextArea v-model="config.code" :rows="10" :placeholder="hints.code?.code?.placeholder" />
           <small class="form-hint">{{ hints.code?.code?.hint }}</small>
         </div>
         <div class="form-group">
           <label>环境变量 (JSON)</label>
-          <textarea v-model="config.env" rows="4" class="form-textarea" placeholder='例如：{"QUERY":"hello"}'></textarea>
+          <TextArea v-model="config.env" :rows="4" placeholder='例如：{"QUERY":"hello"}' />
         </div>
         <div class="form-group">
           <label>超时秒数</label>
-          <input v-model.number="config.timeoutSeconds" type="number" min="1" max="30" class="form-input" />
+          <TextInput :model-value="config.timeoutSeconds ?? ''" type="number" min="1" max="30" @update:model-value="config.timeoutSeconds = Number($event)" />
         </div>
         <div class="form-group">
           <label>内存限制(MB)</label>
-          <input v-model.number="config.memoryLimitMb" type="number" min="64" max="512" class="form-input" />
+          <TextInput :model-value="config.memoryLimitMb ?? ''" type="number" min="64" max="512" @update:model-value="config.memoryLimitMb = Number($event)" />
         </div>
       </div>
 
@@ -172,6 +171,7 @@ import { ref } from 'vue'
 import LlmNodeConfig from '@/components/config/LlmNodeConfig.vue'
 import SkillNodeConfig from '@/components/config/SkillNodeConfig.vue'
 import NodeHelpDialog from '@/components/config/NodeHelpDialog.vue'
+import { TextInput, SelectInput, TextArea } from '@/components/ui'
 import { fieldHints as hints } from '@/components/config/nodeHelpData'
 import { useNodeConfig, type NodeConfig } from '@/composables/workflow/useNodeConfig'
 import type { WorkflowNodeType } from '@/types/workflow'

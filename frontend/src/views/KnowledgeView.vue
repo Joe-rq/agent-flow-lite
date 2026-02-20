@@ -78,7 +78,7 @@
         <h3>新建知识库</h3>
         <div class="form-group">
           <label>知识库名称</label>
-          <input
+          <TextInput
             v-model="newKBName"
             type="text"
             placeholder="请输入知识库名称"
@@ -105,6 +105,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Button from '@/components/ui/Button.vue'
+import { TextInput } from '@/components/ui'
 import KbUploadArea from '@/components/knowledge/KbUploadArea.vue'
 import KbSearchTest from '@/components/knowledge/KbSearchTest.vue'
 import KbDocumentTable from '@/components/knowledge/KbDocumentTable.vue'

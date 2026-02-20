@@ -1,11 +1,13 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+
 interface Option {
   value: string | number
   label: string
 }
 
 interface Props {
-  modelValue: string | number
+  modelValue?: string | number
   label?: string
   options: Option[]
   placeholder?: string
@@ -14,6 +16,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  modelValue: '',
   label: undefined,
   placeholder: undefined,
   error: undefined,
@@ -35,6 +38,7 @@ function handleChange(event: Event) {
     <label v-if="label" class="select-input__label">{{ label }}</label>
     <div class="select-input__wrapper">
       <select
+        v-bind="$attrs"
         :value="modelValue"
         :disabled="disabled"
         class="select-input__field"

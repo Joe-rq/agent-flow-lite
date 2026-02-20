@@ -4,11 +4,10 @@
       <h1>用户管理</h1>
       <div class="header-actions">
         <div class="search-box">
-          <input
+          <TextInput
             v-model="searchQuery"
             type="text"
             placeholder="搜索用户邮箱..."
-            class="search-input"
             @keyup.enter="performSearch"
           />
           <Button variant="secondary" size="sm" @click="performSearch" :disabled="isLoading">
@@ -100,6 +99,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import Button from '@/components/ui/Button.vue'
+import { TextInput } from '@/components/ui'
 import { formatDate } from '@/utils/format'
 import { useUserAdmin } from '@/composables/useUserAdmin'
 

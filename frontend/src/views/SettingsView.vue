@@ -9,11 +9,11 @@
       <div v-else-if="models.length === 0" class="state">当前没有可用模型，请先配置 API Key。</div>
       <div v-else class="form-group">
         <label for="default-model">默认模型</label>
-        <select id="default-model" v-model="selectedModel" @change="saveSelection">
-          <option v-for="item in models" :key="item.id" :value="item.id">
-            {{ item.provider }} / {{ item.model }}
-          </option>
-        </select>
+        <SelectInput
+          v-model="selectedModel"
+          :options="models.map(item => ({ value: item.id, label: `${item.provider} / ${item.model}` }))"
+          @update:model-value="saveSelection"
+        />
       </div>
     </div>
 
@@ -43,6 +43,7 @@
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import { SelectInput } from '@/components/ui'
 
 interface ModelItem {
   id: string

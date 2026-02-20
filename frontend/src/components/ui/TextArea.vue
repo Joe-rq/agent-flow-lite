@@ -1,6 +1,8 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+
 interface Props {
-  modelValue: string
+  modelValue?: string
   label?: string
   placeholder?: string
   rows?: number
@@ -9,6 +11,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  modelValue: '',
   label: undefined,
   placeholder: undefined,
   rows: 4,
@@ -30,6 +33,7 @@ function handleInput(event: Event) {
   <div :class="['text-area', { 'text-area--error': error, 'text-area--disabled': disabled }]">
     <label v-if="label" class="text-area__label">{{ label }}</label>
     <textarea
+      v-bind="$attrs"
       :value="modelValue"
       :placeholder="placeholder"
       :rows="rows"

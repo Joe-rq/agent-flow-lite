@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
+import { TextInput } from '@/components/ui'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -80,7 +81,7 @@ function toggleMode() {
       <div class="login-form">
         <div class="form-group">
           <label for="email">邮箱地址</label>
-          <input
+          <TextInput
             id="email"
             v-model="email"
             type="email"
@@ -92,7 +93,7 @@ function toggleMode() {
 
         <div class="form-group">
           <label for="password">密码</label>
-          <input
+          <TextInput
             id="password"
             v-model="password"
             type="password"
@@ -104,7 +105,7 @@ function toggleMode() {
 
         <div v-if="isRegisterMode" class="form-group">
           <label for="confirmPassword">确认密码</label>
-          <input
+          <TextInput
             id="confirmPassword"
             v-model="confirmPassword"
             type="password"

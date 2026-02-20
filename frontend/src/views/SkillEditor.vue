@@ -28,7 +28,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>技能名称 <span class="required">*</span></label>
-              <input
+              <TextInput
                 v-model="skillName"
                 type="text"
                 placeholder="skill-name"
@@ -42,7 +42,7 @@
 
           <div class="form-group">
             <label>描述</label>
-            <input
+            <TextInput
               v-model="skillDescription"
               type="text"
               placeholder="简短描述这个技能的功能..."
@@ -56,23 +56,20 @@
               <button class="btn-add" @click="addInput">+ 添加</button>
             </div>
             <div v-for="(input, index) in skillInputs" :key="index" class="input-row">
-              <input
+              <TextInput
                 v-model="input.name"
                 type="text"
                 placeholder="参数名"
-                class="input-name"
               />
-              <input
+              <TextInput
                 v-model="input.description"
                 type="text"
                 placeholder="描述"
-                class="input-desc"
               />
-              <input
+              <TextInput
                 v-model="input.default"
                 type="text"
                 placeholder="默认值"
-                class="input-default"
               />
               <label class="checkbox-label">
                 <input v-model="input.required" type="checkbox" />
@@ -89,9 +86,8 @@
         <!-- 提示词编辑 -->
         <div class="prompt-section">
           <label>提示词 (Markdown) <span class="required">*</span></label>
-          <textarea
+          <TextArea
             v-model="skillPrompt"
-            class="prompt-textarea"
             placeholder="# 提示词内容
 
 使用 {{variable}} 语法引用输入参数...
@@ -121,6 +117,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useSkillForm } from '@/composables/skills/useSkillForm'
+import { TextInput, TextArea } from '@/components/ui'
 import SkillPreviewPane from '@/components/skills/SkillPreviewPane.vue'
 
 const {

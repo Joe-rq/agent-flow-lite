@@ -1,6 +1,8 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+
 interface Props {
-  modelValue: string
+  modelValue?: string | number
   label?: string
   placeholder?: string
   type?: 'text' | 'email' | 'password' | 'number'
@@ -10,6 +12,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
+  modelValue: '',
   label: undefined,
   placeholder: undefined,
   type: 'text',
@@ -35,6 +38,7 @@ function handleInput(event: Event) {
       <span v-if="required" class="text-input__required">*</span>
     </label>
     <input
+      v-bind="$attrs"
       :type="type"
       :value="modelValue"
       :placeholder="placeholder"
