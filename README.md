@@ -26,6 +26,21 @@
 
 ---
 
+## 🆚 为什么选 Agent Flow Lite
+
+| 能力 | Dify / LangFlow / Flowise | Agent Flow Lite |
+|------|---------------------------|-----------------|
+| **部署依赖** | PostgreSQL + Redis + 消息队列 | SQLite + 文件存储，零外部依赖 |
+| **部署时间** | Docker Compose + 配置调优 | `./install.sh && ./start.sh`，5 分钟 |
+| **技能定义** | 锁在数据库，导出为 JSON | SKILL.md 纯文本，Git 版本控制 + diff |
+| **工作流断点续跑** | 不支持 | 每节点 checkpoint，断线可恢复 |
+| **LLM 多模型** | 支持 | DeepSeek / OpenAI / Qwen / Ollama 四提供商 |
+| **适用场景** | 团队/企业级，需运维 | 个人开发者/小团队，开箱即用 |
+
+> Agent Flow Lite 不是 Dify 的简化版。它是为**不想维护基础设施的开发者**设计的独立工具——你的工作流和技能跟代码一起提交到 Git，而不是锁在某个平台的数据库里。
+
+---
+
 ## 📸 界面预览
 
 ### 登录页
