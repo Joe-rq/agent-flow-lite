@@ -28,20 +28,20 @@
 
       <!-- 运行按钮 -->
       <div class="dialog-actions">
-        <button
-          class="btn-secondary"
+        <Button
+          variant="secondary"
           @click="$emit('close')"
           :disabled="isRunning"
         >
           取消
-        </button>
-        <button
-          class="btn-primary"
+        </Button>
+        <Button
+          variant="primary"
           :disabled="isRunning"
           @click="$emit('run')"
         >
           {{ isRunning ? '运行中...' : '运行' }}
-        </button>
+        </Button>
       </div>
 
       <!-- 输出区域 -->
@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
+import Button from '@/components/ui/Button.vue'
 import type { Skill } from '@/types'
 
 const props = defineProps<{

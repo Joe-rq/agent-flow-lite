@@ -3,20 +3,21 @@
     <!-- 头部 -->
     <div class="editor-header">
       <div class="header-left">
-        <button class="btn-back" @click="goBack">← 返回列表</button>
+        <Button class="btn-back" variant="secondary" size="sm" @click="goBack">← 返回列表</Button>
         <h1>{{ isNew ? '新建技能' : '编辑技能' }}</h1>
       </div>
       <div class="header-actions">
-        <button class="btn-secondary" @click="togglePreview">
+        <Button variant="secondary" @click="togglePreview">
           {{ showPreview ? '隐藏预览' : '显示预览' }}
-        </button>
-        <button
+        </Button>
+        <Button
           class="btn-primary"
+          variant="primary"
           :disabled="isSaving || !skillName.trim()"
           @click="saveSkill"
         >
           {{ isSaving ? '保存中...' : '保存' }}
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -53,7 +54,7 @@
           <div class="inputs-section">
             <div class="section-header">
               <label>输入参数</label>
-              <button class="btn-add" @click="addInput">+ 添加</button>
+              <Button variant="secondary" size="sm" @click="addInput">+ 添加</Button>
             </div>
             <div v-for="(input, index) in skillInputs" :key="index" class="input-row">
               <TextInput
@@ -75,7 +76,7 @@
                 <input v-model="input.required" type="checkbox" />
                 必填
               </label>
-              <button class="btn-remove" @click="removeInput(index)">×</button>
+              <Button class="btn-remove" variant="danger" size="sm" @click="removeInput(index)">×</Button>
             </div>
             <div v-if="skillInputs.length === 0" class="empty-inputs">
               暂无输入参数
@@ -117,7 +118,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useSkillForm } from '@/composables/skills/useSkillForm'
-import { TextInput, TextArea } from '@/components/ui'
+import { Button, TextInput, TextArea } from '@/components/ui'
 import SkillPreviewPane from '@/components/skills/SkillPreviewPane.vue'
 
 const {

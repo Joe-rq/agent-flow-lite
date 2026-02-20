@@ -10,13 +10,13 @@
         @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         @keyup.enter="$emit('search')"
       />
-      <button
-        class="btn-search"
+      <Button
+        variant="primary"
         :disabled="!searchQuery.trim() || isSearching"
         @click="$emit('search')"
       >
         {{ isSearching ? '检索中...' : '检索' }}
-      </button>
+      </Button>
     </div>
 
     <div v-if="searchResults.length > 0" class="search-results">
@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import Button from '@/components/ui/Button.vue'
 import type { SearchResult } from '@/types'
 
 defineProps<{

@@ -2,9 +2,9 @@
   <div class="knowledge-view">
     <div class="page-header">
       <h1>知识库管理</h1>
-      <button class="btn-primary" @click="showCreateDialog = true">
+      <Button variant="primary" @click="showCreateDialog = true">
         + 新建知识库
-      </button>
+      </Button>
     </div>
 
     <!-- 知识库列表 -->
@@ -21,27 +21,28 @@
         </div>
         <div class="kb-card-footer">
           <span class="kb-created">创建于 {{ formatDate(kb.createdAt) }}</span>
-          <button
-            class="btn-delete-kb"
+          <Button
+            variant="danger"
+            size="sm"
             @click.stop="deleteKnowledgeBase(kb.id, kb.name)"
           >
             删除
-          </button>
+          </Button>
         </div>
       </div>
 
       <div v-if="knowledgeBases.length === 0" class="empty-state">
         <p>暂无知识库</p>
-        <button class="btn-primary" @click="showCreateDialog = true">
+        <Button variant="primary" @click="showCreateDialog = true">
           创建第一个知识库
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- 知识库详情 -->
     <div v-else class="kb-detail">
       <div class="kb-detail-header">
-        <button class="btn-back" @click="selectedKB = null">← 返回列表</button>
+        <Button variant="secondary" size="sm" @click="selectedKB = null">← 返回列表</Button>
         <h2>{{ selectedKB.name }}</h2>
         <span class="kb-meta">{{ documents.length }} 个文档</span>
       </div>

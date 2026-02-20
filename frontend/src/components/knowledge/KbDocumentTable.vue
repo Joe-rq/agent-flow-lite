@@ -26,13 +26,14 @@
         </span>
         <span class="col-size">{{ formatFileSize(doc.fileSize) }}</span>
         <span class="col-action">
-          <button
-            class="btn-delete"
+          <Button
+            variant="danger"
+            size="sm"
             :disabled="doc.status === 'processing'"
             @click="$emit('delete-document', doc.id)"
           >
             删除
-          </button>
+          </Button>
         </span>
       </div>
     </div>
@@ -41,6 +42,7 @@
 
 <script setup lang="ts">
 import { formatFileSize } from '@/utils/format'
+import Button from '@/components/ui/Button.vue'
 import type { Document } from '@/types'
 
 defineProps<{

@@ -2,9 +2,9 @@
   <div class="skills-view">
     <div class="page-header">
       <h1>技能管理</h1>
-      <button class="btn-primary" @click="createNewSkill">
+      <Button class="btn-primary" variant="primary" @click="createNewSkill">
         + 新建技能
-      </button>
+      </Button>
     </div>
 
     <!-- 技能列表 -->
@@ -36,27 +36,31 @@
         <div class="skill-card-footer">
           <span class="skill-updated">更新于 {{ formatDate(skill.updatedAt) }}</span>
           <div class="skill-actions">
-            <button
+            <Button
               class="btn-run"
+              variant="secondary"
+              size="sm"
               @click.stop="runner.openRunModal(skill)"
             >
               运行
-            </button>
-            <button
+            </Button>
+            <Button
               class="btn-delete-skill"
+              variant="danger"
+              size="sm"
               @click.stop="deleteSkill(skill.name)"
             >
               删除
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       <div v-if="skills.length === 0" class="empty-state">
         <p>暂无技能</p>
-        <button class="btn-primary" @click="createNewSkill">
+        <Button variant="primary" @click="createNewSkill">
           创建第一个技能
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -84,6 +88,7 @@ import { API_BASE } from '@/utils/constants'
 import { useSkillRunner } from '@/composables/skills/useSkillRunner'
 import { useToast } from '@/composables/useToast'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import Button from '@/components/ui/Button.vue'
 import SkillRunDialog from '@/components/skills/SkillRunDialog.vue'
 import type { Skill, SkillApiItem } from '@/types'
 

@@ -3,7 +3,7 @@
     <div class="config-header">
       <h3>节点配置</h3>
       <div class="header-actions">
-        <button v-if="nodeType" class="help-btn" @click="showHelp = true">查看示例</button>
+        <Button v-if="nodeType" variant="secondary" size="sm" @click="showHelp = true">查看示例</Button>
         <button class="close-btn" @click="handleClose">×</button>
       </div>
     </div>
@@ -158,8 +158,8 @@
     </div>
 
     <div class="config-footer">
-      <button class="save-btn" @click="handleSave">保存</button>
-      <button class="delete-btn" @click="handleDelete">删除节点</button>
+      <Button variant="primary" @click="handleSave">保存</Button>
+      <Button variant="danger" @click="handleDelete">删除节点</Button>
     </div>
 
     <NodeHelpDialog :visible="showHelp" :node-type="nodeType" @close="showHelp = false" />
@@ -171,7 +171,7 @@ import { ref } from 'vue'
 import LlmNodeConfig from '@/components/config/LlmNodeConfig.vue'
 import SkillNodeConfig from '@/components/config/SkillNodeConfig.vue'
 import NodeHelpDialog from '@/components/config/NodeHelpDialog.vue'
-import { TextInput, SelectInput, TextArea } from '@/components/ui'
+import { Button, TextInput, SelectInput, TextArea } from '@/components/ui'
 import { fieldHints as hints } from '@/components/config/nodeHelpData'
 import { useNodeConfig, type NodeConfig } from '@/composables/workflow/useNodeConfig'
 import type { WorkflowNodeType } from '@/types/workflow'

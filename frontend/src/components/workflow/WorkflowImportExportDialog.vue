@@ -41,20 +41,22 @@
         <div class="template-section">
           <p class="template-label">模板</p>
           <div class="template-buttons">
-            <button
-              class="template-btn"
+            <Button
+              variant="secondary"
+              size="sm"
               :disabled="isImporting"
               @click="importTemplate('kb_qa')"
             >
               导入模板：知识库问答
-            </button>
-            <button
-              class="template-btn"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               :disabled="isImporting"
               @click="importTemplate('sop_assistant')"
             >
               导入模板：SOP 助手
-            </button>
+            </Button>
           </div>
         </div>
 
