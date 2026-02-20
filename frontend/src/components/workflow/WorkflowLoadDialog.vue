@@ -17,7 +17,7 @@
         </div>
       </div>
       <div class="dialog-actions">
-        <Button variant="secondary" @click="$emit('close')">关闭</Button>
+        <Button variant="outline" @click="$emit('close')">关闭</Button>
       </div>
     </div>
   </div>

@@ -5,23 +5,23 @@
         <h2>工作流编辑器</h2>
       </div>
       <div class="toolbar-right">
-        <Button variant="primary" size="sm" @click="saveWorkflow" :disabled="isSaving">
+        <Button variant="default" size="sm" @click="saveWorkflow" :disabled="isSaving">
           {{ isSaving ? '保存中...' : '保存工作流' }}
         </Button>
-        <Button variant="secondary" size="sm" @click="loadWorkflows">加载工作流</Button>
-        <Button variant="primary" size="sm" @click="openRunDialog" :disabled="isRunning">
+        <Button variant="outline" size="sm" @click="loadWorkflows">加载工作流</Button>
+        <Button variant="default" size="sm" @click="openRunDialog" :disabled="isRunning">
           {{ isRunning ? '运行中...' : '运行工作流' }}
         </Button>
-        <Button variant="danger" size="sm" @click="deleteWorkflow" :disabled="!currentWorkflowId">
+        <Button variant="destructive" size="sm" @click="deleteWorkflow" :disabled="!currentWorkflowId">
           删除工作流
         </Button>
-        <Button variant="secondary" size="sm" @click="openExportDialog" :disabled="!currentWorkflowId">
+        <Button variant="outline" size="sm" @click="openExportDialog" :disabled="!currentWorkflowId">
           导出 JSON
         </Button>
-        <Button variant="secondary" size="sm" @click="openImportDialog">
+        <Button variant="outline" size="sm" @click="openImportDialog">
           导入 JSON
         </Button>
-        <Button variant="secondary" size="sm" @click="autoLayout">⚡ 自动布局</Button>
+        <Button variant="outline" size="sm" @click="autoLayout">⚡ 自动布局</Button>
       </div>
     </div>
 

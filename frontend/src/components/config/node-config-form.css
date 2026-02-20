@@ -2,9 +2,9 @@
   margin: 0 0 16px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-muted-foreground);
   padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .form-group {
@@ -16,7 +16,7 @@
   margin-bottom: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-muted-foreground);
 }
 
 .form-input,
@@ -24,11 +24,11 @@
 .form-select {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
-  color: #111827;
-  background: #ffffff;
+  color: var(--color-foreground);
+  background: var(--color-card);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -36,8 +36,8 @@
 .form-textarea:focus,
 .form-select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .form-textarea {
@@ -55,7 +55,7 @@
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: #e5e7eb;
+  background: var(--color-border);
   border-radius: 3px;
   outline: none;
   margin: 10px 0;
@@ -66,20 +66,20 @@
   appearance: none;
   width: 18px;
   height: 18px;
-  background: #3b82f6;
+  background: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .form-range::-webkit-slider-thumb:hover {
-  background: #2563eb;
+  background: var(--color-accent);
 }
 
 .form-range::-moz-range-thumb {
   width: 18px;
   height: 18px;
-  background: #3b82f6;
+  background: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -87,21 +87,21 @@
 }
 
 .form-range::-moz-range-thumb:hover {
-  background: #2563eb;
+  background: var(--color-accent);
 }
 
 .range-labels {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-muted-foreground);
 }
 
 .form-hint {
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-muted-foreground);
 }
 
 .input-mapping-row {
@@ -114,7 +114,7 @@
 .input-name {
   min-width: 80px;
   font-size: 13px;
-  color: #374151;
+  color: var(--color-muted-foreground);
   font-weight: 500;
 }
 

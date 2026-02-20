@@ -1,19 +1,19 @@
 .document-list h3 {
   font-size: 16px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   margin-bottom: 12px;
 }
 
 .empty-docs {
   text-align: center;
   padding: 40px;
-  color: #95a5a6;
-  background: #f8f9fa;
+  color: var(--color-muted-foreground);
+  background: var(--color-muted);
   border-radius: 6px;
 }
 
 .docs-table {
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow-x: auto;
 }
@@ -29,26 +29,26 @@
 }
 
 .docs-header {
-  background-color: #f8f9fa;
+  background-color: var(--color-muted);
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-foreground);
   font-size: 14px;
 }
 
 .docs-row {
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--color-border);
   font-size: 14px;
 }
 
 .docs-row:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-muted);
 }
 
 .col-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #2c3e50;
+  color: var(--color-foreground);
 }
 
 .col-status {
@@ -63,25 +63,25 @@
 }
 
 .status-badge.pending {
-  background-color: #fff3e0;
-  color: #e65100;
+  background-color: var(--color-warning-soft);
+  color: var(--color-warning-dark);
 }
 
 .status-badge.processing {
-  background-color: #e3f2fd;
-  color: #1565c0;
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .status-badge.completed {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: var(--color-success-soft);
+  color: var(--color-success-dark);
 }
 
 .status-badge.error {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: var(--color-destructive-soft);
+  color: var(--color-destructive-dark);
 }
 
 .col-size {
-  color: #7f8c8d;
+  color: var(--color-muted-foreground);
 }

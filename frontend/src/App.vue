@@ -2,6 +2,7 @@
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useTheme } from '@/composables/useTheme'
 import Button from '@/components/ui/Button.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -10,6 +11,7 @@ const sidebarCollapsed = ref(false)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { theme, toggleTheme } = useTheme()
 
 const showChrome = computed(() => !route.meta.hideChrome && authStore.isAuthenticated)
 
@@ -35,15 +37,24 @@ async function handleLogout() {
   <div class="app-container">
     <header v-if="showChrome" class="app-header">
       <div class="logo">Agent Flow</div>
-      <Button
+      <div class="header-actions">
+        <button
+          class="theme-toggle"
+          @click="toggleTheme"
+          :title="theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'"
+        >
+          {{ theme === 'dark' ? '☀️' : '🌙' }}
+        </button>
+        <Button
         v-if="authStore.isAuthenticated"
-        variant="secondary"
+        variant="outline"
         size="sm"
         data-testid="logout-button"
         @click="handleLogout"
       >
         退出登录
       </Button>
+      </div>
     </header>
 
     <div class="app-body">
@@ -105,19 +116,17 @@ async function handleLogout() {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
 }
 </style>
 
 <style scoped>
-@import '@/styles/theme.css';
-
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--bg-primary);
+  background-color: var(--color-background);
 }
 
 .app-header {
@@ -126,14 +135,39 @@ body {
   justify-content: space-between;
   padding: 0 20px;
   height: 60px;
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
+  background-color: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .logo {
   font-size: 1.2rem;
   font-weight: bold;
-  color: var(--text-primary);
+  color: var(--color-foreground);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
 }
 
 .app-body {
@@ -145,8 +179,8 @@ body {
 .app-sidebar {
   width: 240px;
   padding: 20px;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-primary);
+  background: var(--color-card);
+  border-right: 1px solid var(--color-border);
   transition: width 300ms ease;
   display: flex;
   flex-direction: column;
@@ -166,8 +200,8 @@ body {
   height: 28px;
   border: none;
   border-radius: var(--radius-sm);
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -177,8 +211,8 @@ body {
 }
 
 .sidebar-toggle:hover {
-  background-color: var(--accent-cyan-soft);
-  color: var(--accent-cyan);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .toggle-icon {
@@ -199,7 +233,7 @@ body {
 }
 
 .app-sidebar a {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   text-decoration: none;
   padding: 12px 16px;
   border-radius: var(--radius-md);
@@ -212,14 +246,14 @@ body {
 }
 
 .app-sidebar a:hover {
-  color: var(--text-primary);
-  background-color: var(--accent-cyan-soft);
+  color: var(--color-foreground);
+  background-color: var(--color-primary-soft);
 }
 
 .app-sidebar a.router-link-active {
-  color: var(--accent-cyan);
-  background-color: var(--accent-cyan-soft);
-  box-shadow: 0 0 15px var(--accent-cyan-glow);
+  color: var(--color-primary);
+  background-color: var(--color-primary-soft);
+  box-shadow: 0 0 15px var(--color-primary-glow);
 }
 
 .nav-icon {
@@ -253,6 +287,6 @@ body {
   flex: 1;
   padding: 0;
   overflow: hidden;
-  background-color: var(--bg-primary);
+  background-color: var(--color-background);
 }
 </style>

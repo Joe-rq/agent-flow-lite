@@ -63,7 +63,7 @@
       </div>
       <Button
         class="send-btn-compact"
-        variant="primary"
+        variant="default"
         size="sm"
         :disabled="!inputMessage.trim() || isStreaming"
         @click="$emit('send')"

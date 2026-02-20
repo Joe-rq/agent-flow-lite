@@ -10,11 +10,11 @@
             placeholder="搜索用户邮箱..."
             @keyup.enter="performSearch"
           />
-          <Button variant="secondary" size="sm" @click="performSearch" :disabled="isLoading">
+          <Button variant="outline" size="sm" @click="performSearch" :disabled="isLoading">
             🔍 搜索
           </Button>
         </div>
-        <Button variant="secondary" size="sm" @click="refreshUsers" :disabled="isLoading">
+        <Button variant="outline" size="sm" @click="refreshUsers" :disabled="isLoading">
           🔄 刷新
         </Button>
       </div>
@@ -52,7 +52,7 @@
           <span class="col-actions">
             <template v-if="!isCurrentUser(user)">
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 @click="toggleUserStatus(user)"
                 :disabled="isLoading"
@@ -60,7 +60,7 @@
                 {{ user.is_active ? '禁用' : '启用' }}
               </Button>
               <Button
-                variant="danger"
+                variant="destructive"
                 size="sm"
                 @click="deleteUser(user)"
                 :disabled="isLoading"
@@ -80,7 +80,7 @@
         <h3>{{ confirmDialogTitle }}</h3>
         <p class="dialog-message">{{ confirmDialogMessage }}</p>
         <div class="dialog-actions">
-          <Button variant="secondary" @click="cancelAction" :disabled="isLoading">
+          <Button variant="outline" @click="cancelAction" :disabled="isLoading">
             取消
           </Button>
           <Button

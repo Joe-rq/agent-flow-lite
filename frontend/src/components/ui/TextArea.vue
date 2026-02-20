@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ShadcnTextarea from './shadcn/Textarea.vue'
+
 defineOptions({ inheritAttrs: false })
 
 interface Props {
@@ -22,27 +24,20 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
-
-function handleInput(event: Event) {
-  const target = event.target as HTMLTextAreaElement
-  emit('update:modelValue', target.value)
-}
 </script>
 
 <template>
-  <div :class="['text-area', { 'text-area--error': error, 'text-area--disabled': disabled }]">
-    <label v-if="label" class="text-area__label">{{ label }}</label>
-    <textarea
+  <div class="flex flex-col gap-1.5">
+    <label v-if="label" class="text-sm font-medium text-foreground">{{ label }}</label>
+    <ShadcnTextarea
       v-bind="$attrs"
-      :value="modelValue"
+      :model-value="modelValue"
       :placeholder="placeholder"
       :rows="rows"
       :disabled="disabled"
-      class="text-area__field"
-      @input="handleInput"
+      :class="error ? 'border-destructive focus-visible:ring-destructive' : ''"
+      @update:model-value="emit('update:modelValue', $event)"
     />
-    <p v-if="error" class="text-area__error">{{ error }}</p>
+    <p v-if="error" class="text-xs text-destructive leading-snug">{{ error }}</p>
   </div>
 </template>
-
-<style scoped src="./TextArea.css"></style>

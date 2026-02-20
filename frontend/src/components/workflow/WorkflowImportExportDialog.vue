@@ -21,13 +21,13 @@
             rows="12"
           />
           <div class="dialog-actions">
-            <Button variant="secondary" size="sm" @click="copyToClipboard">
+            <Button variant="outline" size="sm" @click="copyToClipboard">
               {{ copied ? '已复制!' : '复制到剪贴板' }}
             </Button>
-            <Button variant="primary" size="sm" @click="downloadJson">
+            <Button variant="default" size="sm" @click="downloadJson">
               下载 JSON 文件
             </Button>
-            <Button variant="secondary" size="sm" @click="close">关闭</Button>
+            <Button variant="outline" size="sm" @click="close">关闭</Button>
           </div>
         </div>
         <div v-else class="status-message">
@@ -42,7 +42,7 @@
           <p class="template-label">模板</p>
           <div class="template-buttons">
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               :disabled="isImporting"
               @click="importTemplate('kb_qa')"
@@ -50,7 +50,7 @@
               导入模板：知识库问答
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               :disabled="isImporting"
               @click="importTemplate('sop_assistant')"
@@ -106,10 +106,10 @@
         </div>
         
         <div class="dialog-actions">
-          <Button variant="primary" size="sm" :disabled="!canImport || isImporting" @click="doImport">
+          <Button variant="default" size="sm" :disabled="!canImport || isImporting" @click="doImport">
             {{ isImporting ? '导入中...' : '导入' }}
           </Button>
-          <Button variant="secondary" size="sm" :disabled="isImporting" @click="close">
+          <Button variant="outline" size="sm" :disabled="isImporting" @click="close">
             取消
           </Button>
         </div>
@@ -302,7 +302,7 @@ function importTemplate(slug: TemplateSlug) {
 .dialog h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .dialog-content {
@@ -310,7 +310,7 @@ function importTemplate(slug: TemplateSlug) {
 }
 
 .hint-text {
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -319,19 +319,19 @@ function importTemplate(slug: TemplateSlug) {
   width: 100%;
   min-height: 200px;
   padding: 12px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
   line-height: 1.5;
   resize: vertical;
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--color-card);
+  color: var(--color-foreground);
 }
 
 .json-textarea:focus {
   outline: none;
-  border-color: var(--accent-cyan);
+  border-color: var(--color-primary);
 }
 
 .json-textarea:disabled {
@@ -347,8 +347,8 @@ function importTemplate(slug: TemplateSlug) {
 
 .tab-btn {
   padding: 8px 16px;
-  border: 1px solid var(--border-primary);
-  background: var(--bg-tertiary);
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -356,17 +356,17 @@ function importTemplate(slug: TemplateSlug) {
 }
 
 .tab-btn:hover {
-  background: var(--bg-secondary);
+  background: var(--color-card);
 }
 
 .tab-btn.active {
-  background: var(--accent-cyan);
+  background: var(--color-primary);
   color: white;
-  border-color: var(--accent-cyan);
+  border-color: var(--color-primary);
 }
 
 .file-upload-area {
-  border: 2px dashed var(--border-primary);
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   padding: 40px;
   text-align: center;
@@ -379,8 +379,8 @@ function importTemplate(slug: TemplateSlug) {
 }
 
 .file-upload-area:hover {
-  border-color: var(--accent-cyan);
-  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  background: var(--color-card);
 }
 
 .hidden-input {
@@ -388,14 +388,14 @@ function importTemplate(slug: TemplateSlug) {
 }
 
 .selected-file {
-  color: var(--accent-cyan);
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .status-message {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
 }
 
 .status-error {
@@ -423,13 +423,13 @@ function importTemplate(slug: TemplateSlug) {
 .template-section {
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .template-label {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   margin: 0 0 12px 0;
 }
 
@@ -441,18 +441,18 @@ function importTemplate(slug: TemplateSlug) {
 
 .template-btn {
   padding: 8px 16px;
-  border: 1px solid var(--border-primary);
-  background: var(--bg-tertiary);
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .template-btn:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--accent-cyan);
+  background: var(--color-card);
+  border-color: var(--color-primary);
 }
 
 .template-btn:disabled {

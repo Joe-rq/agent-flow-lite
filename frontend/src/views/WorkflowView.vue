@@ -5,10 +5,10 @@
         <h2>工作流编辑器</h2>
       </div>
       <div class="toolbar-right">
-        <Button variant="secondary" size="sm" @click="loadWorkflow">📂 加载</Button>
-        <Button variant="danger" size="sm" @click="deleteWorkflow">🗑️ 删除</Button>
-        <Button variant="primary" size="sm" @click="saveWorkflow">💾 保存</Button>
-        <Button variant="secondary" size="sm" @click="autoLayout">⚡ 自动布局</Button>
+        <Button variant="outline" size="sm" @click="loadWorkflow">📂 加载</Button>
+        <Button variant="destructive" size="sm" @click="deleteWorkflow">🗑️ 删除</Button>
+        <Button variant="default" size="sm" @click="saveWorkflow">💾 保存</Button>
+        <Button variant="outline" size="sm" @click="autoLayout">⚡ 自动布局</Button>
       </div>
     </div>
 
@@ -52,13 +52,13 @@
       <div class="node-drawer" :class="{ open: drawerOpen }">
         <h3 class="drawer-title">添加节点</h3>
         <div class="drawer-content">
-          <Button variant="secondary" size="sm" @click="addStartNode" class="drawer-btn">
+          <Button variant="outline" size="sm" @click="addStartNode" class="drawer-btn">
             + 开始节点
           </Button>
-          <Button variant="secondary" size="sm" @click="addLLMNode" class="drawer-btn">
+          <Button variant="outline" size="sm" @click="addLLMNode" class="drawer-btn">
             + LLM 节点
           </Button>
-          <Button variant="secondary" size="sm" @click="addKnowledgeNode" class="drawer-btn">
+          <Button variant="outline" size="sm" @click="addKnowledgeNode" class="drawer-btn">
             + 知识库节点
           </Button>
         </div>
@@ -291,7 +291,7 @@ const autoLayout = () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-primary);
+  background: var(--color-background);
 }
 
 .workflow-toolbar {
@@ -299,15 +299,15 @@ const autoLayout = () => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .toolbar-left h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .toolbar-right {
@@ -319,36 +319,36 @@ const autoLayout = () => {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--bg-primary);
+  background: var(--color-background);
 }
 
 .dark-flow {
-  background: var(--bg-primary);
+  background: var(--color-background);
 }
 
 .dark-flow :deep(.vue-flow__node) {
-  background: var(--bg-secondary);
-  border-color: var(--border-primary);
+  background: var(--color-card);
+  border-color: var(--color-border);
 }
 
 .dark-flow :deep(.vue-flow__handle) {
-  background: var(--bg-tertiary);
-  border-color: var(--border-primary);
+  background: var(--color-muted);
+  border-color: var(--color-border);
 }
 
 .dark-flow :deep(.vue-flow__controls) {
-  background: var(--bg-secondary);
-  border-color: var(--border-primary);
+  background: var(--color-card);
+  border-color: var(--color-border);
 }
 
 .dark-flow :deep(.vue-flow__controls-button) {
-  background: var(--bg-secondary);
-  border-color: var(--border-primary);
-  color: var(--text-primary);
+  background: var(--color-card);
+  border-color: var(--color-border);
+  color: var(--color-foreground);
 }
 
 .dark-flow :deep(.vue-flow__controls-button:hover) {
-  background: var(--bg-tertiary);
+  background: var(--color-muted);
 }
 
 /* Drawer toggle button */
@@ -359,8 +359,8 @@ const autoLayout = () => {
   transform: translateY(-50%);
   width: 24px;
   height: 48px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-right: none;
   border-radius: 4px 0 0 4px;
   cursor: pointer;
@@ -376,12 +376,12 @@ const autoLayout = () => {
 }
 
 .drawer-toggle:hover {
-  background: var(--bg-tertiary);
+  background: var(--color-muted);
 }
 
 .toggle-icon {
   font-size: 12px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   user-select: none;
 }
 
@@ -392,8 +392,8 @@ const autoLayout = () => {
   top: 0;
   bottom: 0;
   width: 220px;
-  background: var(--bg-secondary);
-  border-left: 1px solid var(--border-primary);
+  background: var(--color-card);
+  border-left: 1px solid var(--color-border);
   transform: translateX(100%);
   transition: transform 0.3s ease;
   z-index: 9;
@@ -410,8 +410,8 @@ const autoLayout = () => {
   padding: 16px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-primary);
+  color: var(--color-foreground);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .drawer-content {

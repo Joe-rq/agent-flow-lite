@@ -16,7 +16,7 @@
 .page-header h1 {
   font-size: 24px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin: 0;
 }
 
@@ -28,8 +28,8 @@
 }
 
 .kb-card {
-  background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 20px;
   cursor: pointer;
@@ -38,7 +38,7 @@
 
 .kb-card:hover {
   box-shadow: var(--shadow-lg);
-  border-color: var(--accent-cyan);
+  border-color: var(--color-primary);
 }
 
 .kb-card-header {
@@ -51,20 +51,20 @@
 .kb-name {
   font-size: 18px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin: 0;
 }
 
 .kb-doc-count {
-  background-color: var(--surface-tertiary);
-  color: var(--text-tertiary);
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
 }
 
 .kb-card-footer {
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   font-size: 13px;
   display: flex;
   justify-content: space-between;
@@ -75,7 +75,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: var(--text-tertiary);
+  color: var(--color-muted-foreground);
 }
 
 .empty-state p {
@@ -85,7 +85,7 @@
 
 /* 知识库详情 */
 .kb-detail {
-  background: var(--surface-primary);
+  background: var(--color-card);
   border-radius: 8px;
   padding: 24px;
 }
@@ -93,17 +93,17 @@
 .kb-detail-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .kb-detail-header h2 {
   margin: 8px 0;
   font-size: 22px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .kb-meta {
-  color: var(--text-tertiary);
+  color: var(--color-muted-foreground);
   font-size: 14px;
 }
 
@@ -114,7 +114,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,18 +122,18 @@
 }
 
 .dialog {
-  background: var(--bg-secondary, #ffffff);
+  background: var(--color-card);
   border-radius: 8px;
   padding: 24px;
   width: 400px;
   max-width: 90vw;
-  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.2));
+  border: 1px solid var(--color-border);
 }
 
 .dialog h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: var(--text-primary, #0f172a);
+  color: var(--color-foreground);
 }
 
 .form-group {
@@ -144,24 +144,24 @@
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
-  color: var(--text-primary, #0f172a);
+  color: var(--color-foreground);
   font-weight: 500;
 }
 
 .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
-  background: var(--bg-primary, #f8fafc);
-  color: var(--text-primary, #0f172a);
+  background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--accent-cyan, #0891b2);
+  border-color: var(--color-primary);
 }
 
 .dialog-actions {

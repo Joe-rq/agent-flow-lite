@@ -10,8 +10,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  border-bottom: 1px solid #e9ecef;
-  background: white;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
 }
 
 .header-left {
@@ -23,7 +23,7 @@
 .editor-header h1 {
   font-size: 20px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-foreground);
   margin: 0;
 }
 
@@ -44,7 +44,7 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
-  background: #f8f9fa;
+  background: var(--color-muted);
 }
 
 .editor-pane.expanded {
@@ -53,7 +53,7 @@
 
 /* 元数据表单 */
 .metadata-section {
-  background: white;
+  background: var(--color-card);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
@@ -74,12 +74,12 @@
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   font-weight: 500;
 }
 
 .form-group label .required {
-  color: #e74c3c;
+  color: var(--color-destructive);
   margin-left: 2px;
 }
 
@@ -87,21 +87,21 @@
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #7f8c8d;
+  color: var(--color-muted-foreground);
 }
 
 .error-text {
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #e74c3c;
+  color: var(--color-destructive);
 }
 
 /* 输入参数 */
 .inputs-section {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--color-border);
 }
 
 .section-header {
@@ -113,7 +113,7 @@
 
 .section-header label {
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   font-weight: 500;
 }
 
@@ -127,14 +127,14 @@
 
 .input-row input {
   padding: 8px 10px;
-  border: 1px solid #bdc3c7;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-size: 13px;
 }
 
 .input-row input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--color-primary);
 }
 
 .checkbox-label {
@@ -142,7 +142,7 @@
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   cursor: pointer;
 }
 
@@ -153,15 +153,15 @@
 .empty-inputs {
   text-align: center;
   padding: 20px;
-  color: #95a5a6;
+  color: var(--color-muted-foreground);
   font-size: 13px;
-  background: #f8f9fa;
+  background: var(--color-muted);
   border-radius: 4px;
 }
 
 /* 提示词编辑 */
 .prompt-section {
-  background: white;
+  background: var(--color-card);
   border-radius: 8px;
   padding: 20px;
 }
@@ -170,6 +170,6 @@
   display: block;
   margin-bottom: 12px;
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   font-weight: 500;
 }

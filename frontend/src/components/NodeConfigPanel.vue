@@ -3,7 +3,7 @@
     <div class="config-header">
       <h3>节点配置</h3>
       <div class="header-actions">
-        <Button v-if="nodeType" variant="secondary" size="sm" @click="showHelp = true">查看示例</Button>
+        <Button v-if="nodeType" variant="outline" size="sm" @click="showHelp = true">查看示例</Button>
         <button class="close-btn" @click="handleClose">×</button>
       </div>
     </div>
@@ -158,8 +158,8 @@
     </div>
 
     <div class="config-footer">
-      <Button variant="primary" @click="handleSave">保存</Button>
-      <Button variant="danger" @click="handleDelete">删除节点</Button>
+      <Button variant="default" @click="handleSave">保存</Button>
+      <Button variant="destructive" @click="handleDelete">删除节点</Button>
     </div>
 
     <NodeHelpDialog :visible="showHelp" :node-type="nodeType" @close="showHelp = false" />

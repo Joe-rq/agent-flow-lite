@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-primary: #0891b2;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #7c3aed;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: rgba(148, 163, 184, 0.3);
+  --color-input: rgba(148, 163, 184, 0.3);
+  --color-ring: #0891b2;
+  --color-sidebar-background: #ffffff;
+  --color-sidebar-foreground: #475569;
+  --color-sidebar-primary: #0891b2;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: rgba(8, 145, 178, 0.1);
+  --color-sidebar-accent-foreground: #0891b2;
+  --color-sidebar-border: rgba(148, 163, 184, 0.3);
+  --color-sidebar-ring: #0891b2;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+:root {
+  /* Derived accent colors */
+  --color-primary-soft: rgba(8, 145, 178, 0.1);
+  --color-primary-glow: rgba(8, 145, 178, 0.3);
+  --color-accent-soft: rgba(124, 58, 237, 0.1);
+  --color-accent-glow: rgba(124, 58, 237, 0.3);
+
+  /* Semantic status colors */
+  --color-destructive-dark: #dc2626;
+  --color-destructive-soft: #fef2f2;
+  --color-destructive-focus: rgba(239, 68, 68, 0.1);
+  --color-success: #22c55e;
+  --color-success-dark: #15803d;
+  --color-success-soft: #dcfce7;
+  --color-warning: #f59e0b;
+  --color-warning-dark: #b45309;
+  --color-warning-soft: #fef3c7;
+
+  /* Overlay */
+  --bg-overlay: rgba(15, 23, 42, 0.6);
+
+  /* Radius */
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.1);
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Typography Scale */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+
+  /* Z-Index Scale */
+  --z-modal: 300;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
+  --color-card: #1e293b;
+  --color-card-foreground: #f1f5f9;
+  --color-popover: #1e293b;
+  --color-popover-foreground: #f1f5f9;
+  --color-primary: #22d3ee;
+  --color-primary-foreground: #0f172a;
+  --color-secondary: #334155;
+  --color-secondary-foreground: #f1f5f9;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #a78bfa;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #0f172a;
+  --color-border: rgba(148, 163, 184, 0.2);
+  --color-input: rgba(148, 163, 184, 0.2);
+  --color-ring: #22d3ee;
+  --color-sidebar-background: #1e293b;
+  --color-sidebar-foreground: #94a3b8;
+  --color-sidebar-primary: #22d3ee;
+  --color-sidebar-primary-foreground: #0f172a;
+  --color-sidebar-accent: rgba(34, 211, 238, 0.1);
+  --color-sidebar-accent-foreground: #22d3ee;
+  --color-sidebar-border: rgba(148, 163, 184, 0.2);
+  --color-sidebar-ring: #22d3ee;
+
+  /* Derived accent colors */
+  --color-primary-soft: rgba(34, 211, 238, 0.1);
+  --color-primary-glow: rgba(34, 211, 238, 0.3);
+  --color-accent-soft: rgba(167, 139, 250, 0.1);
+  --color-accent-glow: rgba(167, 139, 250, 0.3);
+
+  /* Semantic status colors */
+  --color-destructive-dark: #fca5a5;
+  --color-destructive-soft: rgba(248, 113, 113, 0.1);
+  --color-destructive-focus: rgba(248, 113, 113, 0.15);
+  --color-success: #4ade80;
+  --color-success-dark: #86efac;
+  --color-success-soft: rgba(74, 222, 128, 0.1);
+  --color-warning: #fbbf24;
+  --color-warning-dark: #fcd34d;
+  --color-warning-soft: rgba(251, 191, 36, 0.1);
+
+  /* Overlay */
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+}

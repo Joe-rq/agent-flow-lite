@@ -1,8 +1,8 @@
 /* 优化后的聊天输入区 - 紧凑扁平设计 */
 .chat-input-wrapper {
   padding: 8px 16px 12px;
-  background-color: var(--surface-primary);
-  border-top: 1px solid var(--border-primary);
+  background-color: var(--color-card);
+  border-top: 1px solid var(--color-border);
 }
 
 /* 配置栏：单行紧凑 */
@@ -24,17 +24,17 @@
 
 .config-select-item label {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   white-space: nowrap;
 }
 
 .config-select-item select {
   padding: 4px 8px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 12px;
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+  background-color: var(--color-muted);
+  color: var(--color-foreground);
   cursor: pointer;
   min-width: 100px;
 }
@@ -49,8 +49,8 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
+  background-color: var(--color-muted);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 4px 4px 4px 12px;
 }
@@ -67,11 +67,11 @@
   outline: none;
   font-size: 14px;
   background: transparent;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .chat-input::placeholder {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
 }
 
 .chat-input:disabled {
@@ -93,13 +93,13 @@
   bottom: 100%;
   left: 0;
   right: 0;
-  background-color: var(--surface-primary);
-  border: 1px solid var(--border-primary);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   margin-bottom: 8px;
   max-height: 200px;
   overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   z-index: 100;
 }
 
@@ -114,7 +114,7 @@
 
 .suggestion-item:hover,
 .suggestion-item.active {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-muted);
 }
 
 .suggestion-item:first-child {
@@ -128,12 +128,12 @@
 .suggestion-name {
   font-size: 14px;
   font-weight: 500;
-  color: var(--accent-cyan);
+  color: var(--color-primary);
 }
 
 .suggestion-desc {
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

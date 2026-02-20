@@ -6,8 +6,8 @@
   transform: translateY(-50%);
   width: 24px;
   height: 48px;
-  background: var(--bg-secondary, #f9fafb);
-  border: 1px solid var(--border-primary, #e5e7eb);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-right: none;
   border-radius: 4px 0 0 4px;
   cursor: pointer;
@@ -24,7 +24,7 @@
 
 .toggle-icon {
   font-size: 12px;
-  color: var(--text-secondary, #6b7280);
+  color: var(--color-muted-foreground);
 }
 
 /* Node creation drawer */
@@ -34,8 +34,8 @@
   top: 0;
   bottom: 0;
   width: 220px;
-  background: var(--bg-secondary, #f9fafb);
-  border-left: 1px solid var(--border-primary, #e5e7eb);
+  background: var(--color-card);
+  border-left: 1px solid var(--color-border);
   transform: translateX(100%);
   transition: transform 0.3s ease;
   z-index: 9;
@@ -52,7 +52,7 @@
   padding: 16px;
   font-size: 16px;
   font-weight: 600;
-  border-bottom: 1px solid var(--border-primary, #e5e7eb);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .drawer-content {
@@ -67,16 +67,16 @@
   gap: 10px;
   padding: 10px;
   margin-bottom: 8px;
-  background: white;
-  border: 1px solid var(--border-primary, #e5e7eb);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .drawer-node-item:hover {
-  background: var(--bg-primary, #f3f4f6);
-  border-color: var(--accent-primary, #3b82f6);
+  background: var(--color-muted);
+  border-color: var(--color-primary);
 }
 
 .drawer-node-icon {
@@ -85,5 +85,5 @@
 
 .drawer-node-label {
   font-size: 14px;
-  color: var(--text-primary, #111827);
+  color: var(--color-foreground);
 }

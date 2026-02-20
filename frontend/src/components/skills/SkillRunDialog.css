@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,7 @@
 }
 
 .dialog {
-  background: white;
+  background: var(--color-card);
   border-radius: 8px;
   padding: 24px;
   width: 500px;
@@ -36,14 +36,14 @@
 .dialog-header h3 {
   margin: 0;
   font-size: 18px;
-  color: #2c3e50;
+  color: var(--color-foreground);
 }
 
 .btn-close {
   background: none;
   border: none;
   font-size: 24px;
-  color: #95a5a6;
+  color: var(--color-muted-foreground);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -56,8 +56,8 @@
 }
 
 .btn-close:hover {
-  background-color: #f5f5f5;
-  color: #e74c3c;
+  background-color: var(--color-muted);
+  color: var(--color-destructive);
 }
 
 /* 运行输入 */
@@ -73,19 +73,19 @@
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #2c3e50;
+  color: var(--color-foreground);
   font-weight: 500;
 }
 
 .required-mark {
-  color: #e74c3c;
+  color: var(--color-destructive);
   margin-left: 2px;
 }
 
 .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #bdc3c7;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
@@ -93,7 +93,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: var(--color-primary);
 }
 
 .dialog-actions {
@@ -105,9 +105,9 @@
 
 /* 运行输出 */
 .run-output {
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background-color: #f8f9fa;
+  background-color: var(--color-muted);
 }
 
 .output-header {
@@ -115,10 +115,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--color-border);
   font-size: 13px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--color-foreground);
 }
 
 .running-indicator {
@@ -129,7 +129,7 @@
 .running-indicator .dot {
   width: 5px;
   height: 5px;
-  background-color: #3498db;
+  background-color: var(--color-primary);
   border-radius: 50%;
   animation: typing 1.4s infinite;
 }
@@ -157,7 +157,7 @@
   overflow-y: auto;
   font-size: 14px;
   line-height: 1.6;
-  color: #2c3e50;
+  color: var(--color-foreground);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -168,7 +168,7 @@
   gap: 8px;
   margin-bottom: 12px;
   padding: 8px 12px;
-  background-color: #f3e5f5;
+  background-color: var(--color-accent-soft);
   border-radius: 6px;
 }
 
@@ -178,7 +178,7 @@
 
 .thought-text {
   font-size: 13px;
-  color: #7b1fa2;
+  color: var(--color-accent);
 }
 
 .output-text {

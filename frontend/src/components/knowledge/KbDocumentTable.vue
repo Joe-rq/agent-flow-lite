@@ -27,7 +27,7 @@
         <span class="col-size">{{ formatFileSize(doc.fileSize) }}</span>
         <span class="col-action">
           <Button
-            variant="danger"
+            variant="destructive"
             size="sm"
             :disabled="doc.status === 'processing'"
             @click="$emit('delete-document', doc.id)"

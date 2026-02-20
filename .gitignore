@@ -53,6 +53,9 @@ htmlcov/
 # Node
 node_modules/
 
+# Frontend src/lib is used by shadcn-vue (not Python lib/)
+!frontend/src/lib/
+
 # Runtime data (generated at runtime, do not commit)
 backend/data/**/*.lock
 backend/data/chromadb/

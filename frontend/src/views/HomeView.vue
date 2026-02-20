@@ -44,10 +44,10 @@ const features: Feature[] = [
         <h1 class="hero__title">Agent Flow</h1>
         <p class="hero__tagline">构建、管理和部署智能 AI 工作流</p>
         <div class="hero__actions">
-          <Button variant="primary" size="lg" @click="$router.push('/workflow')">
+          <Button variant="default" size="lg" @click="$router.push('/workflow')">
             创建工作流
           </Button>
-          <Button variant="secondary" size="lg" @click="$router.push('/knowledge')">
+          <Button variant="outline" size="lg" @click="$router.push('/knowledge')">
             上传文档
           </Button>
         </div>
@@ -115,9 +115,9 @@ const features: Feature[] = [
 .hero__title {
   font-size: var(--text-3xl);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin-bottom: var(--space-md);
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -125,7 +125,7 @@ const features: Feature[] = [
 
 .hero__tagline {
   font-size: var(--text-lg);
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   margin-bottom: var(--space-xl);
 }
 
@@ -165,13 +165,13 @@ const features: Feature[] = [
 }
 
 .feature-card__icon--workflow {
-  background: var(--accent-cyan-soft);
-  color: var(--accent-cyan);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .feature-card__icon--knowledge {
-  background: var(--accent-purple-soft);
-  color: var(--accent-purple);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .feature-card__icon--chat {
@@ -187,13 +187,13 @@ const features: Feature[] = [
 .feature-card__title {
   font-size: var(--text-xl);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin-bottom: var(--space-sm);
 }
 
 .feature-card__description {
   font-size: var(--text-base);
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   line-height: 1.6;
 }
 

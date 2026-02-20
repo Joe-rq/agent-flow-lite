@@ -16,7 +16,7 @@ export function useUserAdmin() {
   const showConfirmDialog = ref(false)
   const confirmDialogTitle = ref('')
   const confirmDialogMessage = ref('')
-  const confirmDialogVariant = ref<'primary' | 'secondary' | 'danger'>('primary')
+  const confirmDialogVariant = ref<'default' | 'outline' | 'destructive'>('default')
   const pendingAction = ref<(() => Promise<void>) | null>(null)
 
   const filteredUsers = computed(() => {
@@ -76,7 +76,7 @@ export function useUserAdmin() {
     const action = user.is_active ? '禁用' : '启用'
     confirmDialogTitle.value = `${action}用户`
     confirmDialogMessage.value = `确定要${action}用户 "${user.email}" 吗？`
-    confirmDialogVariant.value = user.is_active ? 'danger' : 'primary'
+    confirmDialogVariant.value = user.is_active ? 'destructive' : 'default'
     pendingAction.value = async () => {
       try {
         const endpoint = user.is_active ? 'disable' : 'enable'
@@ -97,7 +97,7 @@ export function useUserAdmin() {
     }
     confirmDialogTitle.value = '删除用户'
     confirmDialogMessage.value = `确定要删除用户 "${user.email}" 吗？此操作不可恢复。`
-    confirmDialogVariant.value = 'danger'
+    confirmDialogVariant.value = 'destructive'
     pendingAction.value = async () => {
       try {
         await axios.delete(`${API_BASE}/admin/users/${user.id}`)

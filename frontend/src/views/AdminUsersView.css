@@ -16,7 +16,7 @@
 .page-header h1 {
   font-size: 24px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin: 0;
 }
 
@@ -33,9 +33,9 @@
 }
 
 .users-container {
-  background: var(--bg-secondary);
+  background: var(--color-card);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 
@@ -43,7 +43,7 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
 }
 
 .empty-state p {
@@ -66,21 +66,21 @@
 }
 
 .table-header {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-muted);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   font-size: 14px;
-  border-bottom: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .table-row {
-  border-bottom: 1px solid var(--border-secondary);
+  border-bottom: 1px solid var(--color-border);
   font-size: 14px;
   transition: background-color var(--transition-fast);
 }
 
 .table-row:hover {
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-muted);
 }
 
 .table-row:last-child {
@@ -91,7 +91,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .col-role,
@@ -107,13 +107,13 @@
 }
 
 .role-badge.admin {
-  background-color: var(--accent-purple-soft);
-  color: var(--accent-purple);
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .role-badge.user {
-  background-color: var(--accent-cyan-soft);
-  color: var(--accent-cyan);
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .status-badge {
@@ -124,17 +124,17 @@
 }
 
 .status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: var(--color-success-soft);
+  color: var(--color-success-dark);
 }
 
 .status-badge.disabled {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-destructive-soft);
+  color: var(--color-destructive-dark);
 }
 
 .col-created {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   font-size: 13px;
 }
 
@@ -144,7 +144,7 @@
 }
 
 .self-indicator {
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   font-size: 13px;
   font-style: italic;
 }
@@ -164,25 +164,25 @@
 }
 
 .dialog {
-  background: var(--bg-secondary);
+  background: var(--color-card);
   border-radius: var(--radius-lg);
   padding: 24px;
   width: 400px;
   max-width: 90vw;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
 }
 
 .dialog h3 {
   margin: 0 0 12px 0;
   font-size: 18px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .dialog-message {
   margin: 0 0 20px 0;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   line-height: 1.5;
 }
 

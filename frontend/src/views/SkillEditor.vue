@@ -3,16 +3,16 @@
     <!-- 头部 -->
     <div class="editor-header">
       <div class="header-left">
-        <Button class="btn-back" variant="secondary" size="sm" @click="goBack">← 返回列表</Button>
+        <Button class="btn-back" variant="outline" size="sm" @click="goBack">← 返回列表</Button>
         <h1>{{ isNew ? '新建技能' : '编辑技能' }}</h1>
       </div>
       <div class="header-actions">
-        <Button variant="secondary" @click="togglePreview">
+        <Button variant="outline" @click="togglePreview">
           {{ showPreview ? '隐藏预览' : '显示预览' }}
         </Button>
         <Button
           class="btn-primary"
-          variant="primary"
+          variant="default"
           :disabled="isSaving || !skillName.trim()"
           @click="saveSkill"
         >
@@ -54,7 +54,7 @@
           <div class="inputs-section">
             <div class="section-header">
               <label>输入参数</label>
-              <Button variant="secondary" size="sm" @click="addInput">+ 添加</Button>
+              <Button variant="outline" size="sm" @click="addInput">+ 添加</Button>
             </div>
             <div v-for="(input, index) in skillInputs" :key="index" class="input-row">
               <TextInput
@@ -76,7 +76,7 @@
                 <input v-model="input.required" type="checkbox" />
                 必填
               </label>
-              <Button class="btn-remove" variant="danger" size="sm" @click="removeInput(index)">×</Button>
+              <Button class="btn-remove" variant="destructive" size="sm" @click="removeInput(index)">×</Button>
             </div>
             <div v-if="skillInputs.length === 0" class="empty-inputs">
               暂无输入参数

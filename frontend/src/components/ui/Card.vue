@@ -1,53 +1,36 @@
 <script setup lang="ts">
+import { cn } from '@/lib/utils'
+import { type HTMLAttributes } from 'vue'
+
 interface Props {
   padding?: 'none' | 'sm' | 'md' | 'lg'
   hover?: boolean
+  class?: HTMLAttributes['class']
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   padding: 'md',
   hover: true,
+  class: undefined,
 })
+
+const paddingMap = {
+  none: 'p-0',
+  sm: 'p-3',
+  md: 'p-5',
+  lg: 'p-8',
+} as const
 </script>
 
 <template>
-  <div :class="['card', `card--padding-${padding}`, { 'card--hover': hover }]">
+  <div
+    :class="cn(
+      'rounded-lg border border-border bg-card shadow-sm transition-all duration-300',
+      paddingMap[props.padding],
+      props.hover && 'hover:border-primary hover:shadow-md hover:-translate-y-0.5',
+      props.class
+    )"
+  >
     <slot />
   </div>
 </template>
-
-<style scoped>
-.card {
-  position: relative;
-  background: var(--bg-secondary, #ffffff);
-  border: 1px solid var(--border-primary, rgba(148, 163, 184, 0.3));
-  border-radius: var(--radius-lg, 12px);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.05));
-}
-
-/* Padding variants */
-.card--padding-none {
-  padding: 0;
-}
-
-.card--padding-sm {
-  padding: 0.75rem;
-}
-
-.card--padding-md {
-  padding: 1.25rem;
-}
-
-.card--padding-lg {
-  padding: 2rem;
-}
-
-/* Hover effect */
-.card--hover:hover {
-  border-color: var(--accent-cyan, #0891b2);
-  box-shadow: var(--shadow-md, 0 4px 6px rgba(15, 23, 42, 0.07));
-  transform: translateY(-2px);
-}
-</style>

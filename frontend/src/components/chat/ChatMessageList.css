@@ -27,7 +27,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: var(--bg-tertiary);
+  background-color: var(--color-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,15 +51,15 @@
 }
 
 .message-wrapper.user .message-bubble {
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: white;
   border-bottom-right-radius: 4px;
 }
 
 .message-wrapper.assistant .message-bubble {
-  background-color: var(--surface-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
+  background-color: var(--color-card);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
   border-bottom-left-radius: 4px;
 }
 
@@ -73,7 +73,7 @@
 .typing-indicator .dot {
   width: 6px;
   height: 6px;
-  background-color: var(--text-muted);
+  background-color: var(--color-muted-foreground);
   border-radius: 50%;
   animation: typing 1.4s infinite;
 }
@@ -101,7 +101,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background-color: var(--accent-purple-soft);
+  background-color: var(--color-accent-soft);
   border-radius: 8px;
   margin: 0 auto;
   max-width: 60%;
@@ -114,7 +114,7 @@
 
 .thought-text {
   font-size: 13px;
-  color: var(--accent-purple);
+  color: var(--color-accent);
 }
 
 @keyframes fadeIn {
@@ -137,9 +137,9 @@
 }
 
 .citation-item {
-  border: 1px solid var(--border-primary);
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-muted);
+  color: var(--color-muted-foreground);
   border-radius: 12px;
   padding: 4px 10px;
   font-size: 12px;
@@ -148,14 +148,14 @@
 }
 
 .citation-item:hover {
-  border-color: var(--accent-cyan);
-  color: var(--text-primary);
+  border-color: var(--color-primary);
+  color: var(--color-foreground);
 }
 
 /* 引用面板 */
 .citation-panel {
-  border-top: 1px solid var(--border-primary);
-  background-color: var(--surface-primary);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-card);
   padding: 12px 20px;
 }
 
@@ -169,14 +169,14 @@
 .citation-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .citation-close {
   border: none;
   background: transparent;
   font-size: 18px;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   cursor: pointer;
 }
 
@@ -184,19 +184,19 @@
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   margin-bottom: 8px;
 }
 
 .citation-excerpt {
   font-size: 13px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   line-height: 1.6;
 }
 
 .citation-highlight {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-soft);
+  color: var(--color-warning-dark);
   padding: 2px 4px;
   border-radius: 4px;
 }

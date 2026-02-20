@@ -24,13 +24,13 @@
 .dialog h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .empty-dialog {
   text-align: center;
   padding: 40px 20px;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
 }
 
 .workflow-list {
@@ -43,26 +43,26 @@
 
 .workflow-item {
   padding: 12px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .workflow-item:hover {
-  background-color: var(--bg-secondary);
-  border-color: var(--accent-cyan);
+  background-color: var(--color-card);
+  border-color: var(--color-primary);
 }
 
 .workflow-name {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--color-foreground);
   margin-bottom: 4px;
 }
 
 .workflow-meta {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
 }
 
 .dialog-actions {

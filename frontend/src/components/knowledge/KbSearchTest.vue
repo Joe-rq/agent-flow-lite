@@ -11,7 +11,7 @@
         @keyup.enter="$emit('search')"
       />
       <Button
-        variant="primary"
+        variant="default"
         :disabled="!searchQuery.trim() || isSearching"
         @click="$emit('search')"
       >

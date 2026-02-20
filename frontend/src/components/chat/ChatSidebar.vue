@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <Button class="new-chat-btn" variant="primary" @click="$emit('create-session')">
+      <Button class="new-chat-btn" variant="default" @click="$emit('create-session')">
         <span class="icon">+</span>
         新建会话
       </Button>

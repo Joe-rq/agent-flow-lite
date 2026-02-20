@@ -14,10 +14,10 @@
         @input="$emit('update:runInput', ($event.target as HTMLTextAreaElement).value)"
       ></textarea>
       <div class="run-actions">
-        <Button variant="primary" @click="$emit('execute')" :disabled="isRunning">
+        <Button variant="default" @click="$emit('execute')" :disabled="isRunning">
           运行
         </Button>
-        <Button variant="secondary" @click="$emit('close')" :disabled="isRunning">
+        <Button variant="outline" @click="$emit('close')" :disabled="isRunning">
           关闭
         </Button>
       </div>

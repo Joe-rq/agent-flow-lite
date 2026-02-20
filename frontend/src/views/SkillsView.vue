@@ -2,7 +2,7 @@
   <div class="skills-view">
     <div class="page-header">
       <h1>技能管理</h1>
-      <Button class="btn-primary" variant="primary" @click="createNewSkill">
+      <Button class="btn-primary" variant="default" @click="createNewSkill">
         + 新建技能
       </Button>
     </div>
@@ -38,7 +38,7 @@
           <div class="skill-actions">
             <Button
               class="btn-run"
-              variant="secondary"
+              variant="outline"
               size="sm"
               @click.stop="runner.openRunModal(skill)"
             >
@@ -46,7 +46,7 @@
             </Button>
             <Button
               class="btn-delete-skill"
-              variant="danger"
+              variant="destructive"
               size="sm"
               @click.stop="deleteSkill(skill.name)"
             >
@@ -58,7 +58,7 @@
 
       <div v-if="skills.length === 0" class="empty-state">
         <p>暂无技能</p>
-        <Button variant="primary" @click="createNewSkill">
+        <Button variant="default" @click="createNewSkill">
           创建第一个技能
         </Button>
       </div>

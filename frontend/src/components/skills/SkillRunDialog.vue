@@ -29,14 +29,14 @@
       <!-- 运行按钮 -->
       <div class="dialog-actions">
         <Button
-          variant="secondary"
+          variant="outline"
           @click="$emit('close')"
           :disabled="isRunning"
         >
           取消
         </Button>
         <Button
-          variant="primary"
+          variant="default"
           :disabled="isRunning"
           @click="$emit('run')"
         >

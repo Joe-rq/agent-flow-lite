@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ShadcnInput from './shadcn/Input.vue'
+
 defineOptions({ inheritAttrs: false })
 
 interface Props {
@@ -24,31 +26,24 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
-
-function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
-}
 </script>
 
 <template>
-  <div :class="['text-input', { 'text-input--error': error, 'text-input--disabled': disabled }]">
-    <label v-if="label" class="text-input__label">
+  <div class="flex flex-col gap-1.5">
+    <label v-if="label" class="text-sm font-medium text-foreground">
       {{ label }}
-      <span v-if="required" class="text-input__required">*</span>
+      <span v-if="required" class="text-destructive ml-0.5">*</span>
     </label>
-    <input
+    <ShadcnInput
       v-bind="$attrs"
       :type="type"
-      :value="modelValue"
+      :model-value="String(modelValue)"
       :placeholder="placeholder"
       :disabled="disabled"
       :required="required"
-      class="text-input__field"
-      @input="handleInput"
+      :class="error ? 'border-destructive focus-visible:ring-destructive' : ''"
+      @update:model-value="emit('update:modelValue', $event)"
     />
-    <p v-if="error" class="text-input__error">{{ error }}</p>
+    <p v-if="error" class="text-xs text-destructive leading-snug">{{ error }}</p>
   </div>
 </template>
-
-<style scoped src="./TextInput.css"></style>

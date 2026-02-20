@@ -120,7 +120,7 @@ function toggleMode() {
         </div>
 
         <Button
-          variant="primary"
+          variant="default"
           size="lg"
           :disabled="isLoading"
           @click="handleSubmit"
@@ -147,14 +147,14 @@ function toggleMode() {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
+  background: linear-gradient(135deg, var(--color-background) 0%, var(--color-muted) 100%);
   padding: var(--space-lg);
 }
 
 .login-container {
   width: 100%;
   max-width: 400px;
-  background: var(--surface-primary);
+  background: var(--color-card);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   padding: var(--space-2xl);
@@ -168,7 +168,7 @@ function toggleMode() {
 .login-header h1 {
   font-size: var(--text-3xl);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -176,7 +176,7 @@ function toggleMode() {
 }
 
 .login-header p {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   font-size: var(--text-base);
   margin: 0;
 }
@@ -200,27 +200,27 @@ function toggleMode() {
 .form-group label {
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--color-foreground);
 }
 
 .form-group input {
   padding: var(--space-md);
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--text-base);
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--color-background);
+  color: var(--color-foreground);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 3px var(--accent-cyan-soft);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 .form-group input:disabled {
-  background: var(--bg-tertiary);
+  background: var(--color-muted);
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -238,17 +238,17 @@ function toggleMode() {
   text-align: center;
   margin-top: var(--space-xl);
   padding-top: var(--space-lg);
-  border-top: 1px solid var(--border-secondary);
+  border-top: 1px solid var(--color-border);
 }
 
 .login-footer p {
-  color: var(--text-muted);
+  color: var(--color-muted-foreground);
   font-size: var(--text-sm);
   margin: 0;
 }
 
 .toggle-link {
-  color: var(--accent-cyan);
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }

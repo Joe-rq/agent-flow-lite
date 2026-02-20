@@ -169,9 +169,9 @@ onMounted(() => {
 .settings-card {
   width: 100%;
   max-width: 560px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
+  background: var(--color-card);
   padding: 20px;
 }
 
@@ -180,7 +180,7 @@ onMounted(() => {
 }
 
 .hint {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
   margin-bottom: 16px;
 }
 
@@ -193,14 +193,14 @@ onMounted(() => {
 select {
   height: 36px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-secondary);
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-foreground);
   padding: 0 12px;
 }
 
 .state {
-  color: var(--text-secondary);
+  color: var(--color-muted-foreground);
 }
 
 .state.error {
@@ -218,8 +218,8 @@ select {
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  border: 1px solid var(--border-secondary);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--bg-primary);
+  background: var(--color-background);
 }
 </style>
