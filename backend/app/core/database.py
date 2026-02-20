@@ -33,12 +33,28 @@ AsyncSessionLocal = async_sessionmaker(
 Base = declarative_base()
 
 
+def _import_all_models() -> None:
+    """Auto-discover and import all modules under app.models.
+
+    This ensures every SQLAlchemy model that subclasses Base is registered
+    in Base.metadata before create_all() or Alembic autogenerate runs.
+    """
+    import importlib
+    import pkgutil
+
+    import app.models as models_pkg
+
+    for module_info in pkgutil.iter_modules(models_pkg.__path__):
+        importlib.import_module(f"app.models.{module_info.name}")
+
+
 async def init_db() -> None:
-    """Initialize database by creating all tables and running migrations."""
-    # Import all models so Base.metadata.create_all discovers every table.
-    import app.models.user  # noqa: F401
-    import app.models.workflow_db  # noqa: F401
-    import app.models.workflow_execution_db  # noqa: F401
+    """Initialize database by creating all tables.
+
+    Uses auto-discovery to import every module in app/models/, so new ORM
+    models are picked up automatically without manual imports.
+    """
+    _import_all_models()
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

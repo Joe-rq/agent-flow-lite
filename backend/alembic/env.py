@@ -5,15 +5,10 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from app.core.database import Base, DATABASE_URL
+from app.core.database import Base, DATABASE_URL, _import_all_models
 
-from app.models import session as _session_models
-from app.models import setting as _setting_models
-from app.models import user as _user_models
-from app.models import workflow_db as _workflow_models
-from app.models import workflow_execution_db as _workflow_execution_models
-
-del _session_models, _setting_models, _user_models, _workflow_models, _workflow_execution_models
+# Auto-discover all ORM models so Alembic sees every table in Base.metadata.
+_import_all_models()
 
 config = context.config
 
