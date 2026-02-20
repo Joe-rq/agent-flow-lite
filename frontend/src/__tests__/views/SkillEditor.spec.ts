@@ -232,7 +232,7 @@ describe('SkillEditor Form Validation', () => {
       }
     })
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -382,7 +382,7 @@ describe('SkillEditor Variable Detection', () => {
       }
     })
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Hello {{name}}, your age is {{age}}')
 
     expect(wrapper.text()).toContain('name')
@@ -404,7 +404,7 @@ describe('SkillEditor Variable Detection', () => {
     const inputs = wrapper.findAll('.input-row input')
     await inputs[0].setValue('name')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Hello {{name}}')
 
     expect(wrapper.find('.variable-tag.declared').exists()).toBe(true)
@@ -417,7 +417,7 @@ describe('SkillEditor Variable Detection', () => {
       }
     })
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Hello {{undeclared}}')
 
     const undeclaredTag = wrapper.find('.variable-tag:not(.declared)')
@@ -476,7 +476,7 @@ describe('SkillEditor Preview', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('test-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Process this: {{text}}')
 
     const previewContent = wrapper.find('.code-block').text()
@@ -500,7 +500,7 @@ describe('SkillEditor Preview', () => {
       await descriptionInput.setValue('A test skill')
     }
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt')
 
     const previewContent = wrapper.find('.code-block').text()
@@ -537,7 +537,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('new-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -581,7 +581,7 @@ describe('SkillEditor Save', () => {
 
     await flushPromises()
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Updated prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -615,7 +615,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('existing-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -643,7 +643,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('new-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt')
 
     await flushPromises()
@@ -683,7 +683,7 @@ describe('SkillEditor Save', () => {
     const checkbox = wrapper.find('.checkbox-label input[type="checkbox"]')
     await checkbox.setValue(true)
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Summarize: {{article}}')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -719,7 +719,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('new-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -761,7 +761,7 @@ describe('SkillEditor Save', () => {
 
     await flushPromises()
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Updated prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -790,7 +790,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('test-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt content')
 
     const previewContent = wrapper.find('.code-block').text()
@@ -809,7 +809,7 @@ describe('SkillEditor Save', () => {
     const nameInput = wrapper.find('input[type="text"]')
     await nameInput.setValue('new-skill')
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Test prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))
@@ -847,7 +847,7 @@ describe('SkillEditor Save', () => {
 
     await flushPromises()
 
-    const textarea = wrapper.find('.prompt-textarea')
+    const textarea = wrapper.find('.prompt-section textarea')
     await textarea.setValue('Updated prompt content')
 
     const saveButton = wrapper.findAll('button').find(b => b.text().includes('保存') && !b.text().includes('隐藏'))

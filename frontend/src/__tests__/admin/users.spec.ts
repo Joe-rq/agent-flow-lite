@@ -211,7 +211,7 @@ describe('AdminUsersView', () => {
 
     await flushPromises()
 
-    const searchInput = wrapper.find('.search-input')
+    const searchInput = wrapper.find('.search-box input')
     await searchInput.setValue('admin')
     await searchInput.trigger('keyup.enter')
 
