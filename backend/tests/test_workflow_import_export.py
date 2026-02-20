@@ -50,7 +50,7 @@ async def test_export_then_import_roundtrip_creates_new_workflow_id(
 
     exported = await workflow_api.export_workflow(
         workflow_id="wf-orig",
-        user=MagicMock(),
+        user=MagicMock(id=1),
     )
     assert exported.version == workflow_api.EXPORT_VERSION
     assert exported.workflow.name == "Demo"

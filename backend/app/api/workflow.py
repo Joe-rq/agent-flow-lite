@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.core.database import AsyncSessionLocal
 from app.models.workflow import (
@@ -100,11 +100,19 @@ def workflow_to_model(workflow_id: str, data: dict[str, Any]) -> Workflow:
     )
 
 
-async def _get_workflow_row_by_id(workflow_id: str) -> WorkflowDB:
+async def _get_workflow_row_by_id(
+    workflow_id: str, user_id: int | None = None
+) -> WorkflowDB:
     async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
-        )
+        stmt = select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+        if user_id is not None:
+            stmt = stmt.where(
+                or_(
+                    WorkflowDB.user_id == str(user_id),
+                    WorkflowDB.user_id.is_(None),
+                )
+            )
+        result = await db.execute(stmt)
         row = result.scalar_one_or_none()
     if row is None:
         raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
@@ -118,8 +126,10 @@ def _validate_graph_data_or_422(graph_data: GraphData) -> None:
         raise HTTPException(status_code=422, detail=exc.errors()) from exc
 
 
-async def _get_workflow_by_id(workflow_id: str) -> Workflow:
-    row = await _get_workflow_row_by_id(workflow_id)
+async def _get_workflow_by_id(
+    workflow_id: str, user_id: int | None = None
+) -> Workflow:
+    row = await _get_workflow_row_by_id(workflow_id, user_id=user_id)
     return _row_to_workflow_model(row)
 
 
@@ -131,8 +141,7 @@ async def get_workflow_for_internal(workflow_id: str) -> Workflow:
 async def export_workflow(
     workflow_id: str, user: User = Depends(get_current_user)
 ) -> WorkflowExportPayload:
-    workflow = await _get_workflow_by_id(workflow_id)
-    _ = user
+    workflow = await _get_workflow_by_id(workflow_id, user_id=user.id)
     return WorkflowExportPayload(
         version=EXPORT_VERSION,
         workflow=WorkflowExportObject(
@@ -207,10 +216,16 @@ async def import_workflow(
 
 @router.get("", response_model=WorkflowList)
 async def list_workflows(user: User = Depends(get_current_user)) -> WorkflowList:
-    """List all workflows"""
-    _ = user
+    """List all workflows owned by the current user (including unowned legacy ones)."""
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(WorkflowDB))
+        result = await db.execute(
+            select(WorkflowDB).where(
+                or_(
+                    WorkflowDB.user_id == str(user.id),
+                    WorkflowDB.user_id.is_(None),
+                )
+            )
+        )
         rows = result.scalars().all()
 
     workflows = [_row_to_workflow_model(row) for row in rows]
@@ -271,8 +286,7 @@ async def get_workflow(
     workflow_id: str, user: User = Depends(get_current_user)
 ) -> Workflow:
     """Get a workflow by ID"""
-    _ = user
-    row = await _get_workflow_row_by_id(workflow_id)
+    row = await _get_workflow_row_by_id(workflow_id, user_id=user.id)
     return _row_to_workflow_model(row)
 
 
@@ -288,7 +302,13 @@ async def update_workflow(
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(
-            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+            select(WorkflowDB).where(
+                WorkflowDB.id == workflow_id,
+                or_(
+                    WorkflowDB.user_id == str(user.id),
+                    WorkflowDB.user_id.is_(None),
+                ),
+            )
         )
         row = result.scalar_one_or_none()
         if row is None:
@@ -320,7 +340,13 @@ async def delete_workflow(
     """Delete a workflow"""
     async with AsyncSessionLocal() as db:
         result = await db.execute(
-            select(WorkflowDB).where(WorkflowDB.id == workflow_id)
+            select(WorkflowDB).where(
+                WorkflowDB.id == workflow_id,
+                or_(
+                    WorkflowDB.user_id == str(user.id),
+                    WorkflowDB.user_id.is_(None),
+                ),
+            )
         )
         row = result.scalar_one_or_none()
         if row is None:
@@ -346,7 +372,7 @@ async def execute_workflow(
     input_data: WorkflowExecuteRequest,
     user: User = Depends(get_current_user),
 ) -> StreamingResponse:
-    row = await _get_workflow_row_by_id(workflow_id)
+    row = await _get_workflow_row_by_id(workflow_id, user_id=user.id)
     template_name_obj = row.template_name
     template_name = (
         template_name_obj.strip()[:200] if isinstance(template_name_obj, str) else None
@@ -411,11 +437,14 @@ async def get_execution_status(
     """Get workflow execution status and checkpoint data."""
     from app.models.workflow_execution_db import WorkflowExecutionDB
 
-    _ = user
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(WorkflowExecutionDB).where(
-                WorkflowExecutionDB.id == execution_id
+                WorkflowExecutionDB.id == execution_id,
+                or_(
+                    WorkflowExecutionDB.user_id == str(user.id),
+                    WorkflowExecutionDB.user_id.is_(None),
+                ),
             )
         )
         row = result.scalar_one_or_none()
@@ -454,7 +483,11 @@ async def resume_execution(
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(WorkflowExecutionDB).where(
-                WorkflowExecutionDB.id == execution_id
+                WorkflowExecutionDB.id == execution_id,
+                or_(
+                    WorkflowExecutionDB.user_id == str(user.id),
+                    WorkflowExecutionDB.user_id.is_(None),
+                ),
             )
         )
         row = result.scalar_one_or_none()
