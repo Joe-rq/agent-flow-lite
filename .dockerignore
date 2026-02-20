@@ -1,0 +1,38 @@
+# Version control
+.git
+.gitignore
+
+# Node
+frontend/node_modules
+frontend/.vitest
+
+# Python
+backend/.venv
+backend/__pycache__
+backend/**/__pycache__
+backend/**/*.pyc
+
+# Runtime data (mounted as volume)
+backend/data
+
+# Environment (passed via env_file or Docker env)
+backend/.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build artifacts
+frontend/dist
+
+# Project meta
+*.md
+!frontend/README.md
+docs/
+reviews/
+multi-perspective-review.zip
+.sisyphus/
+scripts/
+sisyphus/

@@ -14,6 +14,7 @@ from alembic.config import Config
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
@@ -93,9 +94,15 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
     )
 
+    # Frontend static files detection (for Docker / production deployment)
+    frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    _serve_frontend = frontend_dist.is_dir()
+
     @app.get("/")
     async def root():
-        """Root endpoint"""
+        """Root endpoint — serves Vue SPA in production, API info in development."""
+        if _serve_frontend:
+            return FileResponse(frontend_dist / "index.html")
         return {
             "name": "Agent Flow Lite API",
             "version": "0.1.0",
@@ -119,6 +126,19 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(admin_router)
     app.include_router(publish_router)
+
+    # SPA catch-all: serve static assets or fall back to index.html
+    # Registered after API routers so /api/v1/* routes take priority.
+    if _serve_frontend:
+        @app.get("/{full_path:path}")
+        async def serve_spa(full_path: str):
+            """Serve Vue SPA — return the file if it exists, otherwise index.html."""
+            file_path = (frontend_dist / full_path).resolve()
+            if file_path.is_file() and str(file_path).startswith(str(frontend_dist)):
+                return FileResponse(file_path)
+            return FileResponse(frontend_dist / "index.html")
+
+        _ = serve_spa
 
     return app
 
