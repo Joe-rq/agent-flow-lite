@@ -20,56 +20,6 @@
   margin: 0;
 }
 
-/* 按钮样式 */
-.btn-primary {
-  background-color: var(--text-primary);
-  color: var(--surface-primary);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: var(--text-secondary);
-}
-
-.btn-primary:disabled {
-  background-color: var(--text-muted);
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background-color: var(--surface-tertiary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-secondary:hover {
-  background-color: var(--bg-tertiary);
-}
-
-.btn-back {
-  background: none;
-  border: none;
-  color: var(--accent-cyan);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-  margin-bottom: 8px;
-}
-
-.btn-back:hover {
-  text-decoration: underline;
-}
-
 /* 知识库列表 */
 .kb-list {
   display: grid;
@@ -119,27 +69,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.btn-delete-kb {
-  padding: 4px 10px;
-  background-color: transparent;
-  color: var(--color-danger);
-  border: 1px solid var(--color-danger);
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  opacity: 0;
-}
-
-.kb-card:hover .btn-delete-kb {
-  opacity: 1;
-}
-
-.btn-delete-kb:hover {
-  background-color: var(--color-danger);
-  color: var(--surface-primary);
 }
 
 .empty-state {

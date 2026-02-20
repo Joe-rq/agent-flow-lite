@@ -31,26 +31,6 @@
   border-color: #3498db;
 }
 
-.btn-search {
-  padding: 12px 24px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-search:hover:not(:disabled) {
-  background-color: #2980b9;
-}
-
-.btn-search:disabled {
-  background-color: #bdc3c7;
-  cursor: not-allowed;
-}
-
 .search-results {
   margin-top: 16px;
 }
