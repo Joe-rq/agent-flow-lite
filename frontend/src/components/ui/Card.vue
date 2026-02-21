@@ -25,9 +25,9 @@ const paddingMap = {
 <template>
   <div
     :class="cn(
-      'rounded-lg border border-border bg-card shadow-sm transition-all duration-300',
+      'rounded-xl border border-border bg-card shadow-sm transition-all duration-300',
       paddingMap[props.padding],
-      props.hover && 'hover:border-primary hover:shadow-md hover:-translate-y-0.5',
+      props.hover && 'hover:border-primary/30 hover:shadow-md',
       props.class
     )"
   >

@@ -1,12 +1,10 @@
 <template>
-  <div class="node skill-node">
-    <div class="node-header">
-      <span class="node-icon">🎯</span>
-      <span class="node-title">Skill</span>
+  <div class="flow-node-base border-t-[3px] border-t-indigo-500 shadow-lg shadow-indigo-500/10 dark:shadow-indigo-500/30">
+    <div class="flex items-center gap-2 mb-1">
+      <span class="w-5 h-5 flex items-center justify-center rounded text-xs bg-indigo-500/10 text-indigo-600">🎯</span>
+      <span class="text-sm font-semibold text-card-foreground">Skill</span>
     </div>
-    <div class="node-body">
-      <span class="node-desc">{{ skillDisplayName }}</span>
-    </div>
+    <div class="text-xs text-muted-foreground truncate max-w-[120px]">{{ skillDisplayName }}</div>
   </div>
 </template>
 
@@ -34,44 +32,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.skill-node {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 140px;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
 
-.node-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.node-icon {
-  font-size: 12px;
-}
-
-.node-title {
-  font-size: 14px;
-}
-
-.node-body {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.node-desc {
-  color: rgba(255, 255, 255, 0.9);
-  display: block;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-</style>

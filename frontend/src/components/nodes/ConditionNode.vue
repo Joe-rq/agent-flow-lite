@@ -1,18 +1,19 @@
 <template>
-  <div class="node condition-node">
-    <div class="node-header">
-      <span class="node-icon">⚡</span>
-      <span class="node-title">条件</span>
+  <div class="flow-node-base min-w-[160px] border-t-[3px] border-t-pink-500 shadow-lg shadow-pink-500/10 dark:shadow-pink-500/30
+    [&_.vue-flow__handle]:w-2 [&_.vue-flow__handle]:h-2 [&_.vue-flow__handle]:bg-white [&_.vue-flow__handle]:border-2 [&_.vue-flow__handle]:border-pink-500
+    [&_.handle-true]:border-emerald-500 [&_.handle-false]:border-red-500"
+  >
+    <div class="flex items-center gap-2 mb-1">
+      <span class="w-5 h-5 flex items-center justify-center rounded text-xs bg-pink-500/10 text-pink-600">⚡</span>
+      <span class="text-sm font-semibold text-card-foreground">条件</span>
     </div>
-    <div class="node-body">
-      <span class="node-desc">{{ expression || '点击配置条件' }}</span>
-    </div>
+    <div class="text-xs text-muted-foreground truncate max-w-[140px]">{{ expression || '点击配置条件' }}</div>
     <Handle type="target" :position="Position.Left" />
     <Handle type="source" :position="Position.Right" id="true" class="handle-true">
-      <span class="handle-label handle-label-right">True</span>
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold pointer-events-none whitespace-nowrap text-emerald-500">True</span>
     </Handle>
     <Handle type="source" :position="Position.Bottom" id="false" class="handle-false">
-      <span class="handle-label handle-label-bottom">False</span>
+      <span class="absolute top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold pointer-events-none whitespace-nowrap text-red-500">False</span>
     </Handle>
   </div>
 </template>
@@ -38,81 +39,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.condition-node {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 160px;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
 
-.node-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.node-icon {
-  font-size: 12px;
-}
-
-.node-title {
-  font-size: 14px;
-}
-
-.node-body {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.node-desc {
-  color: rgba(255, 255, 255, 0.8);
-  display: block;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:deep(.vue-flow__handle) {
-  width: 8px;
-  height: 8px;
-  background: white;
-  border: 2px solid #d97706;
-}
-
-:deep(.handle-true) {
-  border-color: #10b981;
-}
-
-:deep(.handle-false) {
-  border-color: #ef4444;
-}
-
-.handle-label {
-  position: absolute;
-  font-size: 10px;
-  font-weight: 600;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.handle-label-right {
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #10b981;
-}
-
-.handle-label-bottom {
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #ef4444;
-}
-</style>

@@ -1,12 +1,10 @@
 <template>
-  <div class="node code-node">
-    <div class="node-header">
-      <span class="node-icon">🧪</span>
-      <span class="node-title">Code</span>
+  <div class="flow-node-base border-t-[3px] border-t-slate-500 shadow-lg shadow-slate-500/10 dark:shadow-slate-500/30">
+    <div class="flex items-center gap-2 mb-1">
+      <span class="w-5 h-5 flex items-center justify-center rounded text-xs bg-slate-500/10 text-slate-600">🧪</span>
+      <span class="text-sm font-semibold text-card-foreground">Code</span>
     </div>
-    <div class="node-body">
-      <span class="node-desc">{{ displayText }}</span>
-    </div>
+    <div class="text-xs text-muted-foreground">{{ displayText }}</div>
   </div>
 </template>
 
@@ -36,39 +34,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.code-node {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 140px;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
 
-.node-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.node-icon {
-  font-size: 12px;
-}
-
-.node-title {
-  font-size: 14px;
-}
-
-.node-body {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.node-desc {
-  color: rgba(255, 255, 255, 0.9);
-}
-</style>

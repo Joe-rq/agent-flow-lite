@@ -1,12 +1,10 @@
 <template>
-  <div class="node http-node">
-    <div class="node-header">
-      <span class="node-icon">🌐</span>
-      <span class="node-title">HTTP</span>
+  <div class="flow-node-base min-w-[160px] border-t-[3px] border-t-orange-500 shadow-lg shadow-orange-500/10 dark:shadow-orange-500/30">
+    <div class="flex items-center gap-2 mb-1">
+      <span class="w-5 h-5 flex items-center justify-center rounded text-xs bg-orange-500/10 text-orange-600">🌐</span>
+      <span class="text-sm font-semibold text-card-foreground">HTTP</span>
     </div>
-    <div class="node-body">
-      <span class="node-desc">{{ displayText }}</span>
-    </div>
+    <div class="text-xs text-muted-foreground truncate max-w-[140px]">{{ displayText }}</div>
   </div>
 </template>
 
@@ -38,44 +36,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.http-node {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 160px;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
 
-.node-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.node-icon {
-  font-size: 12px;
-}
-
-.node-title {
-  font-size: 14px;
-}
-
-.node-body {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.node-desc {
-  color: rgba(255, 255, 255, 0.9);
-  display: block;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-</style>
