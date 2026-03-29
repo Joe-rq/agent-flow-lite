@@ -1,6 +1,31 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+<!-- HARNESS-LAB:BEGIN -->
+## Harness Lab Startup
+
+本仓库现在同时遵循 Harness Lab 的治理入口。
+
+每次会话开始时，默认按下面顺序恢复上下文：
+1. `AGENTS.md`
+2. `requirements/INDEX.md`
+3. `.claude/progress.txt`
+4. 相关的 `context/*/README.md`
+5. 当前 REQ、设计稿、报告和必要代码
+
+开始实现前，先确认：
+- 当前活跃 REQ 是什么
+- 本次工作是否需要新建或继续一个 REQ
+- 需要落哪些设计 / review / QA 报告
+
+常用治理命令：
+- `npm run docs:impact`
+- `npm run docs:verify`
+- `npm run check:governance`
+- `npm run req:create -- --title "..."`
+- `npm run req:start -- --id REQ-...`
+- `npm run req:complete -- --id REQ-...`
+- `npm run verify`
+<!-- HARNESS-LAB:END -->
 
 ---
 

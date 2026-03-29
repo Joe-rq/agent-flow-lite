@@ -59,6 +59,28 @@
 
 ## 🚀 快速开始
 
+<!-- HARNESS-LAB:BEGIN -->
+### 🧭 研发治理（Harness Lab）
+
+本仓库已引入 Harness Lab 作为研发治理层，用于需求生命周期管理和交付物追踪。
+
+**治理命令：**
+```bash
+npm run docs:impact      # 文档影响分析
+npm run docs:verify      # 文档一致性验证
+npm run check:governance # 治理状态检查
+npm run req:create       # 创建新 REQ
+npm run verify           # 运行质量门
+```
+
+**关键目录：**
+- `requirements/` — 需求状态与报告
+- `context/` — 业务/技术/经验上下文
+- `docs/plans/` — 设计稿
+
+详见 `requirements/INDEX.md`。
+<!-- HARNESS-LAB:END -->
+
 ### 1. 环境准备
 
 确保已安装以下工具：

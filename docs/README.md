@@ -78,6 +78,20 @@ docs/
 
 ## ✅ CI 与质量门文档入口（2026-02 更新）
 
+<!-- HARNESS-LAB:BEGIN -->
+### 🧭 Governance 文档入口
+
+Harness Lab 接入后，新增这些治理入口：
+
+- `../requirements/INDEX.md`：当前活跃 / 已完成 REQ
+- `../requirements/REQ_TEMPLATE.md`：REQ 模板
+- `../docs/plans/`：与 REQ 绑定的实施方案
+- `../requirements/reports/`：code review / QA / ship 报告
+- `../context/`：业务 / 技术 / 经验上下文
+
+历史设计和测试文档继续保留在当前目录结构中；后续新变更优先走 `requirements/` + `docs/plans/`。
+<!-- HARNESS-LAB:END -->
+
 最近提交新增了 CI 检查脚本和质量门流程，建议优先使用以下入口：
 
 - `../scripts/verify-quality-gate.sh`：本地一键预检（前端类型检查/构建/关键测试 + 后端关键测试）

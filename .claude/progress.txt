@@ -1,0 +1,9 @@
+Current active REQ: None
+Current phase: idle
+Last updated: 2026-03-29
+
+Recently completed:
+- REQ-2026-002: Toast/Confirm 通知系统替换 alert/confirm (commit b56f3d2)
+- REQ-2026-001: Harness Lab integration (commit c6f4245)
+
+Next REQ: None
