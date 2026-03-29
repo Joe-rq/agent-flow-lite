@@ -1,37 +1,56 @@
 # CLAUDE.md
 
 <!-- HARNESS-LAB:BEGIN -->
-## Harness Lab Startup
+## Harness Lab 治理入口
 
-本仓库现在同时遵循 Harness Lab 的治理入口。
+本仓库采用 Harness Lab 作为研发治理层。**每次会话必须先按治理入口恢复上下文，再执行具体任务。**
 
-每次会话开始时，默认按下面顺序恢复上下文：
+### 会话启动顺序
+
+每次会话开始时，**必须**按下面顺序读取：
 1. `AGENTS.md`
 2. `requirements/INDEX.md`
 3. `.claude/progress.txt`
-4. 相关的 `context/*/README.md`
-5. 当前 REQ、设计稿、报告和必要代码
+4. 与当前任务相关的 `context/*/README.md`
+5. 当前 REQ、设计稿、已有报告和必要代码
 
-开始实现前，先确认：
+**禁止跳过启动顺序直接进入实现。**
+
+### 开工前检查
+
+开始实现前，**必须**确认：
 - 当前活跃 REQ 是什么
-- 本次工作是否需要新建或继续一个 REQ
-- 需要落哪些设计 / review / QA 报告
+- 该 REQ 的设计稿是否存在
+- 目标项目是否已经绑定真实 `lint / test / build / verify` 命令
+- 本次工作需要落哪些报告
 
-常用治理命令：
-- `npm run docs:impact`
-- `npm run docs:verify`
-- `npm run check:governance`
-- `npm run req:create -- --title "..."`
-- `npm run req:start -- --id REQ-...`
-- `npm run req:complete -- --id REQ-...`
-- `npm run verify`
+如果项目还没绑定真实命令，先补命令或明确记录缺口，不要假装已经验证。
+
+### 默认工作方式
+
+- **理解任务**：从 REQ 和设计稿理解范围、非目标和验收标准，只加载必要的 context
+- **实现任务**：遵循 `plan -> build -> verify -> fix -> record` 闭环，及时更新 `.claude/progress.txt`
+- **验证任务**：review / QA / ship 的结论必须落到 `requirements/reports/`
+- **完成任务**：更新 REQ 状态和 `.claude/progress.txt`，有复用价值的结论写入 `context/experience/`
+
+### 治理命令
+
+```bash
+npm run docs:impact      # 文档影响分析
+npm run docs:verify      # 文档一致性验证
+npm run check:governance # 治理状态检查
+npm run req:create       # 创建新 REQ
+npm run req:start        # 开始 REQ
+npm run req:complete     # 完成 REQ
+npm run verify           # 运行质量门
+```
 <!-- HARNESS-LAB:END -->
 
 ---
 
-## Working Rules（必须遵守）
+## 项目约束（补充规则）
 
-以下规则优先级最高，覆盖所有默认行为：
+以下规则在治理框架内执行，作为项目特定的补充约束。
 
 ### 行为约束
 
