@@ -1,6 +1,6 @@
 # Agent Flow Lite
 
-面向个人开发者和小团队的单机全栈 AI Agent 编排平台。零外部服务依赖（无需 Redis / PostgreSQL / 消息队列），SQLite + 文件存储，clone 后 5 分钟内完成本地部署。
+面向个人开发者和小团队的单机全栈 AI Agent 编排平台。零基础设施依赖（无需 Redis / PostgreSQL / 消息队列），SQLite + 文件存储，clone 后 5 分钟内完成本地部署。
 
 **核心能力**：可视化工作流编排、RAG 知识检索、SSE 流式对话、基于 SKILL.md 的技能系统。
 
@@ -30,7 +30,7 @@
 
 | 能力 | Dify / LangFlow / Flowise | Agent Flow Lite |
 |------|---------------------------|-----------------|
-| **部署依赖** | PostgreSQL + Redis + 消息队列 | SQLite + 文件存储，零外部依赖 |
+| **部署依赖** | PostgreSQL + Redis + 消息队列 | SQLite + 文件存储，零基础设施依赖 |
 | **部署时间** | Docker Compose + 配置调优 | `./install.sh && ./start.sh`，5 分钟 |
 | **技能定义** | 锁在数据库，导出为 JSON | SKILL.md 纯文本，Git 版本控制 + diff |
 | **工作流断点续跑** | 不支持 | 每节点 checkpoint，断线可恢复 |
@@ -492,7 +492,7 @@ Quality Gate 的关键检查是 4 项：
 
 | 组件 | 机制 | 适用场景 | 已知局限 |
 |------|------|---------|---------|
-| 代码沙箱 | AST 级模块黑名单 + 子进程资源限制（`RLIMIT_AS` / `RLIMIT_CPU`） | 开发/演示环境的基本防护 | 非容器/seccomp 隔离，`__class__.__bases__` 等反射链可绕过 AST 检查 |
+| 代码沙箱 | AST 级模块黑名单 + 子进程资源限制（`RLIMIT_AS` / `RLIMIT_CPU`，仅 Linux） | 开发/演示环境的基本防护 | **Windows 平台无资源限制**；非容器/seccomp 隔离，`__class__.__bases__` 等反射链可绕过 AST 检查 |
 | SSRF 防护 | 私有网段黑名单 + DNS 预解析验证 | 纵深防御，阻止常见 SSRF 向量 | 不防御 DNS Rebinding、302 跳转到内网等高级攻击 |
 | 认证系统 | bcrypt 密码散列 + UUID Token + SQLite 存储 | 单实例部署 | 非 JWT，Token 无过期机制，不适合分布式部署 |
 | 审计日志 | 仅追加写入文件 | 事后排查参考 | 非防篡改设计，无签名校验 |
