@@ -20,6 +20,7 @@ from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
 from app.api.knowledge import router as knowledge_router
+from app.api.observability import router as observability_router
 from app.api.publish import router as publish_router
 from app.api.settings import router as settings_router
 from app.api.skill import router as skill_router
@@ -126,6 +127,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(admin_router)
     app.include_router(publish_router)
+    app.include_router(observability_router)
 
     # SPA catch-all: serve static assets or fall back to index.html
     # Registered after API routers so /api/v1/* routes take priority.

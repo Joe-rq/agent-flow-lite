@@ -18,6 +18,27 @@
     </div>
 
     <div class="settings-card">
+      <h2>嵌入模型配置</h2>
+      <p class="hint">用于知识库文档向量化的模型配置。</p>
+
+      <div v-if="embedLoading" class="state">加载中...</div>
+      <div v-else-if="embedError" class="state error">{{ embedError }}</div>
+      <div v-else class="embed-config">
+        <div class="embed-info">
+          <span class="embed-label">Provider:</span>
+          <span class="embed-value">{{ embedProvider }}</span>
+        </div>
+        <div class="embed-info">
+          <span class="embed-label">Model:</span>
+          <span class="embed-value">{{ embedModel }}</span>
+        </div>
+        <div v-if="hasKnowledgeBases" class="warning-box">
+          <strong>风险提示:</strong> 更改嵌入模型会导致新上传的文档与现有知识库向量维度不匹配，建议清空知识库后重新上传文档。
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-card">
       <h2>功能开关</h2>
       <p class="hint">高风险能力默认关闭，管理员可运行时开启或熔断。</p>
 
@@ -66,6 +87,12 @@ const errorMessage = ref('')
 const featureFlags = ref<FeatureFlagItem[]>([])
 const flagErrorMessage = ref('')
 const updatingKeys = ref<Record<string, boolean>>({})
+
+const embedProvider = ref('')
+const embedModel = ref('')
+const embedLoading = ref(false)
+const embedError = ref('')
+const hasKnowledgeBases = ref(false)
 
 async function loadModels() {
   isLoading.value = true
@@ -128,6 +155,25 @@ async function loadFeatureFlags() {
   }
 }
 
+async function loadEmbeddingConfig() {
+  embedLoading.value = true
+  embedError.value = ''
+  try {
+    const [embedRes, kbRes] = await Promise.all([
+      axios.get('/api/v1/settings/embedding'),
+      axios.get('/api/v1/knowledge'),
+    ])
+    embedProvider.value = embedRes.data?.provider || ''
+    embedModel.value = embedRes.data?.model || ''
+    hasKnowledgeBases.value = (kbRes.data?.total || 0) > 0
+  } catch (error) {
+    console.error('加载嵌入配置失败:', error)
+    embedError.value = '加载嵌入配置失败'
+  } finally {
+    embedLoading.value = false
+  }
+}
+
 async function toggleFeatureFlag(flagKey: string, event: Event) {
   const target = event.target as HTMLInputElement
   const enabled = !!target.checked
@@ -153,6 +199,7 @@ async function toggleFeatureFlag(flagKey: string, event: Event) {
 onMounted(() => {
   loadModels()
   loadFeatureFlags()
+  loadEmbeddingConfig()
 })
 </script>
 
@@ -221,5 +268,35 @@ select {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-background);
+}
+
+.embed-config {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.embed-info {
+  display: flex;
+  gap: 8px;
+}
+
+.embed-label {
+  color: var(--color-muted-foreground);
+  min-width: 80px;
+}
+
+.embed-value {
+  font-family: var(--font-mono);
+}
+
+.warning-box {
+  padding: 12px;
+  border: 1px solid var(--accent-amber, #f59e0b);
+  border-radius: var(--radius-md);
+  background: var(--accent-amber-bg, rgba(245, 158, 11, 0.1));
+  color: var(--accent-amber-fg, #92400e);
+  font-size: 14px;
+  line-height: 1.5;
 }
 </style>

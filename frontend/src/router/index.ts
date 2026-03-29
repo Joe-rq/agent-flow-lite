@@ -38,6 +38,12 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: () => import('../views/AdminDashboardView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/skills',
       name: 'skills',
       component: () => import('../views/SkillsView.vue'),

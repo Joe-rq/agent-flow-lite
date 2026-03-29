@@ -3,10 +3,15 @@ Current phase: idle
 Last updated: 2026-03-29
 
 Recently completed:
+- REQ-2026-003: P1 任务实施 (ChromaDB警告、SSE重连、可观测性仪表盘、SDK生成)
 - REQ-2026-002: Toast/Confirm 通知系统替换 alert/confirm (commit b56f3d2)
 - REQ-2026-001: Harness Lab integration (commit c6f4245)
 
 Latest maintenance:
+- 2026-03-29: Added "实施前检查点" to CLAUDE.md
+  - Problem: P1 tasks implemented without REQ, bypassing Harness Lab governance
+  - Root cause: User-provided "implementation plan" was treated as green light to skip REQ
+  - Fix: Added checkpoint requiring REQ check before writing any code
 - 2026-03-29: Fixed Harness Lab governance layer priority issue (commit 315858b)
   - Problem: CLAUDE.md declared Working Rules "覆盖所有默认行为", bypassing governance entry
   - Fix: Restructured CLAUDE.md to make governance entry the true entry point

@@ -14,14 +14,15 @@
 
 - 无
 
+## 最近完成 REQ
+
+- `REQ-2026-003-p1-implementation.md`（P1 任务：ChromaDB警告、SSE重连、可观测性仪表盘、SDK生成）
+- `REQ-2026-002-toast-confirm-alert-confirm.md`（Toast/Confirm 通知系统替换 alert/confirm）
+- `REQ-2026-001-harness-lab-integration.md`（Harness Lab integration）
+
 ## 当前搁置 REQ
 
 - 无
-
-## 最近完成 REQ
-
-- `REQ-2026-002-toast-confirm-alert-confirm.md`（Toast/Confirm 通知系统替换 alert/confirm）
-- `REQ-2026-001-harness-lab-integration.md`（Harness Lab integration）
 
 ## 目录约定
 

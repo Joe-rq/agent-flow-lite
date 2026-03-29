@@ -50,6 +50,7 @@ export function useWorkflowExecution(currentWorkflowId: Ref<string | null>) {
       await fetchSSE({
         url: `${API_BASE}/workflows/${currentWorkflowId.value}/execute`,
         body: { input: runInput.value },
+        retry: { maxRetries: 3, baseDelayMs: 1000, maxDelayMs: 10000 },
         onEvent: (eventType, data) => {
           if (eventType === 'token') {
             runOutput.value += (data.content as string) || ''

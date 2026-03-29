@@ -12,6 +12,7 @@ from app.core.feature_flags import (
     list_feature_flags,
     set_feature_flag_value,
 )
+from app.core.config import settings
 from app.models.user import UserRole
 
 router = APIRouter(prefix="/api/v1/settings", tags=["settings"])
@@ -65,3 +66,18 @@ async def update_feature_flag(
         resource_id=f"{flag_key.upper()}:{str(enabled).lower()}",
     )
     return {"key": flag_key.upper(), "enabled": enabled}
+
+
+@router.get("/embedding")
+async def get_embedding_config(
+    user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    s = settings()
+    provider = s.embedding_provider
+    model_map = {
+        "siliconflow": s.embedding_model,
+        "openai": s.openai_embedding_model,
+        "ollama": s.ollama_embedding_model,
+    }
+    model = model_map.get(provider, "")
+    return {"provider": provider, "model": model}
