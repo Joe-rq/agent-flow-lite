@@ -7,10 +7,12 @@ Recently completed:
 - REQ-2026-001: Harness Lab integration (commit c6f4245)
 
 Latest maintenance:
-- 2026-03-29: Fixed Harness Lab governance layer priority issue
+- 2026-03-29: Fixed Harness Lab governance layer priority issue (commit 315858b)
   - Problem: CLAUDE.md declared Working Rules "覆盖所有默认行为", bypassing governance entry
   - Fix: Restructured CLAUDE.md to make governance entry the true entry point
-  - Simplified AGENTS.md from 192 lines to ~70 lines
-  - context/ directory already contains real project info from REQ-2026-001
+- 2026-03-29: Added session startup protocol and /start skill
+  - Added "会话启动协议" at the top of CLAUDE.md
+  - Created skills/start/start.md for explicit /start command
+  - Requires reading INDEX.md and progress.txt before first response
 
 Next REQ: None
