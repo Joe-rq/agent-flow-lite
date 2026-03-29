@@ -1,6 +1,15 @@
 #!/bin/bash
 # Harness Lab 会话启动脚本
 # 在每次会话开始时输出当前状态
+# 仅对主会话生效，跳过 subagent 会话
+
+# 检测是否是 subagent 会话（通过环境变量或其他标识）
+# Subagents 通常有特定的环境变量或任务上下文
+if [ -n "$CLAUDE_SUBAGENT" ] || [ -n "$AGENT_TASK" ]; then
+  # Subagent 会话，跳过全局上下文加载
+  echo "🔄 Subagent 会话，跳过全局上下文加载"
+  exit 0
+fi
 
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null)"
 if [ -z "$ROOT_DIR" ]; then
